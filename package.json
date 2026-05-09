@@ -4,8 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-  "start": "node server.js"
-},
+    "start": "node server.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,6 +17,7 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "pdfkit": "^0.18.0",
+    "pg": "^8.20.0",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
