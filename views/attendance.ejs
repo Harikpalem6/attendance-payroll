@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/employees">Employees</a>
+            <a href="/attendance">Attendance</a>
+            <a href="/leaves">Leaves</a>
+            <a href="/payroll">Payroll</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Attendance Management</h1>
+
+        <form action="/attendance" method="GET" class="toolbar">
+            <input type="date" name="date" value="<%= filterDate || '' %>">
+
+            <button type="submit">Filter</button>
+
+            <a class="secondary-btn" href="/export/attendance">
+                Export Excel
+            </a>
+        </form>
+
+        <form action="/attendance/add" method="POST" class="toolbar">
+
+            <select name="employee_id" required>
+                <option value="">Select Employee</option>
+
+                <% employees.forEach(emp => { %>
+                    <option value="<%= emp.id %>">
+                        <%= emp.name %>
+                    </option>
+                <% }) %>
+            </select>
+
+            <input type="date" name="date" required>
+
+            <select name="status" required>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Half Day">Half Day</option>
+            </select>
+
+            <button type="submit">Mark Attendance</button>
+
+        </form>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+
+            <% records.forEach(record => { %>
+            <tr>
+                <td><%= record.id %></td>
+                <td><%= record.name %></td>
+                <td><%= record.date %></td>
+                <td><%= record.status %></td>
+
+                <td class="action-buttons">
+
+                    <a
+                        class="edit-btn"
+                        href="/attendance/edit/<%= record.id %>"
+                    >
+                        Edit
+                    </a>
+
+                    <form
+                        action="/attendance/delete/<%= record.id %>"
+                        method="POST"
+                    >
+                        <button class="delete-btn">
+                            Delete
+                        </button>
+                    </form>
+
+                </td>
+            </tr>
+            <% }) %>
+
+        </table>
+
+    </main>
+
+</div>
+
+</body>
+</html>

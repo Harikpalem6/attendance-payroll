@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Attendance</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="simple-page">
+
+    <div class="card">
+        <h1>Edit Attendance</h1>
+
+        <form action="/attendance/update/<%= attendance.id %>" method="POST" class="stack-form">
+
+            <select name="employee_id" required>
+                <% employees.forEach(emp => { %>
+                    <option
+                        value="<%= emp.id %>"
+                        <%= emp.id === attendance.employee_id ? 'selected' : '' %>>
+                        <%= emp.name %>
+                    </option>
+                <% }) %>
+            </select>
+
+            <input
+                type="date"
+                name="date"
+                value="<%= attendance.date %>"
+                required
+            >
+
+            <select name="status" required>
+                <option value="Present" <%= attendance.status === 'Present' ? 'selected' : '' %>>
+                    Present
+                </option>
+
+                <option value="Absent" <%= attendance.status === 'Absent' ? 'selected' : '' %>>
+                    Absent
+                </option>
+
+                <option value="Half Day" <%= attendance.status === 'Half Day' ? 'selected' : '' %>>
+                    Half Day
+                </option>
+            </select>
+
+            <button type="submit">Update Attendance</button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

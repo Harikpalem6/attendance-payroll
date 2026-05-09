@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/employees">Employees</a>
+            <a href="/attendance">Attendance</a>
+            <a href="/leaves">Leaves</a>
+            <a href="/payroll">Payroll</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Employee Management</h1>
+
+        <form action="/employees" method="GET" class="toolbar">
+            <input
+                type="text"
+                name="search"
+                placeholder="Search employee"
+                value="<%= typeof search !== 'undefined' ? search : '' %>"
+            >
+
+            <button type="submit">Search</button>
+
+            <a class="secondary-btn" href="/export/employees">
+                Export Excel
+            </a>
+        </form>
+
+        <form action="/employees/add" method="POST" class="toolbar">
+            <input type="text" name="name" placeholder="Employee Name" required>
+            <input type="text" name="department" placeholder="Department" required>
+            <input type="number" name="salary" placeholder="Salary" required>
+
+            <button type="submit">Add Employee</button>
+        </form>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Salary</th>
+                <th>Actions</th>
+            </tr>
+
+            <% employees.forEach(employee => { %>
+            <tr>
+                <td><%= employee.id %></td>
+                <td><%= employee.name %></td>
+                <td><%= employee.department %></td>
+                <td>₹ <%= employee.salary %></td>
+
+                <td class="action-buttons">
+                    <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
+                        Edit
+                    </a>
+
+                    <form action="/employees/delete/<%= employee.id %>" method="POST">
+                        <button class="delete-btn">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            <% }) %>
+
+        </table>
+
+    </main>
+
+</div>
+
+</body>
+</html>

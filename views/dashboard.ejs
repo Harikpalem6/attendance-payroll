@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/employees">Employees</a>
+            <a href="/attendance">Attendance</a>
+            <a href="/leaves">Leaves</a>
+            <a href="/payroll">Payroll</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+        <h1>Dashboard</h1>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <h3>Total Employees</h3>
+                <p><%= totalEmployees %></p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Present Today</h3>
+                <p><%= presentToday %></p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Absent Today</h3>
+                <p><%= absentToday %></p>
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

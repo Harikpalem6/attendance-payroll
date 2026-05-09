@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Employee</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="simple-page">
+
+    <div class="card">
+        <h1>Edit Employee</h1>
+
+        <form action="/employees/update/<%= employee.id %>" method="POST" class="stack-form">
+
+            <input
+                type="text"
+                name="name"
+                value="<%= employee.name %>"
+                required
+            >
+
+            <input
+                type="text"
+                name="department"
+                value="<%= employee.department %>"
+                required
+            >
+
+            <input
+                type="number"
+                name="salary"
+                value="<%= employee.salary %>"
+                required
+            >
+
+            <button type="submit">Update Employee</button>
+
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>

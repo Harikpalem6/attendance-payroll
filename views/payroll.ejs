@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payroll Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/employees">Employees</a>
+            <a href="/attendance">Attendance</a>
+            <a href="/leaves">Leaves</a>
+            <a href="/payroll">Payroll</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Payroll Management</h1>
+
+        <form action="/payroll/calculate" method="POST" class="toolbar">
+
+            <select name="employee_id" required>
+                <option value="">Select Employee</option>
+
+                <% employees.forEach(emp => { %>
+                    <option value="<%= emp.id %>">
+                        <%= emp.name %>
+                    </option>
+                <% }) %>
+            </select>
+
+            <input type="month" name="month" required>
+
+            <button type="submit">Calculate Payroll</button>
+
+        </form>
+
+        <% if (payroll) { %>
+
+        <div class="card">
+
+            <h2>Payroll Result</h2>
+
+            <br>
+
+            <p><strong>Employee:</strong> <%= payroll.employee.name %></p>
+            <p><strong>Department:</strong> <%= payroll.employee.department %></p>
+            <p><strong>Month:</strong> <%= payroll.month %></p>
+            <p><strong>Base Salary:</strong> ₹ <%= payroll.employee.salary %></p>
+            <p><strong>Present Days:</strong> <%= payroll.present %></p>
+            <p><strong>Absent Days:</strong> <%= payroll.absent %></p>
+            <p><strong>Half Days:</strong> <%= payroll.halfday %></p>
+            <p><strong>Deductions:</strong> ₹ <%= payroll.deduction.toFixed(2) %></p>
+            <p><strong>Final Salary:</strong> ₹ <%= payroll.finalSalary.toFixed(2) %></p>
+
+            <br>
+
+            <form action="/payroll/payslip" method="POST">
+
+                <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
+                <input type="hidden" name="department" value="<%= payroll.employee.department %>">
+                <input type="hidden" name="salary" value="<%= payroll.employee.salary %>">
+                <input type="hidden" name="present" value="<%= payroll.present %>">
+                <input type="hidden" name="absent" value="<%= payroll.absent %>">
+                <input type="hidden" name="halfday" value="<%= payroll.halfday %>">
+                <input type="hidden" name="deduction" value="<%= payroll.deduction.toFixed(2) %>">
+                <input type="hidden" name="finalSalary" value="<%= payroll.finalSalary.toFixed(2) %>">
+                <input type="hidden" name="month" value="<%= payroll.month %>">
+
+                <button type="submit">
+                    Download PDF Payslip
+                </button>
+
+            </form>
+
+        </div>
+
+        <% } %>
+
+    </main>
+
+</div>
+
+</body>
+</html>
