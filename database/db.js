@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const bcrypt = require("bcrypt");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -21,7 +22,9 @@ async function initDatabase() {
       id SERIAL PRIMARY KEY,
       name VARCHAR(200) NOT NULL,
       department VARCHAR(200),
-      salary NUMERIC
+      salary NUMERIC,
+      username VARCHAR(100) UNIQUE,
+      password VARCHAR(255)
     );
   `);
 
@@ -53,7 +56,6 @@ async function initDatabase() {
   );
 
   if (userCheck.rows.length === 0) {
-    const bcrypt = require("bcrypt");
     const hashedPassword = await bcrypt.hash("admin123", 10);
 
     await pool.query(
