@@ -22,10 +22,18 @@ async function initDatabase() {
       id SERIAL PRIMARY KEY,
       name VARCHAR(200) NOT NULL,
       department VARCHAR(200),
-      salary NUMERIC,
-      username VARCHAR(100) UNIQUE,
-      password VARCHAR(255)
+      salary NUMERIC
     );
+  `);
+
+  await pool.query(`
+    ALTER TABLE employees
+    ADD COLUMN IF NOT EXISTS username VARCHAR(100);
+  `);
+
+  await pool.query(`
+    ALTER TABLE employees
+    ADD COLUMN IF NOT EXISTS password VARCHAR(255);
   `);
 
   await pool.query(`
