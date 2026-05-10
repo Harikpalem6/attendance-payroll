@@ -97,10 +97,16 @@ app.post("/employee/login", async (req, res) => {
   }
 
   const employee = result.rows[0];
-  const match = await bcrypt.compare(password, employee.password);
 
-  if (!match) {
-    return res.render("employee-login", {
+if (!employee.password) {
+  return res.render("employee-login", {
+    error: "Employee account not activated"
+  });
+}
+
+      const match = await bcrypt.compare(password, employee.password);
+      if (!match) {
+      return res.render("employee-login", {
       error: "Invalid employee login"
     });
   }
