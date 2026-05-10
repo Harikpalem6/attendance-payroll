@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Payroll</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>Employee Portal</h2>
+
+        <nav>
+            <a href="/employee/dashboard">Dashboard</a>
+            <a href="/employee/leaves">Leaves</a>
+            <a href="/employee/payroll">Payroll</a>
+            <a href="/employee/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Your Payroll</h1>
+
+        <div class="card">
+            <p><strong>Name:</strong> <%= employee.name %></p>
+            <p><strong>Department:</strong> <%= employee.department %></p>
+            <p><strong>Monthly Salary:</strong> ₹ <%= employee.salary %></p>
+
+            <br>
+
+            <p>
+                Payroll calculation is managed by HR/Admin.
+            </p>
+
+            <p>
+                Contact administrator for official payslip generation.
+            </p>
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

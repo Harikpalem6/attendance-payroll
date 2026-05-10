@@ -84,3 +84,51 @@
 
 </body>
 </html>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-page">
+
+<div class="login-wrapper">
+    <div class="login-box">
+
+        <h1>Employee Portal</h1>
+        <p class="subtitle">
+            Attendance • Leave • Payroll
+        </p>
+
+        <% if (typeof error !== 'undefined') { %>
+            <p class="error"><%= error %></p>
+        <% } %>
+
+        <form action="/employee/login" method="POST" class="stack-form">
+
+            <input
+                type="text"
+                name="username"
+                placeholder="Employee Username"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                required
+            >
+
+            <button type="submit">
+                Employee Login
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+</body>
+</html>

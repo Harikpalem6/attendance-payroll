@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Leaves</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>Employee Portal</h2>
+
+        <nav>
+            <a href="/employee/dashboard">Dashboard</a>
+            <a href="/employee/leaves">Leaves</a>
+            <a href="/employee/payroll">Payroll</a>
+            <a href="/employee/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Apply Leave</h1>
+
+        <form action="/employee/leaves/apply" method="POST" class="toolbar">
+
+            <select name="leave_type" required>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Casual Leave">Casual Leave</option>
+                <option value="Paid Leave">Paid Leave</option>
+            </select>
+
+            <input type="date" name="start_date" required>
+            <input type="date" name="end_date" required>
+
+            <input
+                type="text"
+                name="reason"
+                placeholder="Reason"
+                required
+            >
+
+            <button type="submit">
+                Apply Leave
+            </button>
+
+        </form>
+
+        <br>
+
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Reason</th>
+                <th>Status</th>
+            </tr>
+
+            <% leaves.forEach(leave => { %>
+            <tr>
+                <td><%= leave.leave_type %></td>
+                <td><%= leave.start_date %></td>
+                <td><%= leave.end_date %></td>
+                <td><%= leave.reason %></td>
+                <td><%= leave.status %></td>
+            </tr>
+            <% }) %>
+
+        </table>
+
+    </main>
+
+</div>
+
+</body>
+</html>

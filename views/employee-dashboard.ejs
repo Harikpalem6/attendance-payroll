@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>Employee Portal</h2>
+
+        <nav>
+            <a href="/employee/dashboard">Dashboard</a>
+            <a href="/employee/leaves">Leaves</a>
+            <a href="/employee/payroll">Payroll</a>
+            <a href="/employee/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Welcome, <%= employee.name %></h1>
+
+        <div class="card">
+            <h2>Mark Today's Attendance</h2>
+            <br>
+
+            <form action="/employee/attendance" method="POST">
+                <button type="submit">
+                    Mark Present
+                </button>
+            </form>
+        </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Your Recent Attendance</h2>
+            <br>
+
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+
+                <% attendance.forEach(record => { %>
+                <tr>
+                    <td><%= record.date %></td>
+                    <td><%= record.status %></td>
+                </tr>
+                <% }) %>
+
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>
