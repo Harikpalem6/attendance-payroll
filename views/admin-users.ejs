@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Users</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/employees">Employees</a>
+            <a href="/attendance">Attendance</a>
+            <a href="/leaves">Leaves</a>
+            <a href="/payroll">Payroll</a>
+            <a href="/admin-users">Admin Users</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Admin User Management</h1>
+
+        <form action="/admin-users/add" method="POST" class="toolbar">
+            <input type="text" name="username" placeholder="Username" required>
+
+            <input type="password" name="password" placeholder="Password" required>
+
+            <select name="role" required>
+                <option value="Super Admin">Super Admin</option>
+                <option value="HR">HR</option>
+                <option value="Manager">Manager</option>
+            </select>
+
+            <button type="submit">Add User</button>
+        </form>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Action</th>
+            </tr>
+
+            <% users.forEach(user => { %>
+            <tr>
+                <td><%= user.id %></td>
+                <td><%= user.username %></td>
+                <td><%= user.role %></td>
+
+                <td>
+                    <% if (user.username !== "admin") { %>
+                        <form action="/admin-users/delete/<%= user.id %>" method="POST">
+                            <button class="delete-btn" type="submit">Delete</button>
+                        </form>
+                    <% } else { %>
+                        Main Admin
+                    <% } %>
+                </td>
+            </tr>
+            <% }) %>
+        </table>
+
+    </main>
+
+</div>
+
+</body>
+</html>

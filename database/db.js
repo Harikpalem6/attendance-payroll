@@ -18,6 +18,11 @@ async function initDatabase() {
   `);
 
   await pool.query(`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'Super Admin';
+`);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS employees (
       id SERIAL PRIMARY KEY,
       name VARCHAR(200) NOT NULL,
@@ -67,8 +72,8 @@ async function initDatabase() {
     const hashedPassword = await bcrypt.hash("admin123", 10);
 
     await pool.query(
-      "INSERT INTO users (username, password) VALUES ($1, $2)",
-      ["admin", hashedPassword]
+    "INSERT INTO users (username, password, role) VALUES ($1, $2, $3)",
+    ["admin", hashedPassword, "Super Admin"]
     );
   }
 }

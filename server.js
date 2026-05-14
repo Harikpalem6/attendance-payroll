@@ -30,6 +30,49 @@ function requireAdminLogin(req, res, next) {
   next();
 }
 
+function requireSuperAdmin(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/");
+  }
+
+  if (req.session.user.role !== "Super Admin") {
+    return res.send("Access denied: Super Admin only");
+  }
+
+  next();
+}
+
+function requireHRorSuperAdmin(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/");
+  }
+
+  if (
+    req.session.user.role !== "Super Admin" &&
+    req.session.user.role !== "HR"
+  ) {
+    return res.send("Access denied: HR or Super Admin only");
+  }
+
+  next();
+}
+
+function requireManagerHRorSuperAdmin(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/");
+  }
+
+  if (
+    req.session.user.role !== "Super Admin" &&
+    req.session.user.role !== "HR" &&
+    req.session.user.role !== "Manager"
+  ) {
+    return res.send("Access denied");
+  }
+
+  next();
+}
+
 function requireEmployeeLogin(req, res, next) {
   if (!req.session.employee) {
     return res.redirect("/employee/login");
@@ -509,7 +552,7 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
       finalSalary
     }
   });
-});
+}); 
 
 /* PDF */
 
@@ -542,6 +585,44 @@ app.post("/payroll/payslip", (req, res) => {
 });
 
 /* SERVER */
+
+ /* ADMIN USER MANAGEMENT */
+
+app.get("/admin-users", requireSuperAdmin, async (req, res) => {
+  const users = await db.query(
+    "SELECT id, username, role FROM users ORDER BY id DESC"
+  );
+
+  res.render("admin-users", {
+    users: users.rows,
+  });
+});
+
+app.post("/admin-users/add", requireSuperAdmin, async (req, res) => {
+  const { username, password, role } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  try {
+    await db.query(
+      "INSERT INTO users (username, password, role) VALUES ($1, $2, $3)",
+      [username, hashedPassword, role]
+    );
+  } catch (err) {
+    console.log(err.message);
+  }
+
+  res.redirect("/admin-users");
+});
+
+app.post("/admin-users/delete/:id", requireSuperAdmin, async (req, res) => {
+  await db.query(
+    "DELETE FROM users WHERE id = $1 AND username != 'admin'",
+    [req.params.id]
+  );
+
+  res.redirect("/admin-users");
+});
 
 const PORT = process.env.PORT || 3000;
 
