@@ -26,6 +26,10 @@
         <div class="card">
             <h2>Today Attendance</h2>
 
+            <p>
+                <strong>Office Time:</strong> 09:30 AM to 06:00 PM
+            </p>
+
             <br>
 
             <form action="/employee/check-in" method="POST" style="display:inline-block; margin-right:10px;">
@@ -49,11 +53,44 @@
                     <th>Date</th>
                     <th>Status</th>
                     <th>Check In</th>
+                    <th>Check In Status</th>
                     <th>Check Out</th>
+                    <th>Check Out Status</th>
                     <th>Working Hours</th>
                 </tr>
 
                 <% attendance.forEach(record => { %>
+
+                <%
+                    let checkInStatus = "-";
+                    let checkOutStatus = "-";
+                    let workingHours = "-";
+
+                    if (record.check_in) {
+                        const checkIn = new Date(record.check_in);
+                        const officeStart = new Date(record.check_in);
+                        officeStart.setHours(9, 30, 0, 0);
+
+                        checkInStatus = checkIn > officeStart ? "Late" : "On Time";
+                    }
+
+                    if (record.check_out) {
+                        const checkOut = new Date(record.check_out);
+                        const officeEnd = new Date(record.check_out);
+                        officeEnd.setHours(18, 0, 0, 0);
+
+                        checkOutStatus = checkOut < officeEnd ? "Early Checkout" : "Full Day";
+                    }
+
+                    if (record.check_in && record.check_out) {
+                        const diffMs = new Date(record.check_out) - new Date(record.check_in);
+                        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+
+                        workingHours = `${hours}h ${minutes}m`;
+                    }
+                %>
+
                 <tr>
                     <td><%= record.date ? new Date(record.date).toLocaleDateString() : '' %></td>
                     <td><%= record.status %></td>
@@ -62,21 +99,15 @@
                         <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : '-' %>
                     </td>
 
+                    <td><%= checkInStatus %></td>
+
                     <td>
                         <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : '-' %>
                     </td>
 
-                    <td>
-                        <% if (record.check_in && record.check_out) { 
-                            const diffMs = new Date(record.check_out) - new Date(record.check_in);
-                            const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                            const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
-                        %>
-                            <%= hours %>h <%= minutes %>m
-                        <% } else { %>
-                            -
-                        <% } %>
-                    </td>
+                    <td><%= checkOutStatus %></td>
+
+                    <td><%= workingHours %></td>
                 </tr>
                 <% }) %>
 
