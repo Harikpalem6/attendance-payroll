@@ -920,14 +920,20 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
         const pdfBuffer = Buffer.concat(chunks);
 
         const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 10000,
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  family: 4,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
+  tls: {
+    rejectUnauthorized: false,
+  },
         });
 
         await transporter.sendMail({
