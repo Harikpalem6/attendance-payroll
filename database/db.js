@@ -22,6 +22,12 @@ async function initDatabase() {
   ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'Super Admin';
 `);
 
+await pool.query(`
+  UPDATE users
+  SET role = 'Super Admin'
+  WHERE username = 'admin' AND (role IS NULL OR role = '');
+`);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS employees (
       id SERIAL PRIMARY KEY,
