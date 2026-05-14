@@ -468,7 +468,46 @@ app.post("/payroll/calculate", requireAdminLogin, async (req, res) => {
 
 app.get("/employee/payroll", requireEmployeeLogin, async (req, res) => {
   res.render("employee-payroll", {
-    employee: req.session.employee
+    employee: req.session.employee,
+    payroll: null
+  });
+});
+
+app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) => {
+  const { month } = req.body;
+  const employee = req.session.employee;
+
+  const attendance = await db.query(
+    `SELECT * FROM attendance
+     WHERE employee_id = $1
+     AND TO_CHAR(date, 'YYYY-MM') = $2`,
+    [employee.id, month]
+  );
+
+  let present = 0;
+  let absent = 0;
+  let halfday = 0;
+
+  attendance.rows.forEach((row) => {
+    if (row.status === "Present") present++;
+    if (row.status === "Absent") absent++;
+    if (row.status === "Half Day") halfday++;
+  });
+
+  const dailySalary = employee.salary / 30;
+  const deduction = (absent * dailySalary) + ((halfday * dailySalary) / 2);
+  const finalSalary = employee.salary - deduction;
+
+  res.render("employee-payroll", {
+    employee,
+    payroll: {
+      month,
+      present,
+      absent,
+      halfday,
+      deduction,
+      finalSalary
+    }
   });
 });
 

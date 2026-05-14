@@ -27,17 +27,49 @@
             <p><strong>Name:</strong> <%= employee.name %></p>
             <p><strong>Department:</strong> <%= employee.department %></p>
             <p><strong>Monthly Salary:</strong> ₹ <%= employee.salary %></p>
+        </div>
+
+        <br>
+
+        <form action="/employee/payroll/calculate" method="POST" class="toolbar">
+            <input type="month" name="month" required>
+            <button type="submit">Calculate Payslip</button>
+        </form>
+
+        <% if (payroll) { %>
+
+        <div class="card">
+            <h2>Payslip Summary</h2>
 
             <br>
 
-            <p>
-                Payroll calculation is managed by HR/Admin.
-            </p>
+            <p><strong>Month:</strong> <%= payroll.month %></p>
+            <p><strong>Present Days:</strong> <%= payroll.present %></p>
+            <p><strong>Absent Days:</strong> <%= payroll.absent %></p>
+            <p><strong>Half Days:</strong> <%= payroll.halfday %></p>
+            <p><strong>Deductions:</strong> ₹ <%= payroll.deduction.toFixed(2) %></p>
+            <p><strong>Final Salary:</strong> ₹ <%= payroll.finalSalary.toFixed(2) %></p>
 
-            <p>
-                Contact administrator for official payslip generation.
-            </p>
+            <br>
+
+            <form action="/payroll/payslip" method="POST">
+
+                <input type="hidden" name="employeeName" value="<%= employee.name %>">
+                <input type="hidden" name="department" value="<%= employee.department %>">
+                <input type="hidden" name="salary" value="<%= employee.salary %>">
+                <input type="hidden" name="present" value="<%= payroll.present %>">
+                <input type="hidden" name="absent" value="<%= payroll.absent %>">
+                <input type="hidden" name="halfday" value="<%= payroll.halfday %>">
+                <input type="hidden" name="deduction" value="<%= payroll.deduction.toFixed(2) %>">
+                <input type="hidden" name="finalSalary" value="<%= payroll.finalSalary.toFixed(2) %>">
+                <input type="hidden" name="month" value="<%= payroll.month %>">
+
+                <button type="submit">Download PDF Payslip</button>
+
+            </form>
         </div>
+
+        <% } %>
 
     </main>
 
