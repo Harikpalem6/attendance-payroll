@@ -212,6 +212,29 @@ app.post("/employees/delete/:id", requireAdminLogin, async (req, res) => {
   res.redirect("/employees");
 });
 
+app.post("/employees/reset-login/:id", requireAdminLogin, async (req, res) => {
+  const employeeResult = await db.query(
+    "SELECT * FROM employees WHERE id = $1",
+    [req.params.id]
+  );
+
+  const employee = employeeResult.rows[0];
+
+  if (!employee) {
+    return res.redirect("/employees");
+  }
+
+  const username = employee.name.toLowerCase().replace(/\s+/g, "");
+  const hashedPassword = await bcrypt.hash("employee123", 10);
+
+  await db.query(
+    "UPDATE employees SET username = $1, password = $2 WHERE id = $3",
+    [username, hashedPassword, req.params.id]
+  );
+
+  res.redirect("/employees");
+});
+
 /* ADMIN ATTENDANCE */
 
 app.get("/attendance", requireAdminLogin, async (req, res) => {

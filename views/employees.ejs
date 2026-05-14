@@ -54,6 +54,7 @@
                 <th>Name</th>
                 <th>Department</th>
                 <th>Salary</th>
+                <th>Username</th>
                 <th>Actions</th>
             </tr>
 
@@ -63,15 +64,26 @@
                 <td><%= employee.name %></td>
                 <td><%= employee.department %></td>
                 <td>₹ <%= employee.salary %></td>
+                <td><%= employee.username || 'Not activated' %></td>
 
                 <td class="action-buttons">
+
                     <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
                         Edit
                     </a>
 
-                    <form action="/employees/delete/<%= employee.id %>" method="POST">
-                        <button class="delete-btn">Delete</button>
+                    <form action="/employees/reset-login/<%= employee.id %>" method="POST">
+                        <button class="secondary-btn" type="submit">
+                            Reset Login
+                        </button>
                     </form>
+
+                    <form action="/employees/delete/<%= employee.id %>" method="POST">
+                        <button class="delete-btn" type="submit">
+                            Delete
+                        </button>
+                    </form>
+
                 </td>
             </tr>
             <% }) %>
@@ -80,54 +92,6 @@
 
     </main>
 
-</div>
-
-</body>
-</html>
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Employee Login</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body class="login-page">
-
-<div class="login-wrapper">
-    <div class="login-box">
-
-        <h1>Employee Portal</h1>
-        <p class="subtitle">
-            Attendance • Leave • Payroll
-        </p>
-
-        <% if (typeof error !== 'undefined') { %>
-            <p class="error"><%= error %></p>
-        <% } %>
-
-        <form action="/employee/login" method="POST" class="stack-form">
-
-            <input
-                type="text"
-                name="username"
-                placeholder="Employee Username"
-                required
-            >
-
-            <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                required
-            >
-
-            <button type="submit">
-                Employee Login
-            </button>
-
-        </form>
-
-    </div>
 </div>
 
 </body>
