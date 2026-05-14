@@ -576,6 +576,16 @@ app.post("/admin-users/delete/:id", requireSuperAdmin, async (req, res) => {
   res.redirect("/admin-users");
 });
 
+app.post("/admin-users/reset-password/:id", requireSuperAdmin, async (req, res) => {
+  const hashedPassword = await bcrypt.hash("admin123", 10);
+
+  await db.query(
+    "UPDATE users SET password = $1 WHERE id = $2",
+    [hashedPassword, req.params.id]
+  );
+
+  res.redirect("/admin-users");
+});
 /* =========================
    EMPLOYEE PORTAL
 ========================= */

@@ -55,7 +55,7 @@
                 <th>ID</th>
                 <th>Username</th>
                 <th>Role</th>
-                <th>Action</th>
+                <th>Actions</th>
             </tr>
 
             <% users.forEach(adminUser => { %>
@@ -64,7 +64,14 @@
                 <td><%= adminUser.username %></td>
                 <td><%= adminUser.role %></td>
 
-                <td>
+                <td class="action-buttons">
+
+                    <form action="/admin-users/reset-password/<%= adminUser.id %>" method="POST">
+                        <button class="secondary-btn" type="submit">
+                            Reset Password
+                        </button>
+                    </form>
+
                     <% if (adminUser.username !== "admin") { %>
                         <form action="/admin-users/delete/<%= adminUser.id %>" method="POST">
                             <button class="delete-btn" type="submit">
@@ -72,12 +79,17 @@
                             </button>
                         </form>
                     <% } else { %>
-                        Main Admin
+                        <span>Main Admin</span>
                     <% } %>
+
                 </td>
             </tr>
             <% }) %>
         </table>
+
+        <br>
+
+        <p><strong>Note:</strong> Reset Password sets password to <strong>admin123</strong>.</p>
 
     </main>
 
