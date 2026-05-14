@@ -876,13 +876,12 @@ app.post("/payroll/payslip", (req, res) => {
   doc.text("Salary Details", { underline: true });
   doc.moveDown(0.5);
 
-  doc.text(`Base Salary: ₹ ${data.salary}`);
+  doc.text(`Base Salary: Rs. ${data.salary}`);
   doc.text(`Present Days: ${data.present}`);
   doc.text(`Absent Days: ${data.absent}`);
   doc.text(`Half Days: ${data.halfday}`);
-  doc.text(`Deductions: ₹ ${data.deduction}`);
-  doc.text(`Final Salary: ₹ ${data.finalSalary}`);
-
+  doc.text(`Deductions: Rs. ${data.deduction}`);
+  doc.text(`Final Salary: Rs. ${data.finalSalary}`);
   doc.moveDown(2);
 
   // Footer
