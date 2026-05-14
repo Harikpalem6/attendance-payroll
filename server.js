@@ -202,7 +202,6 @@ app.get("/dashboard", requireAdminLogin, async (req, res) => {
 
 /* =========================
    EMPLOYEE MANAGEMENT
-   Super Admin + HR only
 ========================= */
 
 app.get("/employees", requireHRorSuperAdmin, async (req, res) => {
@@ -312,7 +311,6 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
 
 app.post("/employees/delete/:id", requireHRorSuperAdmin, async (req, res) => {
   await db.query("DELETE FROM employees WHERE id = $1", [req.params.id]);
-
   res.redirect("/employees");
 });
 
@@ -421,7 +419,6 @@ app.post("/attendance/update/:id", requireManagerHRorSuperAdmin, async (req, res
 
 app.post("/attendance/delete/:id", requireManagerHRorSuperAdmin, async (req, res) => {
   await db.query("DELETE FROM attendance WHERE id = $1", [req.params.id]);
-
   res.redirect("/attendance");
 });
 
@@ -477,15 +474,23 @@ app.post("/leaves/reject/:id", requireManagerHRorSuperAdmin, async (req, res) =>
 });
 
 /* =========================
-   ADMIN PAYROLL
+   ADMIN PAYROLL + HISTORY
 ========================= */
 
 app.get("/payroll", requireSuperAdmin, async (req, res) => {
   const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
+  const history = await db.query(`
+    SELECT payroll_records.*, employees.name
+    FROM payroll_records
+    JOIN employees ON payroll_records.employee_id = employees.id
+    ORDER BY payroll_records.created_at DESC
+  `);
+
   res.render("payroll", {
     employees: employees.rows,
     payroll: null,
+    history: history.rows,
   });
 });
 
@@ -522,8 +527,16 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
 
   const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
+  const history = await db.query(`
+    SELECT payroll_records.*, employees.name
+    FROM payroll_records
+    JOIN employees ON payroll_records.employee_id = employees.id
+    ORDER BY payroll_records.created_at DESC
+  `);
+
   res.render("payroll", {
     employees: employees.rows,
+    history: history.rows,
     payroll: {
       employee,
       month,
@@ -534,6 +547,46 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
       finalSalary,
     },
   });
+});
+
+app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
+  const {
+    employee_id,
+    month,
+    base_salary,
+    present_days,
+    absent_days,
+    half_days,
+    deduction,
+    final_salary,
+  } = req.body;
+
+  await db.query(
+    `INSERT INTO payroll_records
+    (employee_id, month, base_salary, present_days, absent_days, half_days, deduction, final_salary)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    ON CONFLICT (employee_id, month)
+    DO UPDATE SET
+      base_salary = EXCLUDED.base_salary,
+      present_days = EXCLUDED.present_days,
+      absent_days = EXCLUDED.absent_days,
+      half_days = EXCLUDED.half_days,
+      deduction = EXCLUDED.deduction,
+      final_salary = EXCLUDED.final_salary,
+      created_at = CURRENT_TIMESTAMP`,
+    [
+      employee_id,
+      month,
+      base_salary,
+      present_days,
+      absent_days,
+      half_days,
+      deduction,
+      final_salary,
+    ]
+  );
+
+  res.redirect("/payroll");
 });
 
 /* =========================
@@ -586,6 +639,7 @@ app.post("/admin-users/reset-password/:id", requireSuperAdmin, async (req, res) 
 
   res.redirect("/admin-users");
 });
+
 /* =========================
    EMPLOYEE PORTAL
 ========================= */
@@ -678,9 +732,15 @@ app.post("/employee/leaves/apply", requireEmployeeLogin, async (req, res) => {
 });
 
 app.get("/employee/payroll", requireEmployeeLogin, async (req, res) => {
+  const records = await db.query(
+    "SELECT * FROM payroll_records WHERE employee_id = $1 ORDER BY created_at DESC",
+    [req.session.employee.id]
+  );
+
   res.render("employee-payroll", {
     employee: req.session.employee,
     payroll: null,
+    records: records.rows,
   });
 });
 
@@ -709,8 +769,14 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
   const deduction = absent * dailySalary + (halfday * dailySalary) / 2;
   const finalSalary = Number(employee.salary) - deduction;
 
+  const records = await db.query(
+    "SELECT * FROM payroll_records WHERE employee_id = $1 ORDER BY created_at DESC",
+    [employee.id]
+  );
+
   res.render("employee-payroll", {
     employee,
+    records: records.rows,
     payroll: {
       month,
       present,
@@ -814,8 +880,11 @@ app.get("/export/attendance", requireManagerHRorSuperAdmin, async (req, res) => 
       { header: "Employee", key: "name", width: 25 },
       { header: "Date", key: "date", width: 20 },
       { header: "Status", key: "status", width: 20 },
+      { header: "Check In", key: "check_in", width: 25 },
+      { header: "Check Out", key: "check_out", width: 25 },
     ],
-    `SELECT attendance.id, employees.name, attendance.date, attendance.status
+    `SELECT attendance.id, employees.name, attendance.date, attendance.status,
+            attendance.check_in, attendance.check_out
      FROM attendance
      JOIN employees ON attendance.employee_id = employees.id
      ORDER BY attendance.id DESC`

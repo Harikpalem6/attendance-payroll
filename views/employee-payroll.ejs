@@ -33,13 +33,13 @@
 
         <form action="/employee/payroll/calculate" method="POST" class="toolbar">
             <input type="month" name="month" required>
-            <button type="submit">Calculate Payslip</button>
+            <button type="submit">Calculate Current Payslip</button>
         </form>
 
         <% if (payroll) { %>
 
         <div class="card">
-            <h2>Payslip Summary</h2>
+            <h2>Calculated Payslip Summary</h2>
 
             <br>
 
@@ -69,7 +69,60 @@
             </form>
         </div>
 
+        <br>
+
         <% } %>
+
+        <h2>Saved Payroll History</h2>
+
+        <br>
+
+        <table>
+            <tr>
+                <th>Month</th>
+                <th>Base Salary</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Half Days</th>
+                <th>Deduction</th>
+                <th>Final Salary</th>
+                <th>PDF</th>
+            </tr>
+
+            <% if (records && records.length > 0) { %>
+                <% records.forEach(record => { %>
+                <tr>
+                    <td><%= record.month %></td>
+                    <td>₹ <%= record.base_salary %></td>
+                    <td><%= record.present_days %></td>
+                    <td><%= record.absent_days %></td>
+                    <td><%= record.half_days %></td>
+                    <td>₹ <%= Number(record.deduction).toFixed(2) %></td>
+                    <td>₹ <%= Number(record.final_salary).toFixed(2) %></td>
+                    <td>
+                        <form action="/payroll/payslip" method="POST">
+                            <input type="hidden" name="employeeName" value="<%= employee.name %>">
+                            <input type="hidden" name="department" value="<%= employee.department %>">
+                            <input type="hidden" name="salary" value="<%= record.base_salary %>">
+                            <input type="hidden" name="present" value="<%= record.present_days %>">
+                            <input type="hidden" name="absent" value="<%= record.absent_days %>">
+                            <input type="hidden" name="halfday" value="<%= record.half_days %>">
+                            <input type="hidden" name="deduction" value="<%= Number(record.deduction).toFixed(2) %>">
+                            <input type="hidden" name="finalSalary" value="<%= Number(record.final_salary).toFixed(2) %>">
+                            <input type="hidden" name="month" value="<%= record.month %>">
+
+                            <button type="submit">PDF</button>
+                        </form>
+                    </td>
+                </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="8">No saved payroll records yet.</td>
+                </tr>
+            <% } %>
+
+        </table>
 
     </main>
 

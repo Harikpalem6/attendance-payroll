@@ -117,6 +117,22 @@ await pool.query(`
   ALTER TABLE attendance
   ADD COLUMN IF NOT EXISTS check_out TIMESTAMP;
 `);
+
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS payroll_records (
+    id SERIAL PRIMARY KEY,
+    employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+    month VARCHAR(20) NOT NULL,
+    base_salary NUMERIC,
+    present_days INTEGER,
+    absent_days INTEGER,
+    half_days INTEGER,
+    deduction NUMERIC,
+    final_salary NUMERIC,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(employee_id, month)
+  );
+`);
 }
 
 initDatabase();
