@@ -23,9 +23,20 @@ app.use(
   })
 );
 
+/* =========================
+   LOGIN MIDDLEWARE
+========================= */
+
 function requireAdminLogin(req, res, next) {
   if (!req.session.user) {
     return res.redirect("/");
+  }
+  next();
+}
+
+function requireEmployeeLogin(req, res, next) {
+  if (!req.session.employee) {
+    return res.redirect("/employee/login");
   }
   next();
 }
@@ -73,14 +84,9 @@ function requireManagerHRorSuperAdmin(req, res, next) {
   next();
 }
 
-function requireEmployeeLogin(req, res, next) {
-  if (!req.session.employee) {
-    return res.redirect("/employee/login");
-  }
-  next();
-}
-
-/* ADMIN LOGIN */
+/* =========================
+   ADMIN LOGIN
+========================= */
 
 app.get("/", (req, res) => {
   res.render("login");
@@ -96,7 +102,7 @@ app.post("/login", async (req, res) => {
 
   if (result.rows.length === 0) {
     return res.render("login", {
-      error: "Invalid username or password"
+      error: "Invalid username or password",
     });
   }
 
@@ -105,7 +111,7 @@ app.post("/login", async (req, res) => {
 
   if (!match) {
     return res.render("login", {
-      error: "Invalid username or password"
+      error: "Invalid username or password",
     });
   }
 
@@ -119,7 +125,9 @@ app.get("/logout", (req, res) => {
   });
 });
 
-/* EMPLOYEE LOGIN */
+/* =========================
+   EMPLOYEE LOGIN
+========================= */
 
 app.get("/employee/login", (req, res) => {
   res.render("employee-login");
@@ -135,22 +143,23 @@ app.post("/employee/login", async (req, res) => {
 
   if (result.rows.length === 0) {
     return res.render("employee-login", {
-      error: "Invalid employee login"
+      error: "Invalid employee login",
     });
   }
 
   const employee = result.rows[0];
 
-if (!employee.password) {
-  return res.render("employee-login", {
-    error: "Employee account not activated"
-  });
-}
+  if (!employee.password) {
+    return res.render("employee-login", {
+      error: "Employee account not activated",
+    });
+  }
 
-      const match = await bcrypt.compare(password, employee.password);
-      if (!match) {
-      return res.render("employee-login", {
-      error: "Invalid employee login"
+  const match = await bcrypt.compare(password, employee.password);
+
+  if (!match) {
+    return res.render("employee-login", {
+      error: "Invalid employee login",
     });
   }
 
@@ -164,12 +173,12 @@ app.get("/employee/logout", (req, res) => {
   });
 });
 
-/* DASHBOARD */
+/* =========================
+   ADMIN DASHBOARD
+========================= */
 
 app.get("/dashboard", requireAdminLogin, async (req, res) => {
-  const employees = await db.query(
-    "SELECT COUNT(*) FROM employees"
-  );
+  const employees = await db.query("SELECT COUNT(*) FROM employees");
 
   const present = await db.query(
     "SELECT COUNT(*) FROM attendance WHERE date = CURRENT_DATE AND status = 'Present'"
@@ -186,9 +195,12 @@ app.get("/dashboard", requireAdminLogin, async (req, res) => {
   });
 });
 
-/* EMPLOYEES */
+/* =========================
+   EMPLOYEE MANAGEMENT
+   Super Admin + HR only
+========================= */
 
-app.get("/employees", requireAdminLogin, async (req, res) => {
+app.get("/employees", requireHRorSuperAdmin, async (req, res) => {
   const search = req.query.search || "";
   let result;
 
@@ -198,9 +210,7 @@ app.get("/employees", requireAdminLogin, async (req, res) => {
       [`%${search}%`]
     );
   } else {
-    result = await db.query(
-      "SELECT * FROM employees ORDER BY id DESC"
-    );
+    result = await db.query("SELECT * FROM employees ORDER BY id DESC");
   }
 
   res.render("employees", {
@@ -209,7 +219,7 @@ app.get("/employees", requireAdminLogin, async (req, res) => {
   });
 });
 
-app.post("/employees/add", requireAdminLogin, async (req, res) => {
+app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
   const { name, department, salary } = req.body;
 
   const username = name.toLowerCase().replace(/\s+/g, "");
@@ -224,7 +234,8 @@ app.post("/employees/add", requireAdminLogin, async (req, res) => {
 
   res.redirect("/employees");
 });
-app.get("/employees/edit/:id", requireAdminLogin, async (req, res) => {
+
+app.get("/employees/edit/:id", requireHRorSuperAdmin, async (req, res) => {
   const result = await db.query(
     "SELECT * FROM employees WHERE id = $1",
     [req.params.id]
@@ -235,7 +246,7 @@ app.get("/employees/edit/:id", requireAdminLogin, async (req, res) => {
   });
 });
 
-app.post("/employees/update/:id", requireAdminLogin, async (req, res) => {
+app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
   const { name, department, salary } = req.body;
 
   await db.query(
@@ -246,16 +257,13 @@ app.post("/employees/update/:id", requireAdminLogin, async (req, res) => {
   res.redirect("/employees");
 });
 
-app.post("/employees/delete/:id", requireAdminLogin, async (req, res) => {
-  await db.query(
-    "DELETE FROM employees WHERE id = $1",
-    [req.params.id]
-  );
+app.post("/employees/delete/:id", requireHRorSuperAdmin, async (req, res) => {
+  await db.query("DELETE FROM employees WHERE id = $1", [req.params.id]);
 
   res.redirect("/employees");
 });
 
-app.post("/employees/reset-login/:id", requireAdminLogin, async (req, res) => {
+app.post("/employees/reset-login/:id", requireHRorSuperAdmin, async (req, res) => {
   const employeeResult = await db.query(
     "SELECT * FROM employees WHERE id = $1",
     [req.params.id]
@@ -278,14 +286,15 @@ app.post("/employees/reset-login/:id", requireAdminLogin, async (req, res) => {
   res.redirect("/employees");
 });
 
-/* ADMIN ATTENDANCE */
+/* =========================
+   ADMIN ATTENDANCE
+   Super Admin + HR + Manager
+========================= */
 
-app.get("/attendance", requireAdminLogin, async (req, res) => {
+app.get("/attendance", requireManagerHRorSuperAdmin, async (req, res) => {
   const filterDate = req.query.date || "";
 
-  const employees = await db.query(
-    "SELECT * FROM employees ORDER BY name ASC"
-  );
+  const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
   let records;
 
@@ -314,7 +323,7 @@ app.get("/attendance", requireAdminLogin, async (req, res) => {
   });
 });
 
-app.post("/attendance/add", requireAdminLogin, async (req, res) => {
+app.post("/attendance/add", requireManagerHRorSuperAdmin, async (req, res) => {
   const { employee_id, date, status } = req.body;
 
   try {
@@ -329,43 +338,48 @@ app.post("/attendance/add", requireAdminLogin, async (req, res) => {
   res.redirect("/attendance");
 });
 
-/* EMPLOYEE DASHBOARD */
-
-app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
+app.get("/attendance/edit/:id", requireManagerHRorSuperAdmin, async (req, res) => {
   const attendance = await db.query(
-    "SELECT * FROM attendance WHERE employee_id = $1 ORDER BY date DESC",
-    [req.session.employee.id]
+    "SELECT * FROM attendance WHERE id = $1",
+    [req.params.id]
   );
 
-  const leaves = await db.query(
-    "SELECT * FROM leaves WHERE employee_id = $1 ORDER BY id DESC",
-    [req.session.employee.id]
-  );
+  const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
-  res.render("employee-dashboard", {
-    employee: req.session.employee,
-    attendance: attendance.rows,
-    leaves: leaves.rows,
+  res.render("edit-attendance", {
+    attendance: attendance.rows[0],
+    employees: employees.rows,
   });
 });
 
-app.post("/employee/attendance", requireEmployeeLogin, async (req, res) => {
-  const today = new Date().toISOString().split("T")[0];
+app.post("/attendance/update/:id", requireManagerHRorSuperAdmin, async (req, res) => {
+  const { employee_id, date, status } = req.body;
 
   try {
     await db.query(
-      "INSERT INTO attendance (employee_id, date, status) VALUES ($1, $2, $3)",
-      [req.session.employee.id, today, "Present"]
+      "UPDATE attendance SET employee_id = $1, date = $2, status = $3 WHERE id = $4",
+      [employee_id, date, status, req.params.id]
     );
   } catch (err) {
     console.log(err.message);
   }
 
-  res.redirect("/employee/dashboard");
+  res.redirect("/attendance");
 });
-/* LEAVES */
 
-app.get("/leaves", requireAdminLogin, async (req, res) => {
+app.post("/attendance/delete/:id", requireManagerHRorSuperAdmin, async (req, res) => {
+  await db.query("DELETE FROM attendance WHERE id = $1", [req.params.id]);
+
+  res.redirect("/attendance");
+});
+
+/* =========================
+   ADMIN LEAVES
+   View/Approve/Reject: Super Admin + HR + Manager
+   Add leave manually: Super Admin + HR
+========================= */
+
+app.get("/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
   const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
   const leaves = await db.query(`
@@ -381,7 +395,7 @@ app.get("/leaves", requireAdminLogin, async (req, res) => {
   });
 });
 
-app.post("/leaves/add", requireAdminLogin, async (req, res) => {
+app.post("/leaves/add", requireHRorSuperAdmin, async (req, res) => {
   const { employee_id, leave_type, start_date, end_date, reason } = req.body;
 
   await db.query(
@@ -394,7 +408,7 @@ app.post("/leaves/add", requireAdminLogin, async (req, res) => {
   res.redirect("/leaves");
 });
 
-app.post("/leaves/approve/:id", requireAdminLogin, async (req, res) => {
+app.post("/leaves/approve/:id", requireManagerHRorSuperAdmin, async (req, res) => {
   await db.query(
     "UPDATE leaves SET status = 'Approved' WHERE id = $1",
     [req.params.id]
@@ -403,7 +417,7 @@ app.post("/leaves/approve/:id", requireAdminLogin, async (req, res) => {
   res.redirect("/leaves");
 });
 
-app.post("/leaves/reject/:id", requireAdminLogin, async (req, res) => {
+app.post("/leaves/reject/:id", requireManagerHRorSuperAdmin, async (req, res) => {
   await db.query(
     "UPDATE leaves SET status = 'Rejected' WHERE id = $1",
     [req.params.id]
@@ -412,45 +426,13 @@ app.post("/leaves/reject/:id", requireAdminLogin, async (req, res) => {
   res.redirect("/leaves");
 });
 
-/* EMPLOYEE LEAVES */
+/* =========================
+   ADMIN PAYROLL
+   Super Admin only
+========================= */
 
-app.get("/employee/leaves", requireEmployeeLogin, async (req, res) => {
-  const leaves = await db.query(
-    "SELECT * FROM leaves WHERE employee_id = $1 ORDER BY id DESC",
-    [req.session.employee.id]
-  );
-
-  res.render("employee-leaves", {
-    employee: req.session.employee,
-    leaves: leaves.rows,
-  });
-});
-
-app.post("/employee/leaves/apply", requireEmployeeLogin, async (req, res) => {
-  const { leave_type, start_date, end_date, reason } = req.body;
-
-  await db.query(
-    `INSERT INTO leaves
-    (employee_id, leave_type, start_date, end_date, reason)
-    VALUES ($1, $2, $3, $4, $5)`,
-    [
-      req.session.employee.id,
-      leave_type,
-      start_date,
-      end_date,
-      reason
-    ]
-  );
-
-  res.redirect("/employee/leaves");
-});
-
-/* PAYROLL */
-
-app.get("/payroll", requireAdminLogin, async (req, res) => {
-  const employees = await db.query(
-    "SELECT * FROM employees ORDER BY name ASC"
-  );
+app.get("/payroll", requireSuperAdmin, async (req, res) => {
+  const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
   res.render("payroll", {
     employees: employees.rows,
@@ -458,7 +440,7 @@ app.get("/payroll", requireAdminLogin, async (req, res) => {
   });
 });
 
-app.post("/payroll/calculate", requireAdminLogin, async (req, res) => {
+app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
   const { employee_id, month } = req.body;
 
   const employeeResult = await db.query(
@@ -485,13 +467,11 @@ app.post("/payroll/calculate", requireAdminLogin, async (req, res) => {
     if (row.status === "Half Day") halfday++;
   });
 
-  const dailySalary = employee.salary / 30;
-  const deduction = (absent * dailySalary) + ((halfday * dailySalary) / 2);
-  const finalSalary = employee.salary - deduction;
+  const dailySalary = Number(employee.salary) / 30;
+  const deduction = absent * dailySalary + (halfday * dailySalary) / 2;
+  const finalSalary = Number(employee.salary) - deduction;
 
-  const employees = await db.query(
-    "SELECT * FROM employees ORDER BY name ASC"
-  );
+  const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
   res.render("payroll", {
     employees: employees.rows,
@@ -507,86 +487,10 @@ app.post("/payroll/calculate", requireAdminLogin, async (req, res) => {
   });
 });
 
-/* EMPLOYEE PAYROLL */
-
-app.get("/employee/payroll", requireEmployeeLogin, async (req, res) => {
-  res.render("employee-payroll", {
-    employee: req.session.employee,
-    payroll: null
-  });
-});
-
-app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) => {
-  const { month } = req.body;
-  const employee = req.session.employee;
-
-  const attendance = await db.query(
-    `SELECT * FROM attendance
-     WHERE employee_id = $1
-     AND TO_CHAR(date, 'YYYY-MM') = $2`,
-    [employee.id, month]
-  );
-
-  let present = 0;
-  let absent = 0;
-  let halfday = 0;
-
-  attendance.rows.forEach((row) => {
-    if (row.status === "Present") present++;
-    if (row.status === "Absent") absent++;
-    if (row.status === "Half Day") halfday++;
-  });
-
-  const dailySalary = employee.salary / 30;
-  const deduction = (absent * dailySalary) + ((halfday * dailySalary) / 2);
-  const finalSalary = employee.salary - deduction;
-
-  res.render("employee-payroll", {
-    employee,
-    payroll: {
-      month,
-      present,
-      absent,
-      halfday,
-      deduction,
-      finalSalary
-    }
-  });
-}); 
-
-/* PDF */
-
-app.post("/payroll/payslip", (req, res) => {
-  const data = req.body;
-  const doc = new PDFDocument();
-
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename=payslip-${data.employeeName}.pdf`
-  );
-
-  doc.pipe(res);
-
-  doc.fontSize(22).text("PAYSLIP", { align: "center" });
-  doc.moveDown();
-
-  doc.fontSize(14).text(`Employee Name: ${data.employeeName}`);
-  doc.text(`Department: ${data.department}`);
-  doc.text(`Month: ${data.month}`);
-  doc.text(`Base Salary: ₹ ${data.salary}`);
-  doc.text(`Present Days: ${data.present}`);
-  doc.text(`Absent Days: ${data.absent}`);
-  doc.text(`Half Days: ${data.halfday}`);
-  doc.text(`Deductions: ₹ ${data.deduction}`);
-  doc.text(`Final Salary: ₹ ${data.finalSalary}`);
-
-  doc.end();
-});
-
-/* SERVER */
-
- /* ADMIN USER MANAGEMENT */
+/* =========================
+   ADMIN USER MANAGEMENT
+   Super Admin only
+========================= */
 
 app.get("/admin-users", requireSuperAdmin, async (req, res) => {
   const users = await db.query(
@@ -623,6 +527,234 @@ app.post("/admin-users/delete/:id", requireSuperAdmin, async (req, res) => {
 
   res.redirect("/admin-users");
 });
+
+/* =========================
+   EMPLOYEE PORTAL
+========================= */
+
+app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
+  const attendance = await db.query(
+    "SELECT * FROM attendance WHERE employee_id = $1 ORDER BY date DESC",
+    [req.session.employee.id]
+  );
+
+  const leaves = await db.query(
+    "SELECT * FROM leaves WHERE employee_id = $1 ORDER BY id DESC",
+    [req.session.employee.id]
+  );
+
+  res.render("employee-dashboard", {
+    employee: req.session.employee,
+    attendance: attendance.rows,
+    leaves: leaves.rows,
+  });
+});
+
+app.post("/employee/attendance", requireEmployeeLogin, async (req, res) => {
+  const today = new Date().toISOString().split("T")[0];
+
+  try {
+    await db.query(
+      "INSERT INTO attendance (employee_id, date, status) VALUES ($1, $2, $3)",
+      [req.session.employee.id, today, "Present"]
+    );
+  } catch (err) {
+    console.log(err.message);
+  }
+
+  res.redirect("/employee/dashboard");
+});
+
+app.get("/employee/leaves", requireEmployeeLogin, async (req, res) => {
+  const leaves = await db.query(
+    "SELECT * FROM leaves WHERE employee_id = $1 ORDER BY id DESC",
+    [req.session.employee.id]
+  );
+
+  res.render("employee-leaves", {
+    employee: req.session.employee,
+    leaves: leaves.rows,
+  });
+});
+
+app.post("/employee/leaves/apply", requireEmployeeLogin, async (req, res) => {
+  const { leave_type, start_date, end_date, reason } = req.body;
+
+  await db.query(
+    `INSERT INTO leaves
+    (employee_id, leave_type, start_date, end_date, reason)
+    VALUES ($1, $2, $3, $4, $5)`,
+    [req.session.employee.id, leave_type, start_date, end_date, reason]
+  );
+
+  res.redirect("/employee/leaves");
+});
+
+app.get("/employee/payroll", requireEmployeeLogin, async (req, res) => {
+  res.render("employee-payroll", {
+    employee: req.session.employee,
+    payroll: null,
+  });
+});
+
+app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) => {
+  const { month } = req.body;
+  const employee = req.session.employee;
+
+  const attendance = await db.query(
+    `SELECT * FROM attendance
+     WHERE employee_id = $1
+     AND TO_CHAR(date, 'YYYY-MM') = $2`,
+    [employee.id, month]
+  );
+
+  let present = 0;
+  let absent = 0;
+  let halfday = 0;
+
+  attendance.rows.forEach((row) => {
+    if (row.status === "Present") present++;
+    if (row.status === "Absent") absent++;
+    if (row.status === "Half Day") halfday++;
+  });
+
+  const dailySalary = Number(employee.salary) / 30;
+  const deduction = absent * dailySalary + (halfday * dailySalary) / 2;
+  const finalSalary = Number(employee.salary) - deduction;
+
+  res.render("employee-payroll", {
+    employee,
+    payroll: {
+      month,
+      present,
+      absent,
+      halfday,
+      deduction,
+      finalSalary,
+    },
+  });
+});
+
+/* =========================
+   PDF PAYSLIP
+   Used by Admin and Employee
+========================= */
+
+app.post("/payroll/payslip", (req, res) => {
+  const data = req.body;
+  const doc = new PDFDocument();
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=payslip-${data.employeeName}.pdf`
+  );
+
+  doc.pipe(res);
+
+  doc.fontSize(22).text("PAYSLIP", { align: "center" });
+  doc.moveDown();
+
+  doc.fontSize(14).text(`Employee Name: ${data.employeeName}`);
+  doc.text(`Department: ${data.department}`);
+  doc.text(`Month: ${data.month}`);
+  doc.text(`Base Salary: ₹ ${data.salary}`);
+  doc.text(`Present Days: ${data.present}`);
+  doc.text(`Absent Days: ${data.absent}`);
+  doc.text(`Half Days: ${data.halfday}`);
+  doc.text(`Deductions: ₹ ${data.deduction}`);
+  doc.text(`Final Salary: ₹ ${data.finalSalary}`);
+
+  doc.end();
+});
+
+/* =========================
+   EXCEL EXPORTS
+   Super Admin + HR
+========================= */
+
+async function exportQuery(res, filename, sheet, columns, query) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(sheet);
+
+  worksheet.columns = columns;
+
+  const result = await db.query(query);
+
+  result.rows.forEach((row) => {
+    worksheet.addRow(row);
+  });
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+
+  res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+
+  await workbook.xlsx.write(res);
+  res.end();
+}
+
+app.get("/export/employees", requireHRorSuperAdmin, async (req, res) => {
+  await exportQuery(
+    res,
+    "employees.xlsx",
+    "Employees",
+    [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Name", key: "name", width: 25 },
+      { header: "Department", key: "department", width: 20 },
+      { header: "Salary", key: "salary", width: 15 },
+      { header: "Username", key: "username", width: 20 },
+    ],
+    "SELECT id, name, department, salary, username FROM employees ORDER BY id DESC"
+  );
+});
+
+app.get("/export/attendance", requireManagerHRorSuperAdmin, async (req, res) => {
+  await exportQuery(
+    res,
+    "attendance.xlsx",
+    "Attendance",
+    [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Employee", key: "name", width: 25 },
+      { header: "Date", key: "date", width: 20 },
+      { header: "Status", key: "status", width: 20 },
+    ],
+    `SELECT attendance.id, employees.name, attendance.date, attendance.status
+     FROM attendance
+     JOIN employees ON attendance.employee_id = employees.id
+     ORDER BY attendance.id DESC`
+  );
+});
+
+app.get("/export/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
+  await exportQuery(
+    res,
+    "leaves.xlsx",
+    "Leaves",
+    [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Employee", key: "name", width: 25 },
+      { header: "Type", key: "leave_type", width: 20 },
+      { header: "Start", key: "start_date", width: 15 },
+      { header: "End", key: "end_date", width: 15 },
+      { header: "Reason", key: "reason", width: 30 },
+      { header: "Status", key: "status", width: 15 },
+    ],
+    `SELECT leaves.id, employees.name, leaves.leave_type, leaves.start_date,
+            leaves.end_date, leaves.reason, leaves.status
+     FROM leaves
+     JOIN employees ON leaves.employee_id = employees.id
+     ORDER BY leaves.id DESC`
+  );
+});
+
+/* =========================
+   SERVER START
+========================= */
 
 const PORT = process.env.PORT || 3000;
 
