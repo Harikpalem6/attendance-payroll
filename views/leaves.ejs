@@ -20,12 +20,14 @@
 
             <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
                 <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
                 <a href="/leaves">Leaves</a>
             <% } %>
 
             <% if (user && user.role === "Super Admin") { %>
                 <a href="/payroll">Payroll</a>
                 <a href="/admin-users">Admin Users</a>
+                <a href="/export/backup">Download Backup</a>
             <% } %>
 
             <a href="/logout">Logout</a>
@@ -89,8 +91,8 @@
                 <td><%= leave.id %></td>
                 <td><%= leave.name %></td>
                 <td><%= leave.leave_type %></td>
-                <td><%= leave.start_date %></td>
-                <td><%= leave.end_date %></td>
+                <td><%= leave.start_date ? new Date(leave.start_date).toLocaleDateString() : '' %></td>
+                <td><%= leave.end_date ? new Date(leave.end_date).toLocaleDateString() : '' %></td>
                 <td><%= leave.reason %></td>
                 <td><%= leave.status %></td>
 

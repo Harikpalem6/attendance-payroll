@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monthly Attendance Report</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/leaves">Leaves</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Monthly Attendance Report</h1>
+
+        <form action="/attendance/monthly-report" method="POST" class="toolbar">
+            <input type="month" name="month" value="<%= month || '' %>" required>
+            <button type="submit">View Report</button>
+        </form>
+
+        <% if (report) { %>
+
+            <form action="/export/attendance-monthly" method="POST" class="toolbar">
+                <input type="hidden" name="month" value="<%= month %>">
+                <button type="submit">Export Monthly Attendance Excel</button>
+            </form>
+
+            <table>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Working Hours</th>
+                </tr>
+
+                <% if (report.length > 0) { %>
+                    <% report.forEach(row => { %>
+
+                        <%
+                            let workingHours = "-";
+
+                            if (row.check_in && row.check_out) {
+                                const diffMs = new Date(row.check_out) - new Date(row.check_in);
+                                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                                const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+                                workingHours = `${hours}h ${minutes}m`;
+                            }
+                        %>
+
+                        <tr>
+                            <td><%= row.name %></td>
+                            <td><%= row.department || '' %></td>
+                            <td><%= row.date ? new Date(row.date).toLocaleDateString() : '' %></td>
+                            <td><%= row.status %></td>
+                            <td><%= row.check_in ? new Date(row.check_in).toLocaleTimeString() : '-' %></td>
+                            <td><%= row.check_out ? new Date(row.check_out).toLocaleTimeString() : '-' %></td>
+                            <td><%= workingHours %></td>
+                        </tr>
+
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7">No attendance records found for this month.</td>
+                    </tr>
+                <% } %>
+
+            </table>
+
+        <% } %>
+
+    </main>
+
+</div>
+
+</body>
+</html>

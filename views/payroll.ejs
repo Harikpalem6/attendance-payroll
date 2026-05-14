@@ -20,12 +20,14 @@
 
             <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
                 <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
                 <a href="/leaves">Leaves</a>
             <% } %>
 
             <% if (user && user.role === "Super Admin") { %>
                 <a href="/payroll">Payroll</a>
                 <a href="/admin-users">Admin Users</a>
+                <a href="/export/backup">Download Backup</a>
             <% } %>
 
             <a href="/logout">Logout</a>
@@ -65,12 +67,12 @@
             <p><strong>Employee:</strong> <%= payroll.employee.name %></p>
             <p><strong>Department:</strong> <%= payroll.employee.department %></p>
             <p><strong>Month:</strong> <%= payroll.month %></p>
-            <p><strong>Base Salary:</strong> ₹ <%= payroll.employee.salary %></p>
+            <p><strong>Base Salary:</strong> Rs. <%= payroll.employee.salary %></p>
             <p><strong>Present Days:</strong> <%= payroll.present %></p>
             <p><strong>Absent Days:</strong> <%= payroll.absent %></p>
             <p><strong>Half Days:</strong> <%= payroll.halfday %></p>
-            <p><strong>Deductions:</strong> ₹ <%= payroll.deduction.toFixed(2) %></p>
-            <p><strong>Final Salary:</strong> ₹ <%= payroll.finalSalary.toFixed(2) %></p>
+            <p><strong>Deductions:</strong> Rs. <%= payroll.deduction.toFixed(2) %></p>
+            <p><strong>Final Salary:</strong> Rs. <%= payroll.finalSalary.toFixed(2) %></p>
 
             <br>
 
@@ -140,12 +142,12 @@
                     <td><%= record.id %></td>
                     <td><%= record.name %></td>
                     <td><%= record.month %></td>
-                    <td>₹ <%= record.base_salary %></td>
+                    <td>Rs. <%= record.base_salary %></td>
                     <td><%= record.present_days %></td>
                     <td><%= record.absent_days %></td>
                     <td><%= record.half_days %></td>
-                    <td>₹ <%= Number(record.deduction).toFixed(2) %></td>
-                    <td>₹ <%= Number(record.final_salary).toFixed(2) %></td>
+                    <td>Rs. <%= Number(record.deduction).toFixed(2) %></td>
+                    <td>Rs. <%= Number(record.final_salary).toFixed(2) %></td>
                     <td><%= record.created_at ? new Date(record.created_at).toLocaleString() : '' %></td>
                     <td>
                         <form action="/payroll/payslip" method="POST">

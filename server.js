@@ -986,6 +986,193 @@ app.get("/export/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
 });
 
 /* =========================
+   DATABASE BACKUP EXPORT
+   Super Admin only
+========================= */
+
+app.get("/export/backup", requireSuperAdmin, async (req, res) => {
+  const workbook = new ExcelJS.Workbook();
+
+  const employees = await db.query(`
+    SELECT id, name, department, salary, phone, email, designation, joining_date, address, username
+    FROM employees
+    ORDER BY id DESC
+  `);
+
+  const attendance = await db.query(`
+    SELECT attendance.id, employees.name, attendance.date, attendance.status,
+           attendance.check_in, attendance.check_out
+    FROM attendance
+    JOIN employees ON attendance.employee_id = employees.id
+    ORDER BY attendance.date DESC
+  `);
+
+  const leaves = await db.query(`
+    SELECT leaves.id, employees.name, leaves.leave_type, leaves.start_date,
+           leaves.end_date, leaves.reason, leaves.status
+    FROM leaves
+    JOIN employees ON leaves.employee_id = employees.id
+    ORDER BY leaves.id DESC
+  `);
+
+  const payroll = await db.query(`
+    SELECT payroll_records.id, employees.name, payroll_records.month,
+           payroll_records.base_salary, payroll_records.present_days,
+           payroll_records.absent_days, payroll_records.half_days,
+           payroll_records.deduction, payroll_records.final_salary,
+           payroll_records.created_at
+    FROM payroll_records
+    JOIN employees ON payroll_records.employee_id = employees.id
+    ORDER BY payroll_records.created_at DESC
+  `);
+
+  const adminUsers = await db.query(`
+    SELECT id, username, role
+    FROM users
+    ORDER BY id DESC
+  `);
+
+  function addSheet(sheetName, rows) {
+    const sheet = workbook.addWorksheet(sheetName);
+
+    if (rows.length === 0) {
+      sheet.addRow(["No data"]);
+      return;
+    }
+
+    const columns = Object.keys(rows[0]).map((key) => ({
+      header: key,
+      key,
+      width: 22,
+    }));
+
+    sheet.columns = columns;
+    rows.forEach((row) => sheet.addRow(row));
+  }
+
+  addSheet("Employees", employees.rows);
+  addSheet("Attendance", attendance.rows);
+  addSheet("Leaves", leaves.rows);
+  addSheet("Payroll", payroll.rows);
+  addSheet("Admin Users", adminUsers.rows);
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=hrms-backup.xlsx"
+  );
+
+  await workbook.xlsx.write(res);
+  res.end();
+});
+
+/* =========================
+   ATTENDANCE MONTHLY REPORT
+========================= */
+
+app.get("/attendance/monthly-report", requireManagerHRorSuperAdmin, async (req, res) => {
+  res.render("attendance-report", {
+    report: null,
+    month: "",
+  });
+});
+
+app.post("/attendance/monthly-report", requireManagerHRorSuperAdmin, async (req, res) => {
+  const { month } = req.body;
+
+  const report = await db.query(
+    `
+    SELECT employees.name,
+           employees.department,
+           attendance.date,
+           attendance.status,
+           attendance.check_in,
+           attendance.check_out
+    FROM attendance
+    JOIN employees ON attendance.employee_id = employees.id
+    WHERE TO_CHAR(attendance.date, 'YYYY-MM') = $1
+    ORDER BY employees.name ASC, attendance.date ASC
+    `,
+    [month]
+  );
+
+  res.render("attendance-report", {
+    report: report.rows,
+    month,
+  });
+});
+
+app.post("/export/attendance-monthly", requireManagerHRorSuperAdmin, async (req, res) => {
+  const { month } = req.body;
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Monthly Attendance");
+
+  sheet.columns = [
+    { header: "Employee", key: "name", width: 25 },
+    { header: "Department", key: "department", width: 20 },
+    { header: "Date", key: "date", width: 18 },
+    { header: "Status", key: "status", width: 15 },
+    { header: "Check In", key: "check_in", width: 25 },
+    { header: "Check Out", key: "check_out", width: 25 },
+    { header: "Working Hours", key: "working_hours", width: 18 },
+  ];
+
+  const result = await db.query(
+    `
+    SELECT employees.name,
+           employees.department,
+           attendance.date,
+           attendance.status,
+           attendance.check_in,
+           attendance.check_out
+    FROM attendance
+    JOIN employees ON attendance.employee_id = employees.id
+    WHERE TO_CHAR(attendance.date, 'YYYY-MM') = $1
+    ORDER BY employees.name ASC, attendance.date ASC
+    `,
+    [month]
+  );
+
+  result.rows.forEach((row) => {
+    let workingHours = "-";
+
+    if (row.check_in && row.check_out) {
+      const diffMs = new Date(row.check_out) - new Date(row.check_in);
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+      workingHours = `${hours}h ${minutes}m`;
+    }
+
+    sheet.addRow({
+      name: row.name,
+      department: row.department,
+      date: row.date,
+      status: row.status,
+      check_in: row.check_in,
+      check_out: row.check_out,
+      working_hours: workingHours,
+    });
+  });
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=attendance-report-${month}.xlsx`
+  );
+
+  await workbook.xlsx.write(res);
+  res.end();
+});
+/* =========================
    SERVER START
 ========================= */
 
