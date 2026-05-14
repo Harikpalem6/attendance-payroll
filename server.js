@@ -387,7 +387,6 @@ app.post("/attendance/add", requireManagerHRorSuperAdmin, async (req, res) => {
 
   res.redirect("/attendance");
 });
-
 app.get("/attendance/edit/:id", requireManagerHRorSuperAdmin, async (req, res) => {
   const attendance = await db.query(
     "SELECT * FROM attendance WHERE id = $1",
@@ -423,7 +422,7 @@ app.post("/attendance/delete/:id", requireManagerHRorSuperAdmin, async (req, res
 });
 
 /* =========================
-   ADMIN LEAVES
+   ADMIN LEAVES WITH OVERLAP PROTECTION
 ========================= */
 
 app.get("/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
@@ -444,6 +443,25 @@ app.get("/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
 
 app.post("/leaves/add", requireHRorSuperAdmin, async (req, res) => {
   const { employee_id, leave_type, start_date, end_date, reason } = req.body;
+
+  const overlap = await db.query(
+    `
+    SELECT * FROM leaves
+    WHERE employee_id = $1
+    AND status != 'Rejected'
+    AND start_date <= $3
+    AND end_date >= $2
+    `,
+    [employee_id, start_date, end_date]
+  );
+
+  if (overlap.rows.length > 0) {
+    return res.send(`
+      <h2>Leave date overlap found</h2>
+      <p>This employee already has leave during these dates.</p>
+      <a href="/leaves">Back to Leaves</a>
+    `);
+  }
 
   await db.query(
     `INSERT INTO leaves
@@ -588,7 +606,6 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
 
   res.redirect("/payroll");
 });
-
 /* =========================
    ADMIN USER MANAGEMENT
 ========================= */
@@ -720,12 +737,32 @@ app.get("/employee/leaves", requireEmployeeLogin, async (req, res) => {
 
 app.post("/employee/leaves/apply", requireEmployeeLogin, async (req, res) => {
   const { leave_type, start_date, end_date, reason } = req.body;
+  const employeeId = req.session.employee.id;
+
+  const overlap = await db.query(
+    `
+    SELECT * FROM leaves
+    WHERE employee_id = $1
+    AND status != 'Rejected'
+    AND start_date <= $3
+    AND end_date >= $2
+    `,
+    [employeeId, start_date, end_date]
+  );
+
+  if (overlap.rows.length > 0) {
+    return res.send(`
+      <h2>Leave date overlap found</h2>
+      <p>You already have a leave request during these dates.</p>
+      <a href="/employee/leaves">Back to Leaves</a>
+    `);
+  }
 
   await db.query(
     `INSERT INTO leaves
     (employee_id, leave_type, start_date, end_date, reason)
     VALUES ($1, $2, $3, $4, $5)`,
-    [req.session.employee.id, leave_type, start_date, end_date, reason]
+    [employeeId, leave_type, start_date, end_date, reason]
   );
 
   res.redirect("/employee/leaves");
