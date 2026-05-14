@@ -388,6 +388,7 @@ app.post("/attendance/add", requireManagerHRorSuperAdmin, async (req, res) => {
 
   res.redirect("/attendance");
 });
+
 app.get("/attendance/edit/:id", requireManagerHRorSuperAdmin, async (req, res) => {
   const attendance = await db.query(
     "SELECT * FROM attendance WHERE id = $1",
@@ -607,6 +608,7 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
 
   res.redirect("/payroll");
 });
+
 /* =========================
    ADMIN USER MANAGEMENT
 ========================= */
@@ -830,124 +832,7 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
    PDF PAYSLIP
 ========================= */
 
-app.post("/payroll/payslip", (req, res) => {
-  const data = req.body;
-  const doc = new PDFDocument({ margin: 50 });
-
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename=payslip-${data.employeeName}.pdf`
-  );
-
-  doc.pipe(res);
-
-  const logoPath = path.join(__dirname, "public", "images", "logo.jpg");
-  try {
-    doc.image(logoPath, 50, 40, {
-      width: 80,
-    });
-  } catch (err) {
-    console.log("Logo not found or could not be loaded");
-  }
-
-  doc
-    .fontSize(22)
-    .text("VLCG", 0, 45, { align: "center" });
-
-  doc
-    .fontSize(10)
-    .text("Main Road, Navipet, Telangana, 503245", { align: "center" });
-
-  doc
-    .fontSize(10)
-    .text("Phone: 6302084794 | Email: harikpalem@gmail.com", {
-      align: "center",
-    });
-
-  doc.moveDown(2);
-
-  doc
-    .fontSize(18)
-    .text("SALARY PAYSLIP", { align: "center", underline: true });
-
-  doc.moveDown(2);
-
-  doc.fontSize(12);
-
-  doc.text(`Employee Name: ${data.employeeName}`);
-  doc.text(`Department: ${data.department || "-"}`);
-  doc.text(`Payroll Month: ${data.month}`);
-
-  doc.moveDown();
-
-  doc.text("Salary Details", { underline: true });
-
-  doc.moveDown(0.5);
-
-  doc.text(`Base Salary: Rs. ${data.salary}`);
-  doc.text(`Present Days: ${data.present}`);
-  doc.text(`Absent Days: ${data.absent}`);
-  doc.text(`Half Days: ${data.halfday}`);
-  doc.text(`Deductions: Rs. ${data.deduction}`);
-  doc.text(`Final Salary: Rs. ${data.finalSalary}`);
-
-  doc.moveDown(2);
-
-  doc
-    .fontSize(10)
-    .text("This is a computer-generated payslip.", { align: "center" });
-
-  doc.end();
-});
-
-app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
-  const data = req.body;
-
-  if (!data.email) {
-    return res.send(`
-      <h2>Email missing</h2>
-      <p>This employee does not have an email address saved.</p>
-      <a href="/payroll">Back to Payroll</a>
-    `);
-  }
-
-  const doc = new PDFDocument({ margin: 50 });
-  const chunks = [];
-
-  doc.on("data", (chunk) => chunks.push(chunk));
-
-  doc.on("end", async () => {
-    const pdfBuffer = Buffer.concat(chunks);
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"VLCG HRMS" <${process.env.EMAIL_USER}>`,
-      to: data.email,
-      subject: `Payslip - ${data.month}`,
-      text: `Dear ${data.employeeName},\n\nPlease find attached your payslip for ${data.month}.\n\nRegards,\nVLCG`,
-      attachments: [
-        {
-          filename: `payslip-${data.employeeName}-${data.month}.pdf`,
-          content: pdfBuffer,
-        },
-      ],
-    });
-
-    res.send(`
-      <h2>Payslip emailed successfully</h2>
-      <p>Payslip sent to ${data.email}</p>
-      <a href="/payroll">Back to Payroll</a>
-    `);
-  });
-
+function drawPayslipPdf(doc, data) {
   const logoPath = path.join(__dirname, "public", "images", "logo.jpg");
 
   try {
@@ -996,8 +881,100 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
   doc.fontSize(10).text("This is a computer-generated payslip.", {
     align: "center",
   });
+}
 
+app.post("/payroll/payslip", (req, res) => {
+  const data = req.body;
+  const doc = new PDFDocument({ margin: 50 });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=payslip-${data.employeeName}.pdf`
+  );
+
+  doc.pipe(res);
+  drawPayslipPdf(doc, data);
   doc.end();
+});
+
+app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
+  const data = req.body;
+
+  if (!data.email) {
+    return res.send(`
+      <h2>Email missing</h2>
+      <p>This employee does not have an email address saved.</p>
+      <a href="/payroll">Back to Payroll</a>
+    `);
+  }
+
+  try {
+    const doc = new PDFDocument({ margin: 50 });
+    const chunks = [];
+
+    doc.on("data", (chunk) => chunks.push(chunk));
+
+    doc.on("end", async () => {
+      try {
+        const pdfBuffer = Buffer.concat(chunks);
+
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 10000,
+        });
+
+        await transporter.sendMail({
+          from: `"VLCG HRMS" <${process.env.EMAIL_USER}>`,
+          to: data.email,
+          subject: `Payslip - ${data.month}`,
+          text: `Dear ${data.employeeName},
+
+Please find attached your payslip for ${data.month}.
+
+Regards,
+VLCG`,
+          attachments: [
+            {
+              filename: `payslip-${data.employeeName}-${data.month}.pdf`,
+              content: pdfBuffer,
+            },
+          ],
+        });
+
+        res.send(`
+          <h2>Payslip emailed successfully</h2>
+          <p>Payslip sent to ${data.email}</p>
+          <a href="/payroll">Back to Payroll</a>
+        `);
+      } catch (emailError) {
+        console.log("EMAIL ERROR:", emailError);
+
+        res.send(`
+          <h2>Email sending failed</h2>
+          <p>${emailError.message}</p>
+          <a href="/payroll">Back to Payroll</a>
+        `);
+      }
+    });
+
+    drawPayslipPdf(doc, data);
+    doc.end();
+  } catch (err) {
+    console.log("PDF EMAIL ROUTE ERROR:", err);
+
+    res.send(`
+      <h2>Email payslip error</h2>
+      <p>${err.message}</p>
+      <a href="/payroll">Back to Payroll</a>
+    `);
+  }
 });
 
 /* =========================
@@ -1095,7 +1072,6 @@ app.get("/export/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
 
 /* =========================
    DATABASE BACKUP EXPORT
-   Super Admin only
 ========================= */
 
 app.get("/export/backup", requireSuperAdmin, async (req, res) => {
@@ -1277,9 +1253,10 @@ app.post("/export/attendance-monthly", requireManagerHRorSuperAdmin, async (req,
     `attachment; filename=attendance-report-${month}.xlsx`
   );
 
-  await workbook.xlsx.write(res); 
+  await workbook.xlsx.write(res);
   res.end();
 });
+
 /* =========================
    SERVER START
 ========================= */
@@ -1288,4 +1265,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-}); 
+});
