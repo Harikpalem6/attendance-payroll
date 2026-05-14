@@ -23,6 +23,10 @@ app.use(
   })
 );
 
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
 /* =========================
    LOGIN MIDDLEWARE
 ========================= */
@@ -760,4 +764,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-});
+});1

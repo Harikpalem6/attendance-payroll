@@ -13,11 +13,21 @@
 
         <nav>
             <a href="/dashboard">Dashboard</a>
-            <a href="/employees">Employees</a>
-            <a href="/attendance">Attendance</a>
-            <a href="/leaves">Leaves</a>
-            <a href="/payroll">Payroll</a>
-            <a href="/admin-users">Admin Users</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/leaves">Leaves</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+            <% } %>
+
             <a href="/logout">Logout</a>
         </nav>
     </aside>
@@ -48,16 +58,18 @@
                 <th>Action</th>
             </tr>
 
-            <% users.forEach(user => { %>
+            <% users.forEach(adminUser => { %>
             <tr>
-                <td><%= user.id %></td>
-                <td><%= user.username %></td>
-                <td><%= user.role %></td>
+                <td><%= adminUser.id %></td>
+                <td><%= adminUser.username %></td>
+                <td><%= adminUser.role %></td>
 
                 <td>
-                    <% if (user.username !== "admin") { %>
-                        <form action="/admin-users/delete/<%= user.id %>" method="POST">
-                            <button class="delete-btn" type="submit">Delete</button>
+                    <% if (adminUser.username !== "admin") { %>
+                        <form action="/admin-users/delete/<%= adminUser.id %>" method="POST">
+                            <button class="delete-btn" type="submit">
+                                Delete
+                            </button>
                         </form>
                     <% } else { %>
                         Main Admin

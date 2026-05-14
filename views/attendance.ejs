@@ -13,10 +13,21 @@
 
         <nav>
             <a href="/dashboard">Dashboard</a>
-            <a href="/employees">Employees</a>
-            <a href="/attendance">Attendance</a>
-            <a href="/leaves">Leaves</a>
-            <a href="/payroll">Payroll</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/leaves">Leaves</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+            <% } %>
+
             <a href="/logout">Logout</a>
         </nav>
     </aside>
@@ -77,18 +88,12 @@
 
                 <td class="action-buttons">
 
-                    <a
-                        class="edit-btn"
-                        href="/attendance/edit/<%= record.id %>"
-                    >
+                    <a class="edit-btn" href="/attendance/edit/<%= record.id %>">
                         Edit
                     </a>
 
-                    <form
-                        action="/attendance/delete/<%= record.id %>"
-                        method="POST"
-                    >
-                        <button class="delete-btn">
+                    <form action="/attendance/delete/<%= record.id %>" method="POST">
+                        <button class="delete-btn" type="submit">
                             Delete
                         </button>
                     </form>
