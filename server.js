@@ -27,6 +27,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
+
 /* =========================
    LOGIN MIDDLEWARE
 ========================= */
@@ -224,16 +225,36 @@ app.get("/employees", requireHRorSuperAdmin, async (req, res) => {
 });
 
 app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
-  const { name, department, salary } = req.body;
+  const {
+    name,
+    department,
+    salary,
+    phone,
+    email,
+    designation,
+    joining_date,
+    address,
+  } = req.body;
 
   const username = name.toLowerCase().replace(/\s+/g, "");
   const hashedPassword = await bcrypt.hash("employee123", 10);
 
   await db.query(
     `INSERT INTO employees
-    (name, department, salary, username, password)
-    VALUES ($1, $2, $3, $4, $5)`,
-    [name, department, salary, username, hashedPassword]
+    (name, department, salary, username, password, phone, email, designation, joining_date, address)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [
+      name,
+      department,
+      salary,
+      username,
+      hashedPassword,
+      phone,
+      email,
+      designation,
+      joining_date || null,
+      address,
+    ]
   );
 
   res.redirect("/employees");
@@ -251,11 +272,39 @@ app.get("/employees/edit/:id", requireHRorSuperAdmin, async (req, res) => {
 });
 
 app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
-  const { name, department, salary } = req.body;
+  const {
+    name,
+    department,
+    salary,
+    phone,
+    email,
+    designation,
+    joining_date,
+    address,
+  } = req.body;
 
   await db.query(
-    "UPDATE employees SET name = $1, department = $2, salary = $3 WHERE id = $4",
-    [name, department, salary, req.params.id]
+    `UPDATE employees
+     SET name = $1,
+         department = $2,
+         salary = $3,
+         phone = $4,
+         email = $5,
+         designation = $6,
+         joining_date = $7,
+         address = $8
+     WHERE id = $9`,
+    [
+      name,
+      department,
+      salary,
+      phone,
+      email,
+      designation,
+      joining_date || null,
+      address,
+      req.params.id,
+    ]
   );
 
   res.redirect("/employees");
@@ -292,7 +341,6 @@ app.post("/employees/reset-login/:id", requireHRorSuperAdmin, async (req, res) =
 
 /* =========================
    ADMIN ATTENDANCE
-   Super Admin + HR + Manager
 ========================= */
 
 app.get("/attendance", requireManagerHRorSuperAdmin, async (req, res) => {
@@ -379,8 +427,6 @@ app.post("/attendance/delete/:id", requireManagerHRorSuperAdmin, async (req, res
 
 /* =========================
    ADMIN LEAVES
-   View/Approve/Reject: Super Admin + HR + Manager
-   Add leave manually: Super Admin + HR
 ========================= */
 
 app.get("/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
@@ -432,7 +478,6 @@ app.post("/leaves/reject/:id", requireManagerHRorSuperAdmin, async (req, res) =>
 
 /* =========================
    ADMIN PAYROLL
-   Super Admin only
 ========================= */
 
 app.get("/payroll", requireSuperAdmin, async (req, res) => {
@@ -493,7 +538,6 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
 
 /* =========================
    ADMIN USER MANAGEMENT
-   Super Admin only
 ========================= */
 
 app.get("/admin-users", requireSuperAdmin, async (req, res) => {
@@ -641,7 +685,6 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
 
 /* =========================
    PDF PAYSLIP
-   Used by Admin and Employee
 ========================= */
 
 app.post("/payroll/payslip", (req, res) => {
@@ -674,7 +717,6 @@ app.post("/payroll/payslip", (req, res) => {
 
 /* =========================
    EXCEL EXPORTS
-   Super Admin + HR
 ========================= */
 
 async function exportQuery(res, filename, sheet, columns, query) {
@@ -710,9 +752,16 @@ app.get("/export/employees", requireHRorSuperAdmin, async (req, res) => {
       { header: "Name", key: "name", width: 25 },
       { header: "Department", key: "department", width: 20 },
       { header: "Salary", key: "salary", width: 15 },
+      { header: "Phone", key: "phone", width: 18 },
+      { header: "Email", key: "email", width: 25 },
+      { header: "Designation", key: "designation", width: 20 },
+      { header: "Joining Date", key: "joining_date", width: 20 },
+      { header: "Address", key: "address", width: 35 },
       { header: "Username", key: "username", width: 20 },
     ],
-    "SELECT id, name, department, salary, username FROM employees ORDER BY id DESC"
+    `SELECT id, name, department, salary, phone, email, designation, joining_date, address, username
+     FROM employees
+     ORDER BY id DESC`
   );
 });
 
@@ -764,4 +813,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-});1
+});

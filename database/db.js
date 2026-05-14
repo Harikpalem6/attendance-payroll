@@ -48,6 +48,31 @@ await pool.query(`
   `);
 
   await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS email VARCHAR(200);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS designation VARCHAR(200);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS joining_date DATE;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS address TEXT;
+`);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS attendance (
       id SERIAL PRIMARY KEY,
       employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,

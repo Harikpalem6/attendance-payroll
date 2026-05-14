@@ -17,26 +17,67 @@
                 type="text"
                 name="name"
                 value="<%= employee.name %>"
+                placeholder="Employee Name"
                 required
             >
 
             <input
                 type="text"
                 name="department"
-                value="<%= employee.department %>"
+                value="<%= employee.department || '' %>"
+                placeholder="Department"
                 required
+            >
+
+            <input
+                type="text"
+                name="designation"
+                value="<%= employee.designation || '' %>"
+                placeholder="Designation"
             >
 
             <input
                 type="number"
                 name="salary"
                 value="<%= employee.salary %>"
+                placeholder="Salary"
                 required
+            >
+
+            <input
+                type="text"
+                name="phone"
+                value="<%= employee.phone || '' %>"
+                placeholder="Phone"
+            >
+
+            <input
+                type="email"
+                name="email"
+                value="<%= employee.email || '' %>"
+                placeholder="Email"
+            >
+
+            <input
+                type="date"
+                name="joining_date"
+                value="<%= employee.joining_date ? employee.joining_date.toISOString().split('T')[0] : '' %>"
+            >
+
+            <input
+                type="text"
+                name="address"
+                value="<%= employee.address || '' %>"
+                placeholder="Address"
             >
 
             <button type="submit">Update Employee</button>
 
         </form>
+
+        <br>
+
+        <a href="/employees">Back to Employees</a>
     </div>
 
 </div>
