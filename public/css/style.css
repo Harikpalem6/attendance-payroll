@@ -225,3 +225,106 @@ td {
   justify-content: center;
   align-items: center;
 }
+/* =========================
+   MOBILE RESPONSIVE DESIGN
+========================= */
+
+@media (max-width: 900px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .sidebar h2 {
+    margin-bottom: 15px;
+  }
+
+  .sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .sidebar nav a {
+    text-align: center;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .content {
+    padding: 20px;
+  }
+
+  .stats-grid {
+    flex-direction: column;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar input,
+  .toolbar select,
+  .toolbar button,
+  .toolbar a {
+    width: 100%;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons a,
+  .action-buttons button {
+    width: 100%;
+    text-align: center;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .login-box {
+    width: 90%;
+    padding: 28px;
+  }
+
+  .card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 500px) {
+  .sidebar nav {
+    grid-template-columns: 1fr;
+  }
+
+  .content h1 {
+    font-size: 24px;
+  }
+
+  .stat-card p {
+    font-size: 30px;
+  }
+
+  input,
+  select,
+  button {
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  th,
+  td {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
