@@ -831,7 +831,7 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
 
 app.post("/payroll/payslip", (req, res) => {
   const data = req.body;
-  const doc = new PDFDocument();
+  const doc = new PDFDocument({ margin: 50 });
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
@@ -841,18 +841,54 @@ app.post("/payroll/payslip", (req, res) => {
 
   doc.pipe(res);
 
-  doc.fontSize(22).text("PAYSLIP", { align: "center" });
+  // Company Header
+  doc
+    .fontSize(22)
+    .text("VLCG", { align: "center" });
+
+  doc
+    .fontSize(10)
+    .text("Main Road, Navipet, Telangana, 503245", { align: "center" });
+
+  doc
+    .fontSize(10)
+    .text("Phone: 6302084794 | Email: harikpalem@gmail.com", {
+      align: "center",
+    });
+
+  doc.moveDown(2);
+
+  // Payslip Title
+  doc
+    .fontSize(18)
+    .text("SALARY PAYSLIP", { align: "center", underline: true });
+
+  doc.moveDown(2);
+
+  // Employee Details
+  doc.fontSize(12);
+  doc.text(`Employee Name: ${data.employeeName}`);
+  doc.text(`Department: ${data.department || "-"}`);
+  doc.text(`Payroll Month: ${data.month}`);
   doc.moveDown();
 
-  doc.fontSize(14).text(`Employee Name: ${data.employeeName}`);
-  doc.text(`Department: ${data.department}`);
-  doc.text(`Month: ${data.month}`);
+  // Salary Details
+  doc.text("Salary Details", { underline: true });
+  doc.moveDown(0.5);
+
   doc.text(`Base Salary: ₹ ${data.salary}`);
   doc.text(`Present Days: ${data.present}`);
   doc.text(`Absent Days: ${data.absent}`);
   doc.text(`Half Days: ${data.halfday}`);
   doc.text(`Deductions: ₹ ${data.deduction}`);
   doc.text(`Final Salary: ₹ ${data.finalSalary}`);
+
+  doc.moveDown(2);
+
+  // Footer
+  doc
+    .fontSize(10)
+    .text("This is a computer-generated payslip.", { align: "center" });
 
   doc.end();
 });
