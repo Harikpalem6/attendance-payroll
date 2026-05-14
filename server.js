@@ -841,8 +841,7 @@ app.post("/payroll/payslip", (req, res) => {
 
   doc.pipe(res);
 
-  const logoPath = path.join(__dirname, "public", "images", "logo.png");
-
+  const logoPath = path.join(__dirname, "public", "images", "logo.jpg");
   try {
     doc.image(logoPath, 50, 40, {
       width: 80,
@@ -1189,4 +1188,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-});
+}); 
