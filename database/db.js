@@ -20,13 +20,13 @@ async function initDatabase() {
   await pool.query(`
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'Super Admin';
-`);
+  `);
 
-await pool.query(`
+  await pool.query(`
   UPDATE users
   SET role = 'Super Admin'
   WHERE username = 'admin' AND (role IS NULL OR role = '');
-`);
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS employees (
@@ -50,27 +50,27 @@ await pool.query(`
   await pool.query(`
   ALTER TABLE employees
   ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
-`);
+  `);
 
-await pool.query(`
+  await pool.query(`
   ALTER TABLE employees
   ADD COLUMN IF NOT EXISTS email VARCHAR(200);
-`);
+  `);
 
-await pool.query(`
+  await pool.query(`
   ALTER TABLE employees
   ADD COLUMN IF NOT EXISTS designation VARCHAR(200);
-`);
+  `);
 
-await pool.query(`
+  await pool.query(`
   ALTER TABLE employees
   ADD COLUMN IF NOT EXISTS joining_date DATE;
-`);
+  `);
 
-await pool.query(`
+  await pool.query(`
   ALTER TABLE employees
   ADD COLUMN IF NOT EXISTS address TEXT;
-`);
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS attendance (
@@ -107,6 +107,16 @@ await pool.query(`
     ["admin", hashedPassword, "Super Admin"]
     );
   }
+
+  await pool.query(`
+  ALTER TABLE attendance
+  ADD COLUMN IF NOT EXISTS check_in TIMESTAMP;
+`);
+
+await pool.query(`
+  ALTER TABLE attendance
+  ADD COLUMN IF NOT EXISTS check_out TIMESTAMP;
+`);
 }
 
 initDatabase();

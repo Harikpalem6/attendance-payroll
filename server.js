@@ -608,13 +608,42 @@ app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
   });
 });
 
-app.post("/employee/attendance", requireEmployeeLogin, async (req, res) => {
-  const today = new Date().toISOString().split("T")[0];
+app.post("/employee/check-in", requireEmployeeLogin, async (req, res) => {
+  const employeeId = req.session.employee.id;
 
   try {
     await db.query(
-      "INSERT INTO attendance (employee_id, date, status) VALUES ($1, $2, $3)",
-      [req.session.employee.id, today, "Present"]
+      `
+      INSERT INTO attendance (employee_id, date, status, check_in)
+      VALUES ($1, CURRENT_DATE, 'Present', NOW())
+      ON CONFLICT (employee_id, date)
+      DO UPDATE SET
+        status = 'Present',
+        check_in = COALESCE(attendance.check_in, NOW())
+      `,
+      [employeeId]
+    );
+  } catch (err) {
+    console.log(err.message);
+  }
+
+  res.redirect("/employee/dashboard");
+});
+
+app.post("/employee/check-out", requireEmployeeLogin, async (req, res) => {
+  const employeeId = req.session.employee.id;
+
+  try {
+    await db.query(
+      `
+      UPDATE attendance
+      SET check_out = NOW()
+      WHERE employee_id = $1
+      AND date = CURRENT_DATE
+      AND check_in IS NOT NULL
+      AND check_out IS NULL
+      `,
+      [employeeId]
     );
   } catch (err) {
     console.log(err.message);

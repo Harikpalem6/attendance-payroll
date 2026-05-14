@@ -76,6 +76,9 @@
                 <th>Employee</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Working Hours</th>
                 <th>Actions</th>
             </tr>
 
@@ -83,8 +86,28 @@
             <tr>
                 <td><%= record.id %></td>
                 <td><%= record.name %></td>
-                <td><%= record.date %></td>
+                <td><%= record.date ? new Date(record.date).toLocaleDateString() : '' %></td>
                 <td><%= record.status %></td>
+
+                <td>
+                    <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : '-' %>
+                </td>
+
+                <td>
+                    <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : '-' %>
+                </td>
+
+                <td>
+                    <% if (record.check_in && record.check_out) { 
+                        const diffMs = new Date(record.check_out) - new Date(record.check_in);
+                        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+                    %>
+                        <%= hours %>h <%= minutes %>m
+                    <% } else { %>
+                        -
+                    <% } %>
+                </td>
 
                 <td class="action-buttons">
 

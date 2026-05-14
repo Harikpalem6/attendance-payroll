@@ -24,32 +24,59 @@
         <h1>Welcome, <%= employee.name %></h1>
 
         <div class="card">
-            <h2>Mark Today's Attendance</h2>
+            <h2>Today Attendance</h2>
+
             <br>
 
-            <form action="/employee/attendance" method="POST">
-                <button type="submit">
-                    Mark Present
-                </button>
+            <form action="/employee/check-in" method="POST" style="display:inline-block; margin-right:10px;">
+                <button type="submit">Check In</button>
+            </form>
+
+            <form action="/employee/check-out" method="POST" style="display:inline-block;">
+                <button type="submit">Check Out</button>
             </form>
         </div>
 
         <br>
 
         <div class="card">
-            <h2>Your Recent Attendance</h2>
+            <h2>Your Attendance History</h2>
+
             <br>
 
             <table>
                 <tr>
                     <th>Date</th>
                     <th>Status</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Working Hours</th>
                 </tr>
 
                 <% attendance.forEach(record => { %>
                 <tr>
-                    <td><%= record.date %></td>
+                    <td><%= record.date ? new Date(record.date).toLocaleDateString() : '' %></td>
                     <td><%= record.status %></td>
+
+                    <td>
+                        <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : '-' %>
+                    </td>
+
+                    <td>
+                        <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : '-' %>
+                    </td>
+
+                    <td>
+                        <% if (record.check_in && record.check_out) { 
+                            const diffMs = new Date(record.check_out) - new Date(record.check_in);
+                            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                            const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+                        %>
+                            <%= hours %>h <%= minutes %>m
+                        <% } else { %>
+                            -
+                        <% } %>
+                    </td>
                 </tr>
                 <% }) %>
 
