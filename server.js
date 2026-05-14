@@ -841,10 +841,19 @@ app.post("/payroll/payslip", (req, res) => {
 
   doc.pipe(res);
 
-  // Company Header
+  const logoPath = path.join(__dirname, "public", "images", "logo.png");
+
+  try {
+    doc.image(logoPath, 50, 40, {
+      width: 80,
+    });
+  } catch (err) {
+    console.log("Logo not found or could not be loaded");
+  }
+
   doc
     .fontSize(22)
-    .text("VLCG", { align: "center" });
+    .text("VLCG", 0, 45, { align: "center" });
 
   doc
     .fontSize(10)
@@ -858,22 +867,22 @@ app.post("/payroll/payslip", (req, res) => {
 
   doc.moveDown(2);
 
-  // Payslip Title
   doc
     .fontSize(18)
     .text("SALARY PAYSLIP", { align: "center", underline: true });
 
   doc.moveDown(2);
 
-  // Employee Details
   doc.fontSize(12);
+
   doc.text(`Employee Name: ${data.employeeName}`);
   doc.text(`Department: ${data.department || "-"}`);
   doc.text(`Payroll Month: ${data.month}`);
+
   doc.moveDown();
 
-  // Salary Details
   doc.text("Salary Details", { underline: true });
+
   doc.moveDown(0.5);
 
   doc.text(`Base Salary: Rs. ${data.salary}`);
@@ -882,9 +891,9 @@ app.post("/payroll/payslip", (req, res) => {
   doc.text(`Half Days: ${data.halfday}`);
   doc.text(`Deductions: Rs. ${data.deduction}`);
   doc.text(`Final Salary: Rs. ${data.finalSalary}`);
+
   doc.moveDown(2);
 
-  // Footer
   doc
     .fontSize(10)
     .text("This is a computer-generated payslip.", { align: "center" });
@@ -1169,7 +1178,7 @@ app.post("/export/attendance-monthly", requireManagerHRorSuperAdmin, async (req,
     `attachment; filename=attendance-report-${month}.xlsx`
   );
 
-  await workbook.xlsx.write(res);
+  await workbook.xlsx.write(res); 
   res.end();
 });
 /* =========================
