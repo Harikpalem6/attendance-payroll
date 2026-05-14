@@ -5,6 +5,7 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
+const nodemailer = require("nodemailer");
 const db = require("./database/db");
 
 const app = express();
@@ -896,6 +897,105 @@ app.post("/payroll/payslip", (req, res) => {
   doc
     .fontSize(10)
     .text("This is a computer-generated payslip.", { align: "center" });
+
+  doc.end();
+});
+
+app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
+  const data = req.body;
+
+  if (!data.email) {
+    return res.send(`
+      <h2>Email missing</h2>
+      <p>This employee does not have an email address saved.</p>
+      <a href="/payroll">Back to Payroll</a>
+    `);
+  }
+
+  const doc = new PDFDocument({ margin: 50 });
+  const chunks = [];
+
+  doc.on("data", (chunk) => chunks.push(chunk));
+
+  doc.on("end", async () => {
+    const pdfBuffer = Buffer.concat(chunks);
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"VLCG HRMS" <${process.env.EMAIL_USER}>`,
+      to: data.email,
+      subject: `Payslip - ${data.month}`,
+      text: `Dear ${data.employeeName},\n\nPlease find attached your payslip for ${data.month}.\n\nRegards,\nVLCG`,
+      attachments: [
+        {
+          filename: `payslip-${data.employeeName}-${data.month}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
+    });
+
+    res.send(`
+      <h2>Payslip emailed successfully</h2>
+      <p>Payslip sent to ${data.email}</p>
+      <a href="/payroll">Back to Payroll</a>
+    `);
+  });
+
+  const logoPath = path.join(__dirname, "public", "images", "logo.jpg");
+
+  try {
+    doc.image(logoPath, 50, 35, {
+      width: 90,
+    });
+  } catch (err) {
+    console.log("Logo not found or could not be loaded");
+  }
+
+  doc.fontSize(22).text("VLCG", 0, 45, { align: "center" });
+  doc.fontSize(10).text("Main Road, Navipet, Telangana, 503245", { align: "center" });
+  doc.fontSize(10).text("Phone: 6302084794 | Email: harikpalem@gmail.com", {
+    align: "center",
+  });
+
+  doc.moveDown(2);
+
+  doc.fontSize(18).text("SALARY PAYSLIP", {
+    align: "center",
+    underline: true,
+  });
+
+  doc.moveDown(2);
+
+  doc.fontSize(12);
+  doc.text(`Employee Name: ${data.employeeName}`);
+  doc.text(`Department: ${data.department || "-"}`);
+  doc.text(`Payroll Month: ${data.month}`);
+
+  doc.moveDown();
+
+  doc.text("Salary Details", { underline: true });
+
+  doc.moveDown(0.5);
+
+  doc.text(`Base Salary: Rs. ${data.salary}`);
+  doc.text(`Present Days: ${data.present}`);
+  doc.text(`Absent Days: ${data.absent}`);
+  doc.text(`Half Days: ${data.halfday}`);
+  doc.text(`Deductions: Rs. ${data.deduction}`);
+  doc.text(`Final Salary: Rs. ${data.finalSalary}`);
+
+  doc.moveDown(2);
+
+  doc.fontSize(10).text("This is a computer-generated payslip.", {
+    align: "center",
+  });
 
   doc.end();
 });

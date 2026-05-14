@@ -110,6 +110,24 @@
                 </button>
 
             </form>
+            <form action="/payroll/email-payslip" method="POST" style="display:inline-block; margin-left:10px;">
+
+    <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
+    <input type="hidden" name="department" value="<%= payroll.employee.department %>">
+    <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
+    <input type="hidden" name="salary" value="<%= payroll.employee.salary %>">
+    <input type="hidden" name="present" value="<%= payroll.present %>">
+    <input type="hidden" name="absent" value="<%= payroll.absent %>">
+    <input type="hidden" name="halfday" value="<%= payroll.halfday %>">
+    <input type="hidden" name="deduction" value="<%= payroll.deduction.toFixed(2) %>">
+    <input type="hidden" name="finalSalary" value="<%= payroll.finalSalary.toFixed(2) %>">
+    <input type="hidden" name="month" value="<%= payroll.month %>">
+
+    <button type="submit">
+        Email Payslip
+    </button>
+
+</form>
 
         </div>
 
