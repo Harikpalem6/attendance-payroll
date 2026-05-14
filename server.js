@@ -1,6 +1,9 @@
 const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first");
 
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
+
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -923,15 +926,22 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
         const pdfBuffer = Buffer.concat(chunks);
 
         const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-          connectionTimeout: 10000,
-          greetingTimeout: 10000,
-          socketTimeout: 10000,
-        });
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  requireTLS: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  connectionTimeout: 20000,
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
+        
 
         await transporter.sendMail({
           from: `"VLCG HRMS" <${process.env.EMAIL_USER}>`,
