@@ -8,7 +8,6 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
-const nodemailer = require("nodemailer");
 const db = require("./database/db");
 
 async function getCompanySettings() {
@@ -388,12 +387,12 @@ app.get("/attendance", requireManagerHRorSuperAdmin, async (req, res) => {
 
   const settings = await getCompanySettings();
 
-res.render("attendance", {
-  employees: employees.rows,
-  records: records.rows,
-  filterDate,
-  settings,
-});
+  res.render("attendance", {
+    employees: employees.rows,
+    records: records.rows,
+    filterDate,
+    settings,
+  });
 });
 
 app.post("/attendance/add", requireManagerHRorSuperAdmin, async (req, res) => {
@@ -446,7 +445,7 @@ app.post("/attendance/delete/:id", requireManagerHRorSuperAdmin, async (req, res
 });
 
 /* =========================
-   ADMIN LEAVES WITH OVERLAP PROTECTION
+   ADMIN LEAVES
 ========================= */
 
 app.get("/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
@@ -633,16 +632,13 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
 
 /* =========================
    COMPANY SETTINGS
-   Super Admin only
 ========================= */
 
 app.get("/company-settings", requireSuperAdmin, async (req, res) => {
-  const result = await db.query(
-    "SELECT * FROM company_settings ORDER BY id ASC LIMIT 1"
-  );
+  const settings = await getCompanySettings();
 
   res.render("company-settings", {
-    settings: result.rows[0],
+    settings,
   });
 });
 
@@ -751,12 +747,12 @@ app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
 
   const settings = await getCompanySettings();
 
-res.render("employee-dashboard", {
-  employee: req.session.employee,
-  attendance: attendance.rows,
-  leaves: leaves.rows,
-  settings,
-});
+  res.render("employee-dashboard", {
+    employee: req.session.employee,
+    attendance: attendance.rows,
+    leaves: leaves.rows,
+    settings,
+  });
 });
 
 app.post("/employee/check-in", requireEmployeeLogin, async (req, res) => {
@@ -906,12 +902,11 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
 });
 
 /* =========================
-   PDF PAYSLIP
+   PDF PAYSLIP + EMAIL
 ========================= */
 
 async function drawPayslipPdf(doc, data) {
   const settings = await getCompanySettings();
-
   const logoPath = path.join(__dirname, settings.logo_path);
 
   try {
@@ -922,19 +917,11 @@ async function drawPayslipPdf(doc, data) {
     console.log("Logo not found or could not be loaded");
   }
 
-  doc.fontSize(22).text(settings.company_name, 0, 45, {
-    align: "center",
-  });
-
-  doc.fontSize(10).text(settings.company_address, {
-    align: "center",
-  });
-
+  doc.fontSize(22).text(settings.company_name, 0, 45, { align: "center" });
+  doc.fontSize(10).text(settings.company_address, { align: "center" });
   doc.fontSize(10).text(
     `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
-    {
-      align: "center",
-    }
+    { align: "center" }
   );
 
   doc.moveDown(2);
@@ -954,7 +941,6 @@ async function drawPayslipPdf(doc, data) {
   doc.moveDown();
 
   doc.text("Salary Details", { underline: true });
-
   doc.moveDown(0.5);
 
   doc.text(`Base Salary: Rs. ${data.salary}`);
@@ -982,8 +968,9 @@ app.post("/payroll/payslip", async (req, res) => {
   );
 
   doc.pipe(res);
-await drawPayslipPdf(doc, data);
-doc.end();
+  await drawPayslipPdf(doc, data);
+  doc.end();
+});
 
 app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
   const data = req.body;
@@ -998,20 +985,20 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
 
   try {
     const pdfBuffer = await new Promise(async (resolve, reject) => {
-  try {
-    const doc = new PDFDocument({ margin: 50 });
-    const chunks = [];
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        const chunks = [];
 
-    doc.on("data", (chunk) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
+        doc.on("data", (chunk) => chunks.push(chunk));
+        doc.on("end", () => resolve(Buffer.concat(chunks)));
+        doc.on("error", reject);
 
-    await drawPayslipPdf(doc, data);
-    doc.end();
-  } catch (err) {
-    reject(err);
-  }
-});
+        await drawPayslipPdf(doc, data);
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
 
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
@@ -1243,10 +1230,7 @@ app.get("/export/backup", requireSuperAdmin, async (req, res) => {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   );
 
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=hrms-backup.xlsx"
-  );
+  res.setHeader("Content-Disposition", "attachment; filename=hrms-backup.xlsx");
 
   await workbook.xlsx.write(res);
   res.end();
