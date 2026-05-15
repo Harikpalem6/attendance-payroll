@@ -909,52 +909,183 @@ async function drawPayslipPdf(doc, data) {
   const settings = await getCompanySettings();
   const logoPath = path.join(__dirname, settings.logo_path);
 
+  const pageWidth = doc.page.width;
+  const margin = 40;
+  const contentWidth = pageWidth - margin * 2;
+
+  // Outer border
+  doc
+    .rect(margin, 30, contentWidth, 720)
+    .lineWidth(1)
+    .stroke();
+
+  // Logo
   try {
-    doc.image(logoPath, 50, 35, {
-      width: 90,
+    doc.image(logoPath, margin + 15, 45, {
+      width: 75,
     });
   } catch (err) {
     console.log("Logo not found or could not be loaded");
   }
 
-  doc.fontSize(22).text(settings.company_name, 0, 45, { align: "center" });
-  doc.fontSize(10).text(settings.company_address, { align: "center" });
-  doc.fontSize(10).text(
-    `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
-    { align: "center" }
-  );
+  // Company header
+  doc
+    .fontSize(22)
+    .text(settings.company_name, margin, 45, {
+      align: "center",
+      width: contentWidth,
+    });
 
-  doc.moveDown(2);
+  doc
+    .fontSize(10)
+    .text(settings.company_address, margin, 75, {
+      align: "center",
+      width: contentWidth,
+    });
 
-  doc.fontSize(18).text("SALARY PAYSLIP", {
-    align: "center",
+  doc
+    .fontSize(10)
+    .text(
+      `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
+      margin,
+      92,
+      {
+        align: "center",
+        width: contentWidth,
+      }
+    );
+
+  // Header divider
+  doc
+    .moveTo(margin, 125)
+    .lineTo(pageWidth - margin, 125)
+    .stroke();
+
+  // Payslip title box
+  doc
+    .rect(margin, 125, contentWidth, 38)
+    .fillAndStroke("#f2f2f2", "#000000");
+
+  doc
+    .fillColor("#000000")
+    .fontSize(16)
+    .text("SALARY PAYSLIP", margin, 138, {
+      align: "center",
+      width: contentWidth,
+    });
+
+  // Employee details box
+  const empBoxY = 185;
+  doc
+    .rect(margin + 20, empBoxY, contentWidth - 40, 95)
+    .lineWidth(1)
+    .stroke();
+
+  doc.fontSize(12);
+
+  doc.text("Employee Details", margin + 35, empBoxY + 12, {
     underline: true,
   });
 
-  doc.moveDown(2);
+  doc.text(`Employee Name: ${data.employeeName}`, margin + 35, empBoxY + 38);
+  doc.text(`Department: ${data.department || "-"}`, margin + 35, empBoxY + 58);
+  doc.text(`Payroll Month: ${data.month}`, margin + 35, empBoxY + 78);
 
-  doc.fontSize(12);
-  doc.text(`Employee Name: ${data.employeeName}`);
-  doc.text(`Department: ${data.department || "-"}`);
-  doc.text(`Payroll Month: ${data.month}`);
+  // Salary table
+  const tableX = margin + 20;
+  const tableY = 315;
+  const tableWidth = contentWidth - 40;
+  const rowHeight = 32;
+  const col1Width = tableWidth * 0.6;
+  const col2Width = tableWidth * 0.4;
 
-  doc.moveDown();
+  doc
+    .fontSize(14)
+    .text("Salary Details", tableX, tableY - 30, {
+      underline: true,
+    });
 
-  doc.text("Salary Details", { underline: true });
-  doc.moveDown(0.5);
+  // Table border
+  doc
+    .rect(tableX, tableY, tableWidth, rowHeight * 7)
+    .lineWidth(1)
+    .stroke();
 
-  doc.text(`Base Salary: Rs. ${data.salary}`);
-  doc.text(`Present Days: ${data.present}`);
-  doc.text(`Absent Days: ${data.absent}`);
-  doc.text(`Half Days: ${data.halfday}`);
-  doc.text(`Deductions: Rs. ${data.deduction}`);
-  doc.text(`Final Salary: Rs. ${data.finalSalary}`);
+  // Header row
+  doc
+    .rect(tableX, tableY, tableWidth, rowHeight)
+    .fillAndStroke("#f2f2f2", "#000000");
 
-  doc.moveDown(2);
+  doc.fillColor("#000000").fontSize(12);
+  doc.text("Particulars", tableX + 12, tableY + 10);
+  doc.text("Value", tableX + col1Width + 12, tableY + 10);
 
-  doc.fontSize(10).text("This is a computer-generated payslip.", {
-    align: "center",
+  // Vertical line
+  doc
+    .moveTo(tableX + col1Width, tableY)
+    .lineTo(tableX + col1Width, tableY + rowHeight * 7)
+    .stroke();
+
+  const rows = [
+    ["Base Salary", `Rs. ${data.salary}`],
+    ["Present Days", data.present],
+    ["Absent Days", data.absent],
+    ["Half Days", data.halfday],
+    ["Deductions", `Rs. ${data.deduction}`],
+    ["Final Salary", `Rs. ${data.finalSalary}`],
+  ];
+
+  rows.forEach((row, index) => {
+    const y = tableY + rowHeight * (index + 1);
+
+    doc
+      .moveTo(tableX, y)
+      .lineTo(tableX + tableWidth, y)
+      .stroke();
+
+    if (row[0] === "Final Salary") {
+      doc
+        .rect(tableX, y, tableWidth, rowHeight)
+        .fillAndStroke("#f7f7f7", "#000000")
+        .fillColor("#000000")
+        .font("Helvetica-Bold");
+    } else {
+      doc.font("Helvetica");
+    }
+
+    doc.text(row[0], tableX + 12, y + 10);
+    doc.text(String(row[1]), tableX + col1Width + 12, y + 10);
   });
+
+  doc.font("Helvetica");
+
+  // Footer / signature section
+  const footerY = 610;
+
+  doc
+    .moveTo(margin + 40, footerY)
+    .lineTo(margin + 200, footerY)
+    .stroke();
+
+  doc
+    .fontSize(10)
+    .text("Employee Signature", margin + 65, footerY + 8);
+
+  doc
+    .moveTo(pageWidth - margin - 220, footerY)
+    .lineTo(pageWidth - margin - 60, footerY)
+    .stroke();
+
+  doc
+    .fontSize(10)
+    .text("Authorized Signature", pageWidth - margin - 200, footerY + 8);
+
+  doc
+    .fontSize(9)
+    .text("This is a computer-generated payslip.", margin, 710, {
+      align: "center",
+      width: contentWidth,
+    });
 }
 
 app.post("/payroll/payslip", async (req, res) => {
