@@ -982,9 +982,8 @@ app.post("/payroll/payslip", async (req, res) => {
   );
 
   doc.pipe(res);
-  await drawPayslipPdf(doc, data);
-  doc.end();
-});
+await drawPayslipPdf(doc, data);
+doc.end();
 
 app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
   const data = req.body;
@@ -998,17 +997,21 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
   }
 
   try {
-    const pdfBuffer = await new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ margin: 50 });
-      const chunks = [];
+    const pdfBuffer = await new Promise(async (resolve, reject) => {
+  try {
+    const doc = new PDFDocument({ margin: 50 });
+    const chunks = [];
 
-      doc.on("data", (chunk) => chunks.push(chunk));
-      doc.on("end", () => resolve(Buffer.concat(chunks)));
-      doc.on("error", reject);
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
 
-      await drawPayslipPdf(doc, data);
-      doc.end();
-    });
+    await drawPayslipPdf(doc, data);
+    doc.end();
+  } catch (err) {
+    reject(err);
+  }
+});
 
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
