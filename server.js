@@ -11,6 +11,22 @@ const ExcelJS = require("exceljs");
 const nodemailer = require("nodemailer");
 const db = require("./database/db");
 
+async function getCompanySettings() {
+  const result = await db.query(
+    "SELECT * FROM company_settings ORDER BY id ASC LIMIT 1"
+  );
+
+  return result.rows[0] || {
+    company_name: "VLCG",
+    company_address: "Main Road, Navipet, Telangana, 503245",
+    company_phone: "6302084794",
+    company_email: "harikpalem@gmail.com",
+    office_start_time: "09:30",
+    office_end_time: "18:00",
+    logo_path: "public/images/logo.jpg",
+  };
+}
+
 const app = express();
 
 app.set("view engine", "ejs");
@@ -370,11 +386,14 @@ app.get("/attendance", requireManagerHRorSuperAdmin, async (req, res) => {
     );
   }
 
-  res.render("attendance", {
-    employees: employees.rows,
-    records: records.rows,
-    filterDate,
-  });
+  const settings = await getCompanySettings();
+
+res.render("attendance", {
+  employees: employees.rows,
+  records: records.rows,
+  filterDate,
+  settings,
+});
 });
 
 app.post("/attendance/add", requireManagerHRorSuperAdmin, async (req, res) => {
@@ -730,11 +749,14 @@ app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
     [req.session.employee.id]
   );
 
-  res.render("employee-dashboard", {
-    employee: req.session.employee,
-    attendance: attendance.rows,
-    leaves: leaves.rows,
-  });
+  const settings = await getCompanySettings();
+
+res.render("employee-dashboard", {
+  employee: req.session.employee,
+  attendance: attendance.rows,
+  leaves: leaves.rows,
+  settings,
+});
 });
 
 app.post("/employee/check-in", requireEmployeeLogin, async (req, res) => {
@@ -887,8 +909,10 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
    PDF PAYSLIP
 ========================= */
 
-function drawPayslipPdf(doc, data) {
-  const logoPath = path.join(__dirname, "public", "images", "logo.jpg");
+async function drawPayslipPdf(doc, data) {
+  const settings = await getCompanySettings();
+
+  const logoPath = path.join(__dirname, settings.logo_path);
 
   try {
     doc.image(logoPath, 50, 35, {
@@ -898,11 +922,20 @@ function drawPayslipPdf(doc, data) {
     console.log("Logo not found or could not be loaded");
   }
 
-  doc.fontSize(22).text("VLCG", 0, 45, { align: "center" });
-  doc.fontSize(10).text("Main Road, Navipet, Telangana, 503245", { align: "center" });
-  doc.fontSize(10).text("Phone: 6302084794 | Email: harikpalem@gmail.com", {
+  doc.fontSize(22).text(settings.company_name, 0, 45, {
     align: "center",
   });
+
+  doc.fontSize(10).text(settings.company_address, {
+    align: "center",
+  });
+
+  doc.fontSize(10).text(
+    `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
+    {
+      align: "center",
+    }
+  );
 
   doc.moveDown(2);
 
@@ -938,7 +971,7 @@ function drawPayslipPdf(doc, data) {
   });
 }
 
-app.post("/payroll/payslip", (req, res) => {
+app.post("/payroll/payslip", async (req, res) => {
   const data = req.body;
   const doc = new PDFDocument({ margin: 50 });
 
@@ -949,7 +982,7 @@ app.post("/payroll/payslip", (req, res) => {
   );
 
   doc.pipe(res);
-  drawPayslipPdf(doc, data);
+  await drawPayslipPdf(doc, data);
   doc.end();
 });
 
@@ -973,7 +1006,7 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      drawPayslipPdf(doc, data);
+      await drawPayslipPdf(doc, data);
       doc.end();
     });
 

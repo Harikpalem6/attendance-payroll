@@ -40,7 +40,8 @@
         <h1>Attendance Management</h1>
 
         <p>
-            <strong>Office Time:</strong> 09:30 AM to 06:00 PM
+            <strong>Office Time:</strong>
+<%= settings.office_start_time %> to <%= settings.office_end_time %>
         </p>
 
         <br>
@@ -103,7 +104,8 @@
                 if (record.check_in) {
                     const checkIn = new Date(record.check_in);
                     const officeStart = new Date(record.check_in);
-                    officeStart.setHours(9, 30, 0, 0);
+                    const [startHour, startMinute] = settings.office_start_time.split(":");
+officeStart.setHours(Number(startHour), Number(startMinute), 0, 0);
 
                     checkInStatus = checkIn > officeStart ? "Late" : "On Time";
                 }
@@ -111,7 +113,8 @@
                 if (record.check_out) {
                     const checkOut = new Date(record.check_out);
                     const officeEnd = new Date(record.check_out);
-                    officeEnd.setHours(18, 0, 0, 0);
+                    const [endHour, endMinute] = settings.office_end_time.split(":");
+officeEnd.setHours(Number(endHour), Number(endMinute), 0, 0);
 
                     checkOutStatus = checkOut < officeEnd ? "Early Checkout" : "Full Day";
                 }
