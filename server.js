@@ -613,6 +613,58 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
 });
 
 /* =========================
+   COMPANY SETTINGS
+   Super Admin only
+========================= */
+
+app.get("/company-settings", requireSuperAdmin, async (req, res) => {
+  const result = await db.query(
+    "SELECT * FROM company_settings ORDER BY id ASC LIMIT 1"
+  );
+
+  res.render("company-settings", {
+    settings: result.rows[0],
+  });
+});
+
+app.post("/company-settings/update", requireSuperAdmin, async (req, res) => {
+  const {
+    company_name,
+    company_address,
+    company_phone,
+    company_email,
+    office_start_time,
+    office_end_time,
+    logo_path,
+  } = req.body;
+
+  await db.query(
+    `UPDATE company_settings
+     SET company_name = $1,
+         company_address = $2,
+         company_phone = $3,
+         company_email = $4,
+         office_start_time = $5,
+         office_end_time = $6,
+         logo_path = $7
+     WHERE id = (
+       SELECT id FROM company_settings ORDER BY id ASC LIMIT 1
+     )`,
+    [
+      company_name,
+      company_address,
+      company_phone,
+      company_email,
+      office_start_time,
+      office_end_time,
+      logo_path,
+    ]
+  );
+
+  res.redirect("/company-settings");
+});
+
+/* =========================
    ADMIN USER MANAGEMENT
 ========================= */
 

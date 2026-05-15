@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Company Settings</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/leaves">Leaves</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Company Settings</h1>
+
+        <div class="card">
+
+            <form action="/company-settings/update" method="POST" class="stack-form">
+
+                <label>Company Name</label>
+                <input
+                    type="text"
+                    name="company_name"
+                    value="<%= settings.company_name %>"
+                    required
+                >
+
+                <label>Company Address</label>
+                <input
+                    type="text"
+                    name="company_address"
+                    value="<%= settings.company_address %>"
+                    required
+                >
+
+                <label>Company Phone</label>
+                <input
+                    type="text"
+                    name="company_phone"
+                    value="<%= settings.company_phone %>"
+                    required
+                >
+
+                <label>Company Email</label>
+                <input
+                    type="email"
+                    name="company_email"
+                    value="<%= settings.company_email %>"
+                    required
+                >
+
+                <label>Office Start Time</label>
+                <input
+                    type="time"
+                    name="office_start_time"
+                    value="<%= settings.office_start_time %>"
+                    required
+                >
+
+                <label>Office End Time</label>
+                <input
+                    type="time"
+                    name="office_end_time"
+                    value="<%= settings.office_end_time %>"
+                    required
+                >
+
+                <label>Logo Path</label>
+                <input
+                    type="text"
+                    name="logo_path"
+                    value="<%= settings.logo_path %>"
+                    required
+                >
+
+                <p>
+                    Keep logo path as:
+                    <strong>public/images/logo.jpg</strong>
+                </p>
+
+                <button type="submit">
+                    Save Settings
+                </button>
+
+            </form>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

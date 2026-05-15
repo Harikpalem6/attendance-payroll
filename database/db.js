@@ -133,6 +133,31 @@ await pool.query(`
     UNIQUE(employee_id, month)
   );
 `);
+  await pool.query(`
+  CREATE TABLE IF NOT EXISTS company_settings (
+    id SERIAL PRIMARY KEY,
+    company_name VARCHAR(200) DEFAULT 'VLCG',
+    company_address TEXT DEFAULT 'Main Road, Navipet, Telangana, 503245',
+    company_phone VARCHAR(50) DEFAULT '6302084794',
+    company_email VARCHAR(200) DEFAULT 'harikpalem@gmail.com',
+    office_start_time VARCHAR(20) DEFAULT '09:30',
+    office_end_time VARCHAR(20) DEFAULT '18:00',
+    logo_path VARCHAR(255) DEFAULT 'public/images/logo.jpg'
+  );
+`);
+
+const settingsCheck = await pool.query(
+  "SELECT * FROM company_settings LIMIT 1"
+);
+
+if (settingsCheck.rows.length === 0) {
+  await pool.query(`
+    INSERT INTO company_settings
+    (company_name, company_address, company_phone, company_email, office_start_time, office_end_time, logo_path)
+    VALUES
+    ('VLCG', 'Main Road, Navipet, Telangana, 503245', '6302084794', 'harikpalem@gmail.com', '09:30', '18:00', 'public/images/logo.jpg')
+  `);
+}
 }
 
 initDatabase();
