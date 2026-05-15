@@ -913,71 +913,71 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
   }
 
   try {
-    const doc = new PDFDocument({ margin: 50 });
-    const chunks = [];
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const chunks = [];
 
-    doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
 
-    doc.on("end", async () => {
-      try {
-        const pdfBuffer = Buffer.concat(chunks);
+      drawPayslipPdf(doc, data);
+      doc.end();
+    });
 
-        const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-        
-
-        await transporter.sendMail({
-          from: `"VLCG HRMS" <${process.env.EMAIL_USER}>`,
-          to: data.email,
-          subject: `Payslip - ${data.month}`,
-          text: `Dear ${data.employeeName},
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: "VLCG HRMS",
+          email: process.env.EMAIL_FROM || "harikpalem@gmail.com",
+        },
+        to: [
+          {
+            email: data.email,
+            name: data.employeeName,
+          },
+        ],
+        subject: `Payslip - ${data.month}`,
+        textContent: `Dear ${data.employeeName},
 
 Please find attached your payslip for ${data.month}.
 
 Regards,
 VLCG`,
-          attachments: [
-            {
-              filename: `payslip-${data.employeeName}-${data.month}.pdf`,
-              content: pdfBuffer,
-            },
-          ],
-        });
-
-        res.send(`
-          <h2>Payslip emailed successfully</h2>
-          <p>Payslip sent to ${data.email}</p>
-          <a href="/payroll">Back to Payroll</a>
-        `);
-      } catch (emailError) {
-        console.log("EMAIL ERROR:", emailError);
-
-        res.send(`
-          <h2>Email sending failed</h2>
-          <p>${emailError.message}</p>
-          <a href="/payroll">Back to Payroll</a>
-        `);
-      }
+        attachment: [
+          {
+            name: `payslip-${data.employeeName}-${data.month}.pdf`,
+            content: pdfBuffer.toString("base64"),
+          },
+        ],
+      }),
     });
 
-    drawPayslipPdf(doc, data);
-    doc.end();
+    const resultText = await response.text();
+
+    if (!response.ok) {
+      console.log("BREVO API ERROR:", resultText);
+
+      return res.send(`
+        <h2>Email sending failed</h2>
+        <p>${resultText}</p>
+        <a href="/payroll">Back to Payroll</a>
+      `);
+    }
+
+    res.send(`
+      <h2>Payslip emailed successfully</h2>
+      <p>Payslip sent to ${data.email}</p>
+      <a href="/payroll">Back to Payroll</a>
+    `);
   } catch (err) {
-    console.log("PDF EMAIL ROUTE ERROR:", err);
+    console.log("EMAIL API ERROR:", err);
 
     res.send(`
       <h2>Email payslip error</h2>
