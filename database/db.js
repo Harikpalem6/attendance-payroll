@@ -334,6 +334,19 @@ await pool.query(`
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 `);
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS password_reset_requests (
+    id SERIAL PRIMARY KEY,
+    user_type VARCHAR(50) NOT NULL,
+    username VARCHAR(150),
+    email VARCHAR(200),
+    message TEXT,
+    status VARCHAR(50) DEFAULT 'Pending',
+    handled_by VARCHAR(150),
+    handled_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`);
 }
 
 initDatabase();
