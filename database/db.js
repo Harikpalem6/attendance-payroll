@@ -307,6 +307,18 @@ await pool.query(`
   ALTER TABLE employees
   ADD COLUMN IF NOT EXISTS aadhaar_number VARCHAR(50);
 `);
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_type VARCHAR(50) DEFAULT 'admin',
+    user_id INTEGER,
+    employee_id INTEGER,
+    title VARCHAR(255),
+    message TEXT,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`);
 }
 
 initDatabase();
