@@ -22,6 +22,7 @@
                 <a href="/attendance">Attendance</a>
                 <a href="/attendance/monthly-report">Monthly Report</a>
                 <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
             <% } %>
 
             <% if (user && user.role === "Super Admin") { %>
@@ -37,26 +38,60 @@
     </aside>
 
     <main class="content">
+
         <h1>Dashboard</h1>
 
         <div class="stats-grid">
 
-            <div class="stat-card">
-                <h3>Total Employees</h3>
+            <div class="card">
+                <h2>Total Employees</h2>
                 <p><%= totalEmployees %></p>
             </div>
 
-            <div class="stat-card">
-                <h3>Present Today</h3>
+            <div class="card">
+                <h2>Present Today</h2>
                 <p><%= presentToday %></p>
             </div>
 
-            <div class="stat-card">
-                <h3>Absent Today</h3>
+            <div class="card">
+                <h2>Absent Today</h2>
                 <p><%= absentToday %></p>
             </div>
 
         </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Recent Admin Notifications</h2>
+
+            <br>
+
+            <table>
+                <tr>
+                    <th>Title</th>
+                    <th>Message</th>
+                    <th>Date / Time</th>
+                </tr>
+
+                <% if (notifications && notifications.length > 0) { %>
+                    <% notifications.forEach(notification => { %>
+                        <tr>
+                            <td><%= notification.title || '-' %></td>
+                            <td><%= notification.message || '-' %></td>
+                            <td>
+                                <%= notification.created_at ? new Date(notification.created_at).toLocaleString() : '' %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="3">No notifications yet.</td>
+                    </tr>
+                <% } %>
+            </table>
+        </div>
+
     </main>
 
 </div>

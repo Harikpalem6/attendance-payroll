@@ -48,6 +48,113 @@ async function logActivity(req, action, details) {
   }
 }
 
+async function createAdminNotification(title, message) {
+  try {
+    await db.query(
+      `INSERT INTO notifications
+       (user_type, title, message)
+       VALUES ('admin', $1, $2)`,
+      [title, message]
+    );
+  } catch (err) {
+    console.log("Admin notification error:", err.message);
+  }
+}
+
+async function createAdminNotification(title, message) {
+  try {
+    await db.query(
+      `INSERT INTO notifications
+       (user_type, title, message)
+       VALUES ('admin', $1, $2)`,
+      [title, message]
+    );
+  } catch (err) {
+    console.log("Admin notification error:", err.message);
+  }
+}
+
+async function createEmployeeNotification(employeeId, title, message) {
+  try {
+    await db.query(
+      `INSERT INTO notifications
+       (user_type, employee_id, title, message)
+       VALUES ('employee', $1, $2, $3)`,
+      [employeeId, title, message]
+    );
+  } catch (err) {
+    console.log("Employee notification error:", err.message);
+  }
+}
+
+async function getAdminNotifications() {
+  const result = await db.query(`
+    SELECT *
+    FROM notifications
+    WHERE user_type = 'admin'
+    ORDER BY created_at DESC
+    LIMIT 10
+  `);
+
+  return result.rows;
+}
+
+async function getEmployeeNotifications(employeeId) {
+  const result = await db.query(
+    `
+    SELECT *
+    FROM notifications
+    WHERE user_type = 'employee'
+    AND employee_id = $1
+    ORDER BY created_at DESC
+    LIMIT 10
+    `,
+    [employeeId]
+  );
+
+  return result.rows;
+}
+
+async function createEmployeeNotification(employeeId, title, message) {
+  try {
+    await db.query(
+      `INSERT INTO notifications
+       (user_type, employee_id, title, message)
+       VALUES ('employee', $1, $2, $3)`,
+      [employeeId, title, message]
+    );
+  } catch (err) {
+    console.log("Employee notification error:", err.message);
+  }
+}
+
+async function getAdminNotifications() {
+  const result = await db.query(`
+    SELECT *
+    FROM notifications
+    WHERE user_type = 'admin'
+    ORDER BY created_at DESC
+    LIMIT 10
+  `);
+
+  return result.rows;
+}
+
+async function getEmployeeNotifications(employeeId) {
+  const result = await db.query(
+    `
+    SELECT *
+    FROM notifications
+    WHERE user_type = 'employee'
+    AND employee_id = $1
+    ORDER BY created_at DESC
+    LIMIT 10
+    `,
+    [employeeId]
+  );
+
+  return result.rows;
+}
 async function ensureLeaveBalance(employeeId, year) {
   const existing = await db.query(
     "SELECT * FROM leave_balances WHERE employee_id = $1 AND year = $2",
@@ -379,10 +486,13 @@ app.get("/dashboard", requireAdminLogin, async (req, res) => {
     "SELECT COUNT(*) FROM attendance WHERE date = CURRENT_DATE AND status = 'Absent'"
   );
 
+  const notifications = await getAdminNotifications();
+
   res.render("dashboard", {
     totalEmployees: employees.rows[0].count,
     presentToday: present.rows[0].count,
     absentToday: absent.rows[0].count,
+    notifications,
   });
 });
 
@@ -511,6 +621,11 @@ app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
     `Added employee: ${name}`
   );
 
+  await createAdminNotification(
+    "Employee Added",
+    `New employee added: ${name}`
+  );
+
   res.redirect("/employees");
 });
 
@@ -524,6 +639,7 @@ app.get("/employees/edit/:id", requireHRorSuperAdmin, async (req, res) => {
     employee: result.rows[0],
   });
 });
+
 app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
   const {
     name,
@@ -609,6 +725,11 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
     req,
     "Employee Updated",
     `Updated employee ID: ${req.params.id}`
+  );
+
+  await createAdminNotification(
+    "Employee Updated",
+    `Employee updated: ${name}`
   );
 
   res.redirect("/employees");
@@ -817,6 +938,13 @@ await logActivity(
 });
 
 app.post("/leaves/approve/:id", requireManagerHRorSuperAdmin, async (req, res) => {
+  const leaveResult = await db.query(
+    "SELECT * FROM leaves WHERE id = $1",
+    [req.params.id]
+  );
+
+  const leave = leaveResult.rows[0];
+
   await db.query(
     "UPDATE leaves SET status = 'Approved' WHERE id = $1",
     [req.params.id]
@@ -828,19 +956,89 @@ app.post("/leaves/approve/:id", requireManagerHRorSuperAdmin, async (req, res) =
     `Approved leave ID: ${req.params.id}`
   );
 
+  if (leave) {
+    await createEmployeeNotification(
+      leave.employee_id,
+      "Leave Approved",
+      `Your ${leave.leave_type} from ${new Date(leave.start_date).toLocaleDateString()} to ${new Date(leave.end_date).toLocaleDateString()} was approved.`
+    );
+
+    await createAdminNotification(
+      "Leave Approved",
+      `Leave ID ${req.params.id} was approved.`
+    );
+  }
+
   res.redirect("/leaves");
 });
 
 app.post("/leaves/reject/:id", requireManagerHRorSuperAdmin, async (req, res) => {
+  const leaveResult = await db.query(
+    "SELECT * FROM leaves WHERE id = $1",
+    [req.params.id]
+  );
+
+  const leave = leaveResult.rows[0];
+
   await db.query(
     "UPDATE leaves SET status = 'Rejected' WHERE id = $1",
     [req.params.id]
   );
-await logActivity(
-  req,
-  "Leave Rejected",
-  `Rejected leave ID: ${req.params.id}`
-);
+
+  await logActivity(
+    req,
+    "Leave Rejected",
+    `Rejected leave ID: ${req.params.id}`
+  );
+
+  if (leave) {
+    await createEmployeeNotification(
+      leave.employee_id,
+      "Leave Rejected",
+      `Your ${leave.leave_type} from ${new Date(leave.start_date).toLocaleDateString()} to ${new Date(leave.end_date).toLocaleDateString()} was rejected.`
+    );
+
+    await createAdminNotification(
+      "Leave Rejected",
+      `Leave ID ${req.params.id} was rejected.`
+    );
+  }
+
+  res.redirect("/leaves");
+});
+
+app.post("/leaves/reject/:id", requireManagerHRorSuperAdmin, async (req, res) => {
+  const leaveResult = await db.query(
+    "SELECT * FROM leaves WHERE id = $1",
+    [req.params.id]
+  );
+
+  const leave = leaveResult.rows[0];
+
+  await db.query(
+    "UPDATE leaves SET status = 'Rejected' WHERE id = $1",
+    [req.params.id]
+  );
+
+  await logActivity(
+    req,
+    "Leave Rejected",
+    `Rejected leave ID: ${req.params.id}`
+  );
+
+  if (leave) {
+    await createEmployeeNotification(
+      leave.employee_id,
+      "Leave Rejected",
+      `Your ${leave.leave_type} from ${new Date(leave.start_date).toLocaleDateString()} to ${new Date(leave.end_date).toLocaleDateString()} was rejected.`
+    );
+
+    await createAdminNotification(
+      "Leave Rejected",
+      `Leave ID ${req.params.id} was rejected.`
+    );
+  }
+
   res.redirect("/leaves");
 });
 
@@ -1005,11 +1203,24 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
       final_salary,
     ]
   );
-await logActivity(
-  req,
-  "Payroll Saved",
-  `Saved payroll for employee ID: ${employee_id}, month: ${month}`
-);
+
+  await logActivity(
+    req,
+    "Payroll Saved",
+    `Saved payroll for employee ID: ${employee_id}, month: ${month}`
+  );
+
+  await createAdminNotification(
+    "Payroll Saved",
+    `Payroll saved for employee ID: ${employee_id}, month: ${month}`
+  );
+
+  await createEmployeeNotification(
+    employee_id,
+    "Payroll Generated",
+    `Your payroll for ${month} has been generated.`
+  );
+
   res.redirect("/payroll");
 });
 
@@ -1707,32 +1918,35 @@ app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
 
   const settings = await getCompanySettings();
 
-const employeeResult = await db.query(
-  "SELECT * FROM employees WHERE id = $1",
-  [req.session.employee.id]
-);
+  const employeeResult = await db.query(
+    "SELECT * FROM employees WHERE id = $1",
+    [req.session.employee.id]
+  );
 
-const employee = employeeResult.rows[0];
+  const employee = employeeResult.rows[0];
 
-let photoUrl = "/images/default-user.png";
+  let photoUrl = "/images/default-user.png";
 
-if (employee.photo_path) {
-  const { data, error } = await supabase.storage
-    .from(SUPABASE_PHOTO_BUCKET)
-    .createSignedUrl(employee.photo_path, 300);
+  if (employee.photo_path) {
+    const { data, error } = await supabase.storage
+      .from(SUPABASE_PHOTO_BUCKET)
+      .createSignedUrl(employee.photo_path, 300);
 
-  if (!error) {
-    photoUrl = data.signedUrl;
+    if (!error) {
+      photoUrl = data.signedUrl;
+    }
   }
-}
 
-res.render("employee-dashboard", {
-  employee,
-  attendance: attendance.rows,
-  leaves: leaves.rows,
-  settings,
-  photoUrl,
-});
+  const notifications = await getEmployeeNotifications(employee.id);
+
+  res.render("employee-dashboard", {
+    employee,
+    attendance: attendance.rows,
+    leaves: leaves.rows,
+    settings,
+    photoUrl,
+    notifications,
+  });
 });
 
 app.post("/employee/check-in", requireEmployeeLogin, async (req, res) => {
@@ -1801,31 +2015,33 @@ app.get("/employee/leaves", requireEmployeeLogin, async (req, res) => {
 app.post("/employee/leaves/apply", requireEmployeeLogin, async (req, res) => {
   const { leave_type, start_date, end_date, reason } = req.body;
   const employeeId = req.session.employee.id;
-const currentYear = new Date(start_date).getFullYear();
-const leaveBalance = await getLeaveBalance(employeeId, currentYear);
-const requestedDays = calculateLeaveDays(start_date, end_date);
 
-let remainingBalance = 0;
+  const currentYear = new Date(start_date).getFullYear();
+  const leaveBalance = await getLeaveBalance(employeeId, currentYear);
+  const requestedDays = calculateLeaveDays(start_date, end_date);
 
-if (leave_type === "Sick Leave") {
-  remainingBalance = leaveBalance.sickRemaining;
-}
+  let remainingBalance = 0;
 
-if (leave_type === "Casual Leave") {
-  remainingBalance = leaveBalance.casualRemaining;
-}
+  if (leave_type === "Sick Leave") {
+    remainingBalance = leaveBalance.sickRemaining;
+  }
 
-if (leave_type === "Paid Leave") {
-  remainingBalance = leaveBalance.paidRemaining;
-}
+  if (leave_type === "Casual Leave") {
+    remainingBalance = leaveBalance.casualRemaining;
+  }
 
-if (requestedDays > remainingBalance) {
-  return res.send(`
-    <h2>Insufficient Leave Balance</h2>
-    <p>You requested ${requestedDays} day(s) of ${leave_type}, but only ${remainingBalance} day(s) are remaining.</p>
-    <a href="/employee/leaves">Back to Leaves</a>
-  `);
-}
+  if (leave_type === "Paid Leave") {
+    remainingBalance = leaveBalance.paidRemaining;
+  }
+
+  if (requestedDays > remainingBalance) {
+    return res.send(`
+      <h2>Insufficient Leave Balance</h2>
+      <p>You requested ${requestedDays} day(s) of ${leave_type}, but only ${remainingBalance} day(s) are remaining.</p>
+      <a href="/employee/leaves">Back to Leaves</a>
+    `);
+  }
+
   const overlap = await db.query(
     `
     SELECT * FROM leaves
@@ -1850,6 +2066,11 @@ if (requestedDays > remainingBalance) {
     (employee_id, leave_type, start_date, end_date, reason)
     VALUES ($1, $2, $3, $4, $5)`,
     [employeeId, leave_type, start_date, end_date, reason]
+  );
+
+  await createAdminNotification(
+    "New Leave Request",
+    `${req.session.employee.name} requested ${leave_type} from ${start_date} to ${end_date}`
   );
 
   res.redirect("/employee/leaves");

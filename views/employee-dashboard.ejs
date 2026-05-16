@@ -22,30 +22,71 @@
     <main class="content">
 
         <div class="card" style="display:flex; align-items:center; gap:20px;">
-    <img
-        src="<%= photoUrl %>"
-        style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid #ddd;"
-    >
+            <img
+                src="<%= photoUrl %>"
+                style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid #ddd;"
+            >
 
-    <div>
-        <h1>Welcome, <%= employee.name %></h1>
-        <p><strong>Department:</strong> <%= employee.department || '-' %></p>
-        <p><strong>Designation:</strong> <%= employee.designation || '-' %></p>
-    </div>
-</div>
+            <div>
+                <h1>Welcome, <%= employee.name %></h1>
+                <p><strong>Department:</strong> <%= employee.department || '-' %></p>
+                <p><strong>Designation:</strong> <%= employee.designation || '-' %></p>
+            </div>
+        </div>
 
-<br>
+        <br>
 
         <div class="card">
-            <h2>Today Attendance</h2>
-
-            <p>
-                <strong>Office Time:</strong>
-<%= settings.office_start_time %> to <%= settings.office_end_time %>
-            </p>
+            <h2>Your Notifications</h2>
 
             <br>
 
+            <table>
+                <tr>
+                    <th>Title</th>
+                    <th>Message</th>
+                    <th>Date / Time</th>
+                </tr>
+
+                <% if (notifications && notifications.length > 0) { %>
+                    <% notifications.forEach(notification => { %>
+                        <tr>
+                            <td><%= notification.title || '-' %></td>
+                            <td><%= notification.message || '-' %></td>
+                            <td>
+                                <%= notification.created_at ? new Date(notification.created_at).toLocaleString() : '' %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="3">No notifications yet.</td>
+                    </tr>
+                <% } %>
+            </table>
+        </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Quick Actions</h2>
+
+            <br>
+
+            <a class="secondary-btn" href="/employee/leaves">
+                Apply / View Leaves
+            </a>
+
+            <a class="secondary-btn" href="/employee/payroll">
+                View Payroll
+            </a>
+        </div>
+
+        <br>
+
+        <h2>Your Attendance</h2>
+
+        <div class="card">
             <form action="/employee/check-in" method="POST" style="display:inline-block; margin-right:10px;">
                 <button type="submit">Check In</button>
             </form>
@@ -57,78 +98,59 @@
 
         <br>
 
-        <div class="card">
-            <h2>Your Attendance History</h2>
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+            </tr>
 
-            <br>
-
-            <table>
-                <tr>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Check In</th>
-                    <th>Check In Status</th>
-                    <th>Check Out</th>
-                    <th>Check Out Status</th>
-                    <th>Working Hours</th>
-                </tr>
-
+            <% if (attendance && attendance.length > 0) { %>
                 <% attendance.forEach(record => { %>
-
-                <%
-                    let checkInStatus = "-";
-                    let checkOutStatus = "-";
-                    let workingHours = "-";
-
-                    if (record.check_in) {
-                        const checkIn = new Date(record.check_in);
-                        const officeStart = new Date(record.check_in);
-                        const [startHour, startMinute] = settings.office_start_time.split(":");
-officeStart.setHours(Number(startHour), Number(startMinute), 0, 0);
-
-                        checkInStatus = checkIn > officeStart ? "Late" : "On Time";
-                    }
-
-                    if (record.check_out) {
-                        const checkOut = new Date(record.check_out);
-                        const officeEnd = new Date(record.check_out);
-                        const [endHour, endMinute] = settings.office_end_time.split(":");
-officeEnd.setHours(Number(endHour), Number(endMinute), 0, 0);
-
-                        checkOutStatus = checkOut < officeEnd ? "Early Checkout" : "Full Day";
-                    }
-
-                    if (record.check_in && record.check_out) {
-                        const diffMs = new Date(record.check_out) - new Date(record.check_in);
-                        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                        const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
-
-                        workingHours = `${hours}h ${minutes}m`;
-                    }
-                %>
-
-                <tr>
-                    <td><%= record.date ? new Date(record.date).toLocaleDateString() : '' %></td>
-                    <td><%= record.status %></td>
-
-                    <td>
-                        <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : '-' %>
-                    </td>
-
-                    <td><%= checkInStatus %></td>
-
-                    <td>
-                        <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : '-' %>
-                    </td>
-
-                    <td><%= checkOutStatus %></td>
-
-                    <td><%= workingHours %></td>
-                </tr>
+                    <tr>
+                        <td><%= record.date ? new Date(record.date).toLocaleDateString() : '' %></td>
+                        <td><%= record.status || '-' %></td>
+                        <td><%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : '-' %></td>
+                        <td><%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : '-' %></td>
+                    </tr>
                 <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="4">No attendance records found.</td>
+                </tr>
+            <% } %>
+        </table>
 
-            </table>
-        </div>
+        <br>
+
+        <h2>Your Leave Requests</h2>
+
+        <table>
+            <tr>
+                <th>Leave Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+            </tr>
+
+            <% if (leaves && leaves.length > 0) { %>
+                <% leaves.forEach(leave => { %>
+                    <tr>
+                        <td><%= leave.leave_type || '-' %></td>
+                        <td><%= leave.start_date ? new Date(leave.start_date).toLocaleDateString() : '' %></td>
+                        <td><%= leave.end_date ? new Date(leave.end_date).toLocaleDateString() : '' %></td>
+                        <td><%= leave.reason || '-' %></td>
+                        <td><%= leave.status || '-' %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="5">No leave records found.</td>
+                </tr>
+            <% } %>
+        </table>
 
     </main>
 
