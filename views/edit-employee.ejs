@@ -29,6 +29,7 @@
                 <a href="/payroll">Payroll</a>
                 <a href="/admin-users">Admin Users</a>
                 <a href="/company-settings">Company Settings</a>
+                <a href="/activity-logs">Activity Logs</a>
                 <a href="/export/backup">Download Backup</a>
             <% } %>
 
@@ -44,11 +45,16 @@
 
             <form action="/employees/update/<%= employee.id %>" method="POST" class="stack-form">
 
+                <h3>Basic Details</h3>
+
                 <label>Name</label>
-                <input type="text" name="name" value="<%= employee.name %>" required>
+                <input type="text" name="name" value="<%= employee.name || '' %>" required>
 
                 <label>Department</label>
                 <input type="text" name="department" value="<%= employee.department || '' %>" required>
+
+                <label>Designation</label>
+                <input type="text" name="designation" value="<%= employee.designation || '' %>">
 
                 <label>Main Salary / Gross Salary</label>
                 <input type="number" name="salary" value="<%= employee.salary || 0 %>" required>
@@ -89,9 +95,6 @@
                 <label>Email</label>
                 <input type="email" name="email" value="<%= employee.email || '' %>">
 
-                <label>Designation</label>
-                <input type="text" name="designation" value="<%= employee.designation || '' %>">
-
                 <label>Joining Date</label>
                 <input
                     type="date"
@@ -102,7 +105,32 @@
                 <label>Address</label>
                 <input type="text" name="address" value="<%= employee.address || '' %>">
 
-                <button type="submit">Update Employee</button>
+                <h3>Bank / Identity Details</h3>
+
+                <label>Bank Name</label>
+                <input type="text" name="bank_name" value="<%= employee.bank_name || '' %>">
+
+                <label>Account Holder Name</label>
+                <input type="text" name="account_holder_name" value="<%= employee.account_holder_name || '' %>">
+
+                <label>Account Number</label>
+                <input type="text" name="account_number" value="<%= employee.account_number || '' %>">
+
+                <label>IFSC Code</label>
+                <input type="text" name="ifsc_code" value="<%= employee.ifsc_code || '' %>">
+
+                <label>UPI ID</label>
+                <input type="text" name="upi_id" value="<%= employee.upi_id || '' %>">
+
+                <label>PAN Number</label>
+                <input type="text" name="pan_number" value="<%= employee.pan_number || '' %>">
+
+                <label>Aadhaar Number</label>
+                <input type="text" name="aadhaar_number" value="<%= employee.aadhaar_number || '' %>">
+
+                <button type="submit">
+                    Update Employee
+                </button>
 
             </form>
 

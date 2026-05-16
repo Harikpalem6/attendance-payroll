@@ -426,6 +426,13 @@ app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
     designation,
     joining_date,
     address,
+    bank_name,
+    account_holder_name,
+    account_number,
+    ifsc_code,
+    upi_id,
+    pan_number,
+    aadhaar_number,
   } = req.body;
 
   const username = name.toLowerCase().replace(/\s+/g, "");
@@ -433,8 +440,41 @@ app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
 
   await db.query(
     `INSERT INTO employees
-    (name, department, salary, basic_salary, hra, allowances, bonus, pf_deduction, esi_deduction, professional_tax, other_deduction, username, password, phone, email, designation, joining_date, address)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+    (
+      name,
+      department,
+      salary,
+      basic_salary,
+      hra,
+      allowances,
+      bonus,
+      pf_deduction,
+      esi_deduction,
+      professional_tax,
+      other_deduction,
+      username,
+      password,
+      phone,
+      email,
+      designation,
+      joining_date,
+      address,
+      bank_name,
+      account_holder_name,
+      account_number,
+      ifsc_code,
+      upi_id,
+      pan_number,
+      aadhaar_number
+    )
+    VALUES
+    (
+      $1, $2, $3, $4, $5,
+      $6, $7, $8, $9, $10,
+      $11, $12, $13, $14, $15,
+      $16, $17, $18, $19, $20,
+      $21, $22, $23, $24, $25
+    )`,
     [
       name,
       department,
@@ -454,6 +494,13 @@ app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
       designation,
       joining_date || null,
       address,
+      bank_name,
+      account_holder_name,
+      account_number,
+      ifsc_code,
+      upi_id,
+      pan_number,
+      aadhaar_number,
     ]
   );
 
@@ -494,6 +541,13 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
     designation,
     joining_date,
     address,
+    bank_name,
+    account_holder_name,
+    account_number,
+    ifsc_code,
+    upi_id,
+    pan_number,
+    aadhaar_number,
   } = req.body;
 
   await db.query(
@@ -513,8 +567,15 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
          email = $13,
          designation = $14,
          joining_date = $15,
-         address = $16
-     WHERE id = $17`,
+         address = $16,
+         bank_name = $17,
+         account_holder_name = $18,
+         account_number = $19,
+         ifsc_code = $20,
+         upi_id = $21,
+         pan_number = $22,
+         aadhaar_number = $23
+     WHERE id = $24`,
     [
       name,
       department,
@@ -532,14 +593,23 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
       designation,
       joining_date || null,
       address,
+      bank_name,
+      account_holder_name,
+      account_number,
+      ifsc_code,
+      upi_id,
+      pan_number,
+      aadhaar_number,
       req.params.id,
     ]
   );
-await logActivity(
-  req,
-  "Employee Updated",
-  `Updated employee ID: ${req.params.id}`
-);
+
+  await logActivity(
+    req,
+    "Employee Updated",
+    `Updated employee ID: ${req.params.id}`
+  );
+
   res.redirect("/employees");
 });
 
