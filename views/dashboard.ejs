@@ -63,30 +63,62 @@
         <br>
 
         <div class="card">
-            <h2>Recent Admin Notifications</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Recent Admin Notifications</h2>
+
+                <form action="/notifications/read-all" method="POST">
+                    <button type="submit" class="secondary-btn">
+                        Mark All Read
+                    </button>
+                </form>
+            </div>
 
             <br>
 
             <table>
                 <tr>
+                    <th>Status</th>
                     <th>Title</th>
                     <th>Message</th>
                     <th>Date / Time</th>
+                    <th>Action</th>
                 </tr>
 
                 <% if (notifications && notifications.length > 0) { %>
                     <% notifications.forEach(notification => { %>
-                        <tr>
+                        <tr style="<%= notification.is_read ? '' : 'font-weight:bold; background:#f7f7f7;' %>">
+                            <td>
+                                <%= notification.is_read ? 'Read' : 'Unread' %>
+                            </td>
+
                             <td><%= notification.title || '-' %></td>
+
                             <td><%= notification.message || '-' %></td>
+
                             <td>
                                 <%= notification.created_at ? new Date(notification.created_at).toLocaleString() : '' %>
+                            </td>
+
+                            <td>
+                                <% if (notification.is_read) { %>
+                                    <form action="/notifications/unread/<%= notification.id %>" method="POST">
+                                        <button type="submit" class="secondary-btn">
+                                            Mark Unread
+                                        </button>
+                                    </form>
+                                <% } else { %>
+                                    <form action="/notifications/read/<%= notification.id %>" method="POST">
+                                        <button type="submit" class="secondary-btn">
+                                            Mark Read
+                                        </button>
+                                    </form>
+                                <% } %>
                             </td>
                         </tr>
                     <% }) %>
                 <% } else { %>
                     <tr>
-                        <td colspan="3">No notifications yet.</td>
+                        <td colspan="5">No notifications yet.</td>
                     </tr>
                 <% } %>
             </table>

@@ -1902,6 +1902,74 @@ app.post("/admin-users/reset-password/:id", requireSuperAdmin, async (req, res) 
 });
 
 /* =========================
+   NOTIFICATION READ / UNREAD
+========================= */
+
+app.post("/notifications/read/:id", requireAdminLogin, async (req, res) => {
+  await db.query(
+    "UPDATE notifications SET is_read = true WHERE id = $1",
+    [req.params.id]
+  );
+
+  res.redirect(req.get("Referrer") || "/dashboard");
+});
+
+app.post("/notifications/unread/:id", requireAdminLogin, async (req, res) => {
+  await db.query(
+    "UPDATE notifications SET is_read = false WHERE id = $1",
+    [req.params.id]
+  );
+
+  res.redirect(req.get("Referrer") || "/dashboard");
+});
+
+app.post("/notifications/read-all", requireAdminLogin, async (req, res) => {
+  await db.query(
+    "UPDATE notifications SET is_read = true WHERE user_type = 'admin'"
+  );
+
+  res.redirect(req.get("Referrer") || "/dashboard");
+});
+
+app.post("/employee/notifications/read/:id", requireEmployeeLogin, async (req, res) => {
+  await db.query(
+    `UPDATE notifications
+     SET is_read = true
+     WHERE id = $1
+     AND user_type = 'employee'
+     AND employee_id = $2`,
+    [req.params.id, req.session.employee.id]
+  );
+
+  res.redirect(req.get("Referrer") || "/employee/dashboard");
+});
+
+app.post("/employee/notifications/unread/:id", requireEmployeeLogin, async (req, res) => {
+  await db.query(
+    `UPDATE notifications
+     SET is_read = false
+     WHERE id = $1
+     AND user_type = 'employee'
+     AND employee_id = $2`,
+    [req.params.id, req.session.employee.id]
+  );
+
+  res.redirect(req.get("Referrer") || "/employee/dashboard");
+});
+
+app.post("/employee/notifications/read-all", requireEmployeeLogin, async (req, res) => {
+  await db.query(
+    `UPDATE notifications
+     SET is_read = true
+     WHERE user_type = 'employee'
+     AND employee_id = $1`,
+    [req.session.employee.id]
+  );
+
+  res.redirect(req.get("Referrer") || "/employee/dashboard");
+});
+
+/* =========================
    EMPLOYEE PORTAL
 ========================= */
 
