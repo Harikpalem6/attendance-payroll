@@ -418,6 +418,14 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
     name,
     department,
     salary,
+    basic_salary,
+    hra,
+    allowances,
+    bonus,
+    pf_deduction,
+    esi_deduction,
+    professional_tax,
+    other_deduction,
     phone,
     email,
     designation,
@@ -430,16 +438,32 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
      SET name = $1,
          department = $2,
          salary = $3,
-         phone = $4,
-         email = $5,
-         designation = $6,
-         joining_date = $7,
-         address = $8
-     WHERE id = $9`,
+         basic_salary = $4,
+         hra = $5,
+         allowances = $6,
+         bonus = $7,
+         pf_deduction = $8,
+         esi_deduction = $9,
+         professional_tax = $10,
+         other_deduction = $11,
+         phone = $12,
+         email = $13,
+         designation = $14,
+         joining_date = $15,
+         address = $16
+     WHERE id = $17`,
     [
       name,
       department,
-      salary,
+      salary || 0,
+      basic_salary || 0,
+      hra || 0,
+      allowances || 0,
+      bonus || 0,
+      pf_deduction || 0,
+      esi_deduction || 0,
+      professional_tax || 0,
+      other_deduction || 0,
       phone,
       email,
       designation,
@@ -451,7 +475,6 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
 
   res.redirect("/employees");
 });
-
 app.post("/employees/delete/:id", requireHRorSuperAdmin, async (req, res) => {
   await db.query("DELETE FROM employees WHERE id = $1", [req.params.id]);
   res.redirect("/employees");

@@ -6,79 +6,113 @@
 </head>
 <body>
 
-<div class="simple-page">
+<div class="app-layout">
 
-    <div class="card">
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
         <h1>Edit Employee</h1>
 
-        <form action="/employees/update/<%= employee.id %>" method="POST" class="stack-form">
+        <div class="card">
 
-            <input
-                type="text"
-                name="name"
-                value="<%= employee.name %>"
-                placeholder="Employee Name"
-                required
-            >
+            <form action="/employees/update/<%= employee.id %>" method="POST" class="stack-form">
 
-            <input
-                type="text"
-                name="department"
-                value="<%= employee.department || '' %>"
-                placeholder="Department"
-                required
-            >
+                <label>Name</label>
+                <input type="text" name="name" value="<%= employee.name %>" required>
 
-            <input
-                type="text"
-                name="designation"
-                value="<%= employee.designation || '' %>"
-                placeholder="Designation"
-            >
+                <label>Department</label>
+                <input type="text" name="department" value="<%= employee.department || '' %>" required>
 
-            <input
-                type="number"
-                name="salary"
-                value="<%= employee.salary %>"
-                placeholder="Salary"
-                required
-            >
+                <label>Main Salary / Gross Salary</label>
+                <input type="number" name="salary" value="<%= employee.salary || 0 %>" required>
 
-            <input
-                type="text"
-                name="phone"
-                value="<%= employee.phone || '' %>"
-                placeholder="Phone"
-            >
+                <h3>Salary Components</h3>
 
-            <input
-                type="email"
-                name="email"
-                value="<%= employee.email || '' %>"
-                placeholder="Email"
-            >
+                <label>Basic Salary</label>
+                <input type="number" name="basic_salary" value="<%= employee.basic_salary || 0 %>">
 
-            <input
-                type="date"
-                name="joining_date"
-                value="<%= employee.joining_date ? employee.joining_date.toISOString().split('T')[0] : '' %>"
-            >
+                <label>HRA</label>
+                <input type="number" name="hra" value="<%= employee.hra || 0 %>">
 
-            <input
-                type="text"
-                name="address"
-                value="<%= employee.address || '' %>"
-                placeholder="Address"
-            >
+                <label>Allowances</label>
+                <input type="number" name="allowances" value="<%= employee.allowances || 0 %>">
 
-            <button type="submit">Update Employee</button>
+                <label>Bonus</label>
+                <input type="number" name="bonus" value="<%= employee.bonus || 0 %>">
 
-        </form>
+                <h3>Deductions</h3>
+
+                <label>PF Deduction</label>
+                <input type="number" name="pf_deduction" value="<%= employee.pf_deduction || 0 %>">
+
+                <label>ESI Deduction</label>
+                <input type="number" name="esi_deduction" value="<%= employee.esi_deduction || 0 %>">
+
+                <label>Professional Tax</label>
+                <input type="number" name="professional_tax" value="<%= employee.professional_tax || 0 %>">
+
+                <label>Other Deduction</label>
+                <input type="number" name="other_deduction" value="<%= employee.other_deduction || 0 %>">
+
+                <h3>Contact / Profile</h3>
+
+                <label>Phone</label>
+                <input type="text" name="phone" value="<%= employee.phone || '' %>">
+
+                <label>Email</label>
+                <input type="email" name="email" value="<%= employee.email || '' %>">
+
+                <label>Designation</label>
+                <input type="text" name="designation" value="<%= employee.designation || '' %>">
+
+                <label>Joining Date</label>
+                <input
+                    type="date"
+                    name="joining_date"
+                    value="<%= employee.joining_date ? new Date(employee.joining_date).toISOString().split('T')[0] : '' %>"
+                >
+
+                <label>Address</label>
+                <input type="text" name="address" value="<%= employee.address || '' %>">
+
+                <button type="submit">Update Employee</button>
+
+            </form>
+
+        </div>
 
         <br>
 
         <a href="/employees">Back to Employees</a>
-    </div>
+
+    </main>
 
 </div>
 
