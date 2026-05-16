@@ -8,6 +8,8 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
+const multer = require("multer");
+const fs = require("fs");
 const db = require("./database/db");
 
 async function getCompanySettings() {
@@ -27,6 +29,30 @@ async function getCompanySettings() {
 }
 
 const app = express();
+const documentStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, "public", "uploads", "documents");
+
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+
+    cb(null, uploadPath);
+  },
+
+  filename: function (req, file, cb) {
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const uniqueName = Date.now() + "-" + safeName;
+    cb(null, uniqueName);
+  },
+});
+
+const uploadDocument = multer({
+  storage: documentStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -629,7 +655,77 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
 
   res.redirect("/payroll");
 });
+/* =========================
+   EMPLOYEE DOCUMENTS
+   Super Admin + HR only
+========================= */
 
+app.get("/employees/documents/:id", requireHRorSuperAdmin, async (req, res) => {
+  const employeeResult = await db.query(
+    "SELECT * FROM employees WHERE id = $1",
+    [req.params.id]
+  );
+
+  const documents = await db.query(
+    "SELECT * FROM employee_documents WHERE employee_id = $1 ORDER BY uploaded_at DESC",
+    [req.params.id]
+  );
+
+  res.render("employee-documents", {
+    employee: employeeResult.rows[0],
+    documents: documents.rows,
+  });
+});
+
+app.post(
+  "/employees/documents/upload/:id",
+  requireHRorSuperAdmin,
+  uploadDocument.single("document_file"),
+  async (req, res) => {
+    const { document_type } = req.body;
+
+    if (!req.file) {
+      return res.redirect(`/employees/documents/${req.params.id}`);
+    }
+
+    const filePath = `/uploads/documents/${req.file.filename}`;
+
+    await db.query(
+      `INSERT INTO employee_documents
+       (employee_id, document_type, file_name, file_path)
+       VALUES ($1, $2, $3, $4)`,
+      [req.params.id, document_type, req.file.originalname, filePath]
+    );
+
+    res.redirect(`/employees/documents/${req.params.id}`);
+  }
+);
+
+app.post("/employees/documents/delete/:id", requireHRorSuperAdmin, async (req, res) => {
+  const result = await db.query(
+    "SELECT * FROM employee_documents WHERE id = $1",
+    [req.params.id]
+  );
+
+  const document = result.rows[0];
+
+  if (document) {
+    const fullPath = path.join(__dirname, "public", document.file_path);
+
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+
+    await db.query(
+      "DELETE FROM employee_documents WHERE id = $1",
+      [req.params.id]
+    );
+
+    return res.redirect(`/employees/documents/${document.employee_id}`);
+  }
+
+  res.redirect("/employees");
+});
 /* =========================
    COMPANY SETTINGS
 ========================= */

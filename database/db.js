@@ -158,6 +158,16 @@ if (settingsCheck.rows.length === 0) {
     ('VLCG', 'Main Road, Navipet, Telangana, 503245', '6302084794', 'harikpalem@gmail.com', '09:30', '18:00', 'public/images/logo.jpg')
   `);
 }
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS employee_documents (
+    id SERIAL PRIMARY KEY,
+    employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+    document_type VARCHAR(100),
+    file_name VARCHAR(255),
+    file_path VARCHAR(500),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`);
 }
 
 initDatabase();

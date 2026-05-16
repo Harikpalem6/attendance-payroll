@@ -93,6 +93,9 @@
                     <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
                         Edit
                     </a>
+                    <a class="secondary-btn" href="/employees/documents/<%= employee.id %>">
+    Documents
+</a>
 
                     <form action="/employees/reset-login/<%= employee.id %>" method="POST">
                         <button class="secondary-btn" type="submit">

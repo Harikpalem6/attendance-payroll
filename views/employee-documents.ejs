@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Documents</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/leaves">Leaves</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Documents - <%= employee.name %></h1>
+
+        <div class="card">
+            <form
+                action="/employees/documents/upload/<%= employee.id %>"
+                method="POST"
+                enctype="multipart/form-data"
+                class="stack-form"
+            >
+
+                <label>Document Type</label>
+                <select name="document_type" required>
+                    <option value="Aadhaar">Aadhaar</option>
+                    <option value="PAN">PAN</option>
+                    <option value="Resume">Resume</option>
+                    <option value="Certificate">Certificate</option>
+                    <option value="Bank Document">Bank Document</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label>Select File</label>
+                <input
+                    type="file"
+                    name="document_file"
+                    required
+                >
+
+                <button type="submit">Upload Document</button>
+
+            </form>
+        </div>
+
+        <br>
+
+        <h2>Uploaded Documents</h2>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>File Name</th>
+                <th>Uploaded</th>
+                <th>Open</th>
+                <th>Delete</th>
+            </tr>
+
+            <% if (documents && documents.length > 0) { %>
+                <% documents.forEach(doc => { %>
+                    <tr>
+                        <td><%= doc.id %></td>
+                        <td><%= doc.document_type %></td>
+                        <td><%= doc.file_name %></td>
+                        <td><%= doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString() : '' %></td>
+
+                        <td>
+                            <a
+                                class="secondary-btn"
+                                href="<%= doc.file_path %>"
+                                target="_blank"
+                            >
+                                Open
+                            </a>
+                        </td>
+
+                        <td>
+                            <form action="/employees/documents/delete/<%= doc.id %>" method="POST">
+                                <button class="delete-btn" type="submit">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="6">No documents uploaded yet.</td>
+                </tr>
+            <% } %>
+        </table>
+
+        <br>
+
+        <a href="/employees">Back to Employees</a>
+
+    </main>
+
+</div>
+
+</body>
+</html>
