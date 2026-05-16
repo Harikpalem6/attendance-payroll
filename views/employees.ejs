@@ -20,12 +20,16 @@
 
             <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
                 <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
                 <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
             <% } %>
 
             <% if (user && user.role === "Super Admin") { %>
                 <a href="/payroll">Payroll</a>
                 <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/export/backup">Download Backup</a>
             <% } %>
 
             <a href="/logout">Logout</a>
@@ -41,7 +45,7 @@
                 type="text"
                 name="search"
                 placeholder="Search employee"
-                value="<%= typeof search !== 'undefined' ? search : '' %>"
+                value="<%= search || '' %>"
             >
 
             <button type="submit">Search</button>
@@ -51,27 +55,153 @@
             </a>
         </form>
 
-        <form action="/employees/add" method="POST" class="toolbar">
-            <input type="text" name="name" placeholder="Employee Name" required>
-            <input type="text" name="department" placeholder="Department" required>
-            <input type="text" name="designation" placeholder="Designation">
-            <input type="number" name="salary" placeholder="Salary" required>
-            <input type="text" name="phone" placeholder="Phone">
-            <input type="email" name="email" placeholder="Email">
-            <input type="date" name="joining_date">
-            <input type="text" name="address" placeholder="Address">
-            <input type="number" name="basic_salary" placeholder="Basic Salary" value="0">
-<input type="number" name="hra" placeholder="HRA" value="0">
-<input type="number" name="allowances" placeholder="Allowances" value="0">
-<input type="number" name="bonus" placeholder="Bonus" value="0">
+        <div class="card">
+            <h2>Add Employee</h2>
 
-<input type="number" name="pf_deduction" placeholder="PF Deduction" value="0">
-<input type="number" name="esi_deduction" placeholder="ESI Deduction" value="0">
-<input type="number" name="professional_tax" placeholder="Professional Tax" value="0">
-<input type="number" name="other_deduction" placeholder="Other Deduction" value="0">
+            <br>
 
-            <button type="submit">Add Employee</button>
-        </form>
+            <form action="/employees/add" method="POST" class="stack-form">
+
+                <h3>Basic Details</h3>
+
+                <label>Employee Name</label>
+                <input
+                    type="text"
+                    name="name"
+                    placeholder="Enter employee name"
+                    required
+                >
+
+                <label>Department</label>
+                <input
+                    type="text"
+                    name="department"
+                    placeholder="Enter department"
+                    required
+                >
+
+                <label>Designation</label>
+                <input
+                    type="text"
+                    name="designation"
+                    placeholder="Enter designation"
+                >
+
+                <label>Main Salary / Gross Salary</label>
+                <input
+                    type="number"
+                    name="salary"
+                    placeholder="Enter main salary"
+                    required
+                >
+
+                <h3>Salary Components</h3>
+
+                <label>Basic Salary</label>
+                <input
+                    type="number"
+                    name="basic_salary"
+                    placeholder="Enter basic salary"
+                    value="0"
+                >
+
+                <label>HRA</label>
+                <input
+                    type="number"
+                    name="hra"
+                    placeholder="Enter HRA"
+                    value="0"
+                >
+
+                <label>Allowances</label>
+                <input
+                    type="number"
+                    name="allowances"
+                    placeholder="Enter allowances"
+                    value="0"
+                >
+
+                <label>Bonus</label>
+                <input
+                    type="number"
+                    name="bonus"
+                    placeholder="Enter bonus"
+                    value="0"
+                >
+
+                <h3>Deductions</h3>
+
+                <label>PF Deduction</label>
+                <input
+                    type="number"
+                    name="pf_deduction"
+                    placeholder="Enter PF deduction"
+                    value="0"
+                >
+
+                <label>ESI Deduction</label>
+                <input
+                    type="number"
+                    name="esi_deduction"
+                    placeholder="Enter ESI deduction"
+                    value="0"
+                >
+
+                <label>Professional Tax</label>
+                <input
+                    type="number"
+                    name="professional_tax"
+                    placeholder="Enter professional tax"
+                    value="0"
+                >
+
+                <label>Other Deduction</label>
+                <input
+                    type="number"
+                    name="other_deduction"
+                    placeholder="Enter other deduction"
+                    value="0"
+                >
+
+                <h3>Contact / Profile</h3>
+
+                <label>Phone Number</label>
+                <input
+                    type="text"
+                    name="phone"
+                    placeholder="Enter phone number"
+                >
+
+                <label>Email Address</label>
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter email address"
+                >
+
+                <label>Joining Date</label>
+                <input
+                    type="date"
+                    name="joining_date"
+                >
+
+                <label>Address</label>
+                <input
+                    type="text"
+                    name="address"
+                    placeholder="Enter address"
+                >
+
+                <button type="submit">
+                    Add Employee
+                </button>
+
+            </form>
+        </div>
+
+        <br>
+
+        <h2>Employee List</h2>
 
         <table>
             <tr>
@@ -87,71 +217,80 @@
                 <th>Actions</th>
             </tr>
 
-            <% employees.forEach(employee => { %>
-            <tr>
-                <td><%= employee.id %></td>
+            <% if (employees && employees.length > 0) { %>
+                <% employees.forEach(employee => { %>
+                    <tr>
+                        <td><%= employee.id %></td>
 
-<td>
-    <img
-        src="/employees/photo/<%= employee.id %>"
-        style="width:50px; height:50px; border-radius:50%; object-fit:cover;"
-    >
-</td>
+                        <td>
+                            <img
+                                src="/employees/photo/<%= employee.id %>"
+                                style="width:50px; height:50px; border-radius:50%; object-fit:cover;"
+                            >
+                        </td>
 
-<td><%= employee.name %></td>
-                <td><%= employee.department || '' %></td>
-                <td><%= employee.designation || '' %></td>
-                <td><%= employee.phone || '' %></td>
-                <td><%= employee.email || '' %></td>
-                <td>₹ <%= employee.salary %></td>
-                <td><%= employee.username || 'Not activated' %></td>
+                        <td><%= employee.name %></td>
+                        <td><%= employee.department || '-' %></td>
+                        <td><%= employee.designation || '-' %></td>
+                        <td><%= employee.phone || '-' %></td>
+                        <td><%= employee.email || '-' %></td>
+                        <td>Rs. <%= employee.salary || 0 %></td>
+                        <td><%= employee.username || '-' %></td>
 
-                <td class="action-buttons">
+                        <td class="action-buttons">
 
-                    <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
-                        Edit
-                    </a>
-                    <a class="secondary-btn" href="/employees/documents/<%= employee.id %>">
-    Documents
-</a>
-<form
-    action="/employees/photo/upload/<%= employee.id %>"
-    method="POST"
-    enctype="multipart/form-data"
->
-    <input
-        type="file"
-        name="employee_photo"
-        accept="image/*"
-        required
-        style="width:150px;"
-    >
-    <button class="secondary-btn" type="submit">
-        Upload Photo
-    </button>
-</form>
+                            <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
+                                Edit
+                            </a>
 
-<form action="/employees/photo/delete/<%= employee.id %>" method="POST">
-    <button class="delete-btn" type="submit">
-        Delete Photo
-    </button>
-</form>
-                    <form action="/employees/reset-login/<%= employee.id %>" method="POST">
-                        <button class="secondary-btn" type="submit">
-                            Reset Login
-                        </button>
-                    </form>
+                            <a class="secondary-btn" href="/employees/documents/<%= employee.id %>">
+                                Documents
+                            </a>
 
-                    <form action="/employees/delete/<%= employee.id %>" method="POST">
-                        <button class="delete-btn" type="submit">
-                            Delete
-                        </button>
-                    </form>
+                            <form
+                                action="/employees/photo/upload/<%= employee.id %>"
+                                method="POST"
+                                enctype="multipart/form-data"
+                            >
+                                <input
+                                    type="file"
+                                    name="employee_photo"
+                                    accept="image/*"
+                                    required
+                                    style="width:150px;"
+                                >
 
-                </td>
-            </tr>
-            <% }) %>
+                                <button class="secondary-btn" type="submit">
+                                    Upload Photo
+                                </button>
+                            </form>
 
+                            <form action="/employees/photo/delete/<%= employee.id %>" method="POST">
+                                <button class="delete-btn" type="submit">
+                                    Delete Photo
+                                </button>
+                            </form>
+
+                            <form action="/employees/reset-login/<%= employee.id %>" method="POST">
+                                <button class="secondary-btn" type="submit">
+                                    Reset Login
+                                </button>
+                            </form>
+
+                            <form action="/employees/delete/<%= employee.id %>" method="POST">
+                                <button class="delete-btn" type="submit">
+                                    Delete
+                                </button>
+                            </form>
+
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="10">No employees found.</td>
+                </tr>
+            <% } %>
         </table>
 
     </main>
