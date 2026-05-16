@@ -375,6 +375,154 @@ const requireManagerHRorSuperAdmin = requireRole([
 ]);
 
 /* =========================
+   CHANGE PASSWORD
+========================= */
+
+app.get("/change-password", requireAdminLogin, (req, res) => {
+  res.render("change-password", {
+    error: null,
+    success: null,
+  });
+});
+
+app.post("/change-password", requireAdminLogin, async (req, res) => {
+  const { current_password, new_password, confirm_password } = req.body;
+
+  if (!current_password || !new_password || !confirm_password) {
+    return res.render("change-password", {
+      error: "All fields are required.",
+      success: null,
+    });
+  }
+
+  if (new_password !== confirm_password) {
+    return res.render("change-password", {
+      error: "New password and confirm password do not match.",
+      success: null,
+    });
+  }
+
+  if (new_password.length < 6) {
+    return res.render("change-password", {
+      error: "New password must be at least 6 characters.",
+      success: null,
+    });
+  }
+
+  const userResult = await db.query(
+    "SELECT * FROM users WHERE id = $1",
+    [req.session.user.id]
+  );
+
+  const user = userResult.rows[0];
+
+  if (!user) {
+    return res.redirect("/");
+  }
+
+  const match = await bcrypt.compare(current_password, user.password);
+
+  if (!match) {
+    return res.render("change-password", {
+      error: "Current password is incorrect.",
+      success: null,
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(new_password, 10);
+
+  await db.query(
+    "UPDATE users SET password = $1 WHERE id = $2",
+    [hashedPassword, user.id]
+  );
+
+  await logActivity(
+    req,
+    "Password Changed",
+    `Password changed for user: ${user.username}`
+  );
+
+  req.session.destroy(() => {
+    res.render("change-password-success", {
+      loginUrl: "/",
+      userType: "Admin",
+    });
+  });
+});
+
+app.get("/employee/change-password", requireEmployeeLogin, (req, res) => {
+  res.render("employee-change-password", {
+    error: null,
+    success: null,
+  });
+});
+
+app.post("/employee/change-password", requireEmployeeLogin, async (req, res) => {
+  const { current_password, new_password, confirm_password } = req.body;
+
+  if (!current_password || !new_password || !confirm_password) {
+    return res.render("employee-change-password", {
+      error: "All fields are required.",
+      success: null,
+    });
+  }
+
+  if (new_password !== confirm_password) {
+    return res.render("employee-change-password", {
+      error: "New password and confirm password do not match.",
+      success: null,
+    });
+  }
+
+  if (new_password.length < 6) {
+    return res.render("employee-change-password", {
+      error: "New password must be at least 6 characters.",
+      success: null,
+    });
+  }
+
+  const employeeResult = await db.query(
+    "SELECT * FROM employees WHERE id = $1",
+    [req.session.employee.id]
+  );
+
+  const employee = employeeResult.rows[0];
+
+  if (!employee) {
+    return res.redirect("/employee/login");
+  }
+
+  const match = await bcrypt.compare(current_password, employee.password);
+
+  if (!match) {
+    return res.render("employee-change-password", {
+      error: "Current password is incorrect.",
+      success: null,
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(new_password, 10);
+
+  await db.query(
+    "UPDATE employees SET password = $1 WHERE id = $2",
+    [hashedPassword, employee.id]
+  );
+
+  await createEmployeeNotification(
+    employee.id,
+    "Password Changed",
+    "Your employee portal password was changed successfully."
+  );
+
+  req.session.destroy(() => {
+    res.render("change-password-success", {
+      loginUrl: "/employee/login",
+      userType: "Employee",
+    });
+  });
+});
+
+/* =========================
    ADMIN LOGIN
 ========================= */
 
