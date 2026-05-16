@@ -189,6 +189,10 @@
 
                         <td class="action-buttons">
 
+                            <a class="secondary-btn" href="/employees/profile/<%= employee.id %>">
+                                Profile
+                            </a>
+
                             <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
                                 Edit
                             </a>
@@ -198,8 +202,8 @@
                             </a>
 
                             <a class="secondary-btn" href="/employees/id-card/<%= employee.id %>">
-    ID Card
-</a>
+                                ID Card
+                            </a>
 
                             <form
                                 action="/employees/photo/upload/<%= employee.id %>"

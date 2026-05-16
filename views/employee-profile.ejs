@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Profile</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/activity-logs">Activity Logs</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Employee Profile</h1>
+
+        <div class="card" style="display:flex; align-items:center; gap:25px;">
+            <img
+                src="<%= photoUrl %>"
+                style="width:130px; height:130px; border-radius:50%; object-fit:cover; border:2px solid #ddd;"
+            >
+
+            <div>
+                <h2><%= employee.name %></h2>
+                <p><strong>Employee ID:</strong> <%= employee.id %></p>
+                <p><strong>Department:</strong> <%= employee.department || '-' %></p>
+                <p><strong>Designation:</strong> <%= employee.designation || '-' %></p>
+                <p><strong>Username:</strong> <%= employee.username || '-' %></p>
+            </div>
+        </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Quick Actions</h2>
+
+            <br>
+
+            <a class="secondary-btn" href="/employees/edit/<%= employee.id %>">
+                Edit Employee
+            </a>
+
+            <a class="secondary-btn" href="/employees/documents/<%= employee.id %>">
+                Documents
+            </a>
+
+            <a class="secondary-btn" href="/employees/id-card/<%= employee.id %>">
+                Download ID Card
+            </a>
+
+            <a class="secondary-btn" href="/employees">
+                Back to Employees
+            </a>
+        </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Contact / Profile Details</h2>
+
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+
+                <tr>
+                    <td>Phone</td>
+                    <td><%= employee.phone || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>Email</td>
+                    <td><%= employee.email || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>Joining Date</td>
+                    <td><%= employee.joining_date ? new Date(employee.joining_date).toLocaleDateString() : '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>Address</td>
+                    <td><%= employee.address || '-' %></td>
+                </tr>
+            </table>
+        </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Salary Details</h2>
+
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Amount</th>
+                </tr>
+
+                <tr>
+                    <td>Main Salary / Gross Salary</td>
+                    <td>Rs. <%= Number(employee.salary || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>Basic Salary</td>
+                    <td>Rs. <%= Number(employee.basic_salary || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>HRA</td>
+                    <td>Rs. <%= Number(employee.hra || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>Allowances</td>
+                    <td>Rs. <%= Number(employee.allowances || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>Bonus</td>
+                    <td>Rs. <%= Number(employee.bonus || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>PF Deduction</td>
+                    <td>Rs. <%= Number(employee.pf_deduction || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>ESI Deduction</td>
+                    <td>Rs. <%= Number(employee.esi_deduction || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>Professional Tax</td>
+                    <td>Rs. <%= Number(employee.professional_tax || 0).toFixed(2) %></td>
+                </tr>
+
+                <tr>
+                    <td>Other Deduction</td>
+                    <td>Rs. <%= Number(employee.other_deduction || 0).toFixed(2) %></td>
+                </tr>
+            </table>
+        </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Bank / Identity Details</h2>
+
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+
+                <tr>
+                    <td>Bank Name</td>
+                    <td><%= employee.bank_name || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>Account Holder Name</td>
+                    <td><%= employee.account_holder_name || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>Account Number</td>
+                    <td><%= employee.account_number || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>IFSC Code</td>
+                    <td><%= employee.ifsc_code || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>UPI ID</td>
+                    <td><%= employee.upi_id || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>PAN Number</td>
+                    <td><%= employee.pan_number || '-' %></td>
+                </tr>
+
+                <tr>
+                    <td>Aadhaar Number</td>
+                    <td><%= employee.aadhaar_number || '-' %></td>
+                </tr>
+            </table>
+        </div>
+
+        <br>
+
+        <div class="card">
+            <h2>Documents</h2>
+
+            <table>
+                <tr>
+                    <th>Document Type</th>
+                    <th>File Name</th>
+                    <th>Uploaded At</th>
+                    <th>Action</th>
+                </tr>
+
+                <% if (documents && documents.length > 0) { %>
+                    <% documents.forEach(document => { %>
+                        <tr>
+                            <td><%= document.document_type || '-' %></td>
+                            <td><%= document.file_name || '-' %></td>
+                            <td><%= document.uploaded_at ? new Date(document.uploaded_at).toLocaleString() : '-' %></td>
+                            <td>
+                                <a class="secondary-btn" href="/employees/documents/open/<%= document.id %>">
+                                    Open
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="4">No documents uploaded.</td>
+                    </tr>
+                <% } %>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

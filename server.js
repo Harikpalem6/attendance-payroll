@@ -496,6 +496,46 @@ app.get("/dashboard", requireAdminLogin, async (req, res) => {
   });
 });
 
+app.get("/employees/profile/:id", requireHRorSuperAdmin, async (req, res) => {
+  const employeeResult = await db.query(
+    "SELECT * FROM employees WHERE id = $1",
+    [req.params.id]
+  );
+
+  const employee = employeeResult.rows[0];
+
+  if (!employee) {
+    return res.redirect("/employees");
+  }
+
+  const documentsResult = await db.query(
+    "SELECT * FROM employee_documents WHERE employee_id = $1 ORDER BY uploaded_at DESC",
+    [req.params.id]
+  );
+
+  let photoUrl = "/images/default-user.png";
+
+  if (employee.photo_path) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(SUPABASE_PHOTO_BUCKET)
+        .createSignedUrl(employee.photo_path, 300);
+
+      if (!error && data && data.signedUrl) {
+        photoUrl = data.signedUrl;
+      }
+    } catch (err) {
+      console.log("Profile photo could not be loaded");
+    }
+  }
+
+  res.render("employee-profile", {
+    employee,
+    documents: documentsResult.rows,
+    photoUrl,
+  });
+});
+
 /* =========================
    EMPLOYEE MANAGEMENT
 ========================= */
