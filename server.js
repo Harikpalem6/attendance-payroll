@@ -9,7 +9,7 @@ const bcrypt = require("bcrypt");
 const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
 const multer = require("multer");
-const fs = require("fs");
+const { createClient } = require("@supabase/supabase-js");
 const db = require("./database/db");
 
 async function getCompanySettings() {
@@ -29,26 +29,14 @@ async function getCompanySettings() {
 }
 
 const app = express();
-const documentStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, "public", "uploads", "documents");
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-
-    cb(null, uploadPath);
-  },
-
-  filename: function (req, file, cb) {
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const uniqueName = Date.now() + "-" + safeName;
-    cb(null, uniqueName);
-  },
-});
-
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "employee-documents";
 const uploadDocument = multer({
-  storage: documentStorage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
@@ -683,23 +671,71 @@ app.post(
   uploadDocument.single("document_file"),
   async (req, res) => {
     const { document_type } = req.body;
+    const employeeId = req.params.id;
 
     if (!req.file) {
-      return res.redirect(`/employees/documents/${req.params.id}`);
+      return res.redirect(`/employees/documents/${employeeId}`);
     }
 
-    const filePath = `/uploads/documents/${req.file.filename}`;
+    const safeName = req.file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const storagePath = `${employeeId}/${Date.now()}-${safeName}`;
+
+    const { error } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .upload(storagePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      });
+
+    if (error) {
+      console.log("SUPABASE UPLOAD ERROR:", error.message);
+
+      return res.send(`
+        <h2>Document upload failed</h2>
+        <p>${error.message}</p>
+        <a href="/employees/documents/${employeeId}">Back to Documents</a>
+      `);
+    }
 
     await db.query(
       `INSERT INTO employee_documents
        (employee_id, document_type, file_name, file_path)
        VALUES ($1, $2, $3, $4)`,
-      [req.params.id, document_type, req.file.originalname, filePath]
+      [employeeId, document_type, req.file.originalname, storagePath]
     );
 
-    res.redirect(`/employees/documents/${req.params.id}`);
+    res.redirect(`/employees/documents/${employeeId}`);
   }
 );
+
+app.get("/employees/documents/open/:id", requireHRorSuperAdmin, async (req, res) => {
+  const result = await db.query(
+    "SELECT * FROM employee_documents WHERE id = $1",
+    [req.params.id]
+  );
+
+  const document = result.rows[0];
+
+  if (!document) {
+    return res.redirect("/employees");
+  }
+
+  const { data, error } = await supabase.storage
+    .from(SUPABASE_BUCKET)
+    .createSignedUrl(document.file_path, 60);
+
+  if (error) {
+    console.log("SUPABASE SIGNED URL ERROR:", error.message);
+
+    return res.send(`
+      <h2>Could not open document</h2>
+      <p>${error.message}</p>
+      <a href="/employees/documents/${document.employee_id}">Back to Documents</a>
+    `);
+  }
+
+  res.redirect(data.signedUrl);
+});
 
 app.post("/employees/documents/delete/:id", requireHRorSuperAdmin, async (req, res) => {
   const result = await db.query(
@@ -710,10 +746,12 @@ app.post("/employees/documents/delete/:id", requireHRorSuperAdmin, async (req, r
   const document = result.rows[0];
 
   if (document) {
-    const fullPath = path.join(__dirname, "public", document.file_path);
+    const { error } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .remove([document.file_path]);
 
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
+    if (error) {
+      console.log("SUPABASE DELETE ERROR:", error.message);
     }
 
     await db.query(
@@ -726,6 +764,7 @@ app.post("/employees/documents/delete/:id", requireHRorSuperAdmin, async (req, r
 
   res.redirect("/employees");
 });
+
 /* =========================
    COMPANY SETTINGS
 ========================= */
