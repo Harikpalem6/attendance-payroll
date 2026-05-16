@@ -21,53 +21,105 @@
 
     <main class="content">
 
-        <h1>Apply Leave</h1>
+        <h1>Your Leaves</h1>
 
-        <form action="/employee/leaves/apply" method="POST" class="toolbar">
+        <div class="card">
+            <h2>Leave Balance - <%= leaveBalance.year %></h2>
 
-            <select name="leave_type" required>
-                <option value="Sick Leave">Sick Leave</option>
-                <option value="Casual Leave">Casual Leave</option>
-                <option value="Paid Leave">Paid Leave</option>
-            </select>
+            <br>
 
-            <input type="date" name="start_date" required>
-            <input type="date" name="end_date" required>
+            <table>
+                <tr>
+                    <th>Leave Type</th>
+                    <th>Total</th>
+                    <th>Used</th>
+                    <th>Remaining</th>
+                </tr>
 
-            <input
-                type="text"
-                name="reason"
-                placeholder="Reason"
-                required
-            >
+                <tr>
+                    <td>Sick Leave</td>
+                    <td><%= leaveBalance.sickTotal %></td>
+                    <td><%= leaveBalance.sickUsed %></td>
+                    <td><%= leaveBalance.sickRemaining %></td>
+                </tr>
 
-            <button type="submit">
-                Apply Leave
-            </button>
+                <tr>
+                    <td>Casual Leave</td>
+                    <td><%= leaveBalance.casualTotal %></td>
+                    <td><%= leaveBalance.casualUsed %></td>
+                    <td><%= leaveBalance.casualRemaining %></td>
+                </tr>
 
-        </form>
+                <tr>
+                    <td>Paid Leave</td>
+                    <td><%= leaveBalance.paidTotal %></td>
+                    <td><%= leaveBalance.paidUsed %></td>
+                    <td><%= leaveBalance.paidRemaining %></td>
+                </tr>
+            </table>
+        </div>
 
         <br>
 
+        <div class="card">
+            <h2>Apply Leave</h2>
+
+            <br>
+
+            <form action="/employee/leaves/apply" method="POST" class="stack-form">
+
+                <select name="leave_type" required>
+                    <option value="Sick Leave">Sick Leave</option>
+                    <option value="Casual Leave">Casual Leave</option>
+                    <option value="Paid Leave">Paid Leave</option>
+                </select>
+
+                <input type="date" name="start_date" required>
+
+                <input type="date" name="end_date" required>
+
+                <input
+                    type="text"
+                    name="reason"
+                    placeholder="Reason"
+                    required
+                >
+
+                <button type="submit">Apply Leave</button>
+
+            </form>
+        </div>
+
+        <br>
+
+        <h2>Your Leave History</h2>
+
         <table>
             <tr>
-                <th>Type</th>
-                <th>Start</th>
-                <th>End</th>
+                <th>ID</th>
+                <th>Leave Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
                 <th>Reason</th>
                 <th>Status</th>
             </tr>
 
-            <% leaves.forEach(leave => { %>
-            <tr>
-                <td><%= leave.leave_type %></td>
-                <td><%= leave.start_date %></td>
-                <td><%= leave.end_date %></td>
-                <td><%= leave.reason %></td>
-                <td><%= leave.status %></td>
-            </tr>
-            <% }) %>
-
+            <% if (leaves && leaves.length > 0) { %>
+                <% leaves.forEach(leave => { %>
+                    <tr>
+                        <td><%= leave.id %></td>
+                        <td><%= leave.leave_type %></td>
+                        <td><%= leave.start_date ? new Date(leave.start_date).toLocaleDateString() : '' %></td>
+                        <td><%= leave.end_date ? new Date(leave.end_date).toLocaleDateString() : '' %></td>
+                        <td><%= leave.reason %></td>
+                        <td><%= leave.status %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="6">No leave records found.</td>
+                </tr>
+            <% } %>
         </table>
 
     </main>

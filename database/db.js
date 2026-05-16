@@ -172,6 +172,17 @@ await pool.query(`
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 `);
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS leave_balances (
+    id SERIAL PRIMARY KEY,
+    employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+    year INTEGER NOT NULL,
+    sick_total INTEGER DEFAULT 6,
+    casual_total INTEGER DEFAULT 12,
+    paid_total INTEGER DEFAULT 12,
+    UNIQUE(employee_id, year)
+  );
+`);
 }
 
 initDatabase();
