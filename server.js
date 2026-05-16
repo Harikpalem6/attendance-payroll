@@ -706,8 +706,12 @@ app.get("/employees/edit/:id", requireHRorSuperAdmin, async (req, res) => {
     [req.params.id]
   );
 
+  const canManageSensitiveDetails =
+    req.session.user && req.session.user.role === "Super Admin";
+
   res.render("edit-employee", {
     employee: result.rows[0],
+    canManageSensitiveDetails,
   });
 });
 

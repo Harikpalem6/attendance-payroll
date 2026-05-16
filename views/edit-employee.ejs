@@ -25,7 +25,7 @@
                 <a href="/leaves/balances">Leave Balances</a>
             <% } %>
 
-            <% if (user && user.role === "Super Admin") { %>
+            <% if (canManageSensitiveDetails) { %>
                 <a href="/payroll">Payroll</a>
                 <a href="/admin-users">Admin Users</a>
                 <a href="/company-settings">Company Settings</a>
