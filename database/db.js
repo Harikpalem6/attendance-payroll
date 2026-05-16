@@ -319,6 +319,21 @@ await pool.query(`
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 `);
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS attendance_regularizations (
+    id SERIAL PRIMARY KEY,
+    employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+    attendance_date DATE NOT NULL,
+    requested_status VARCHAR(50),
+    requested_check_in TIME,
+    requested_check_out TIME,
+    reason TEXT,
+    status VARCHAR(50) DEFAULT 'Pending',
+    admin_remarks TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`);
 }
 
 initDatabase();
