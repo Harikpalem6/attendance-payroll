@@ -1016,7 +1016,168 @@ await logActivity(
    EMPLOYEE DOCUMENTS
    Super Admin + HR only
 ========================= */
+/* =========================
+   EMPLOYEE ID CARD PDF
+   Super Admin + HR only
+========================= */
 
+app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
+  const employeeResult = await db.query(
+    "SELECT * FROM employees WHERE id = $1",
+    [req.params.id]
+  );
+
+  const employee = employeeResult.rows[0];
+
+  if (!employee) {
+    return res.redirect("/employees");
+  }
+
+  const settings = await getCompanySettings();
+  const doc = new PDFDocument({
+    size: [350, 520],
+    margin: 0,
+  });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=id-card-${employee.name}.pdf`
+  );
+
+  doc.pipe(res);
+
+  // Card background / border
+  doc.rect(15, 15, 320, 490).lineWidth(2).stroke();
+
+  // Header box
+  doc.rect(15, 15, 320, 80).fillAndStroke("#f2f2f2", "#000000");
+
+  // Company logo
+  try {
+    const logoPath = path.join(__dirname, settings.logo_path);
+    doc.image(logoPath, 30, 30, {
+      width: 50,
+      height: 50,
+    });
+  } catch (err) {
+    console.log("ID card logo could not be loaded");
+  }
+
+  doc
+    .fillColor("#000000")
+    .fontSize(17)
+    .font("Helvetica-Bold")
+    .text(settings.company_name || "Company", 90, 35, {
+      width: 220,
+      align: "center",
+    });
+
+  doc
+    .fontSize(8)
+    .font("Helvetica")
+    .text(settings.company_address || "", 90, 60, {
+      width: 220,
+      align: "center",
+    });
+
+  // Employee photo
+  let photoLoaded = false;
+
+  if (employee.photo_path) {
+    try {
+      const { data: signedPhoto, error } = await supabase.storage
+        .from(SUPABASE_PHOTO_BUCKET)
+        .createSignedUrl(employee.photo_path, 300);
+
+      if (!error && signedPhoto && signedPhoto.signedUrl) {
+        const photoResponse = await fetch(signedPhoto.signedUrl);
+        const photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
+
+        doc.image(photoBuffer, 115, 120, {
+          width: 120,
+          height: 120,
+        });
+
+        photoLoaded = true;
+      }
+    } catch (err) {
+      console.log("ID card photo could not be loaded");
+    }
+  }
+
+  if (!photoLoaded) {
+    doc.rect(115, 120, 120, 120).stroke();
+    doc.fontSize(10).text("PHOTO", 115, 170, {
+      width: 120,
+      align: "center",
+    });
+  }
+
+  // Employee name
+  doc
+    .fontSize(18)
+    .font("Helvetica-Bold")
+    .text(employee.name || "-", 30, 260, {
+      width: 290,
+      align: "center",
+    });
+
+  doc
+    .fontSize(11)
+    .font("Helvetica")
+    .text(employee.designation || "-", 30, 285, {
+      width: 290,
+      align: "center",
+    });
+
+  // Details section
+  const detailsX = 45;
+  let y = 330;
+
+  function detailRow(label, value) {
+    doc.font("Helvetica-Bold").fontSize(10).text(label, detailsX, y, {
+      width: 95,
+    });
+
+    doc.font("Helvetica").fontSize(10).text(value || "-", detailsX + 105, y, {
+      width: 170,
+    });
+
+    y += 24;
+  }
+
+  detailRow("Employee ID:", String(employee.id));
+  detailRow("Department:", employee.department || "-");
+  detailRow("Phone:", employee.phone || "-");
+  detailRow("Email:", employee.email || "-");
+
+  // Footer
+  doc
+    .moveTo(60, 455)
+    .lineTo(180, 455)
+    .stroke();
+
+  doc.fontSize(9).text("Authorized Signature", 60, 463, {
+    width: 120,
+    align: "center",
+  });
+
+  doc
+    .fontSize(8)
+    .text(`Phone: ${settings.company_phone || "-"}`, 30, 485, {
+      width: 290,
+      align: "center",
+    });
+
+  doc.end();
+
+  await logActivity(
+    req,
+    "Employee ID Card Downloaded",
+    `Downloaded ID card for employee ID: ${employee.id}`
+  );
+});
 /* =========================
    EMPLOYEE PHOTO
    Super Admin + HR only
