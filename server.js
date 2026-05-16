@@ -374,17 +374,6 @@ const requireManagerHRorSuperAdmin = requireRole([
   "Manager",
 ]);
 
-  if (
-    req.session.user.role !== "Super Admin" &&
-    req.session.user.role !== "HR" &&
-    req.session.user.role !== "Manager"
-  ) {
-    return res.send("Access denied");
-  }
-
-  next();
-
-
 /* =========================
    ADMIN LOGIN
 ========================= */
