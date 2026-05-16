@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Regularizations</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/attendance/regularizations">Regularizations</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/activity-logs">Activity Logs</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Attendance Regularization Requests</h1>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Date</th>
+                <th>Requested Status</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Admin Remarks</th>
+                <th>Action</th>
+            </tr>
+
+            <% if (requests && requests.length > 0) { %>
+                <% requests.forEach(request => { %>
+                    <tr>
+                        <td><%= request.id %></td>
+                        <td><%= request.name %></td>
+                        <td><%= request.department || '-' %></td>
+                        <td><%= request.attendance_date ? new Date(request.attendance_date).toLocaleDateString() : '-' %></td>
+                        <td><%= request.requested_status || '-' %></td>
+                        <td><%= request.requested_check_in || '-' %></td>
+                        <td><%= request.requested_check_out || '-' %></td>
+                        <td><%= request.reason || '-' %></td>
+                        <td><%= request.status || '-' %></td>
+                        <td><%= request.admin_remarks || '-' %></td>
+
+                        <td>
+                            <% if (request.status === 'Pending') { %>
+
+                                <form action="/attendance/regularizations/approve/<%= request.id %>" method="POST" style="margin-bottom:8px;">
+                                    <input
+                                        type="text"
+                                        name="admin_remarks"
+                                        placeholder="Remarks"
+                                    >
+                                    <button type="submit">Approve</button>
+                                </form>
+
+                                <form action="/attendance/regularizations/reject/<%= request.id %>" method="POST">
+                                    <input
+                                        type="text"
+                                        name="admin_remarks"
+                                        placeholder="Remarks"
+                                    >
+                                    <button class="delete-btn" type="submit">Reject</button>
+                                </form>
+
+                            <% } else { %>
+                                Completed
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="11">No regularization requests found.</td>
+                </tr>
+            <% } %>
+        </table>
+
+    </main>
+
+</div>
+
+</body>
+</html>

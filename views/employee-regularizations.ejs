@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Regularization</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>Employee Portal</h2>
+
+        <nav>
+            <a href="/employee/dashboard">Dashboard</a>
+            <a href="/employee/leaves">Leaves</a>
+            <a href="/employee/payroll">Payroll</a>
+            <a href="/employee/regularizations">Regularization</a>
+            <a href="/employee/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Attendance Regularization</h1>
+
+        <div class="card">
+            <h2>Submit Request</h2>
+
+            <br>
+
+            <form action="/employee/regularizations/apply" method="POST" class="stack-form">
+
+                <label>Attendance Date</label>
+                <input type="date" name="attendance_date" required>
+
+                <label>Requested Status</label>
+                <select name="requested_status" required>
+                    <option value="Present">Present</option>
+                    <option value="Absent">Absent</option>
+                    <option value="Half Day">Half Day</option>
+                </select>
+
+                <label>Requested Check In</label>
+                <input type="time" name="requested_check_in">
+
+                <label>Requested Check Out</label>
+                <input type="time" name="requested_check_out">
+
+                <label>Reason</label>
+                <input
+                    type="text"
+                    name="reason"
+                    placeholder="Example: Forgot to check in"
+                    required
+                >
+
+                <button type="submit">Submit Request</button>
+
+            </form>
+        </div>
+
+        <br>
+
+        <h2>Your Requests</h2>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Requested Status</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Admin Remarks</th>
+                <th>Created</th>
+            </tr>
+
+            <% if (requests && requests.length > 0) { %>
+                <% requests.forEach(request => { %>
+                    <tr>
+                        <td><%= request.id %></td>
+                        <td><%= request.attendance_date ? new Date(request.attendance_date).toLocaleDateString() : '-' %></td>
+                        <td><%= request.requested_status || '-' %></td>
+                        <td><%= request.requested_check_in || '-' %></td>
+                        <td><%= request.requested_check_out || '-' %></td>
+                        <td><%= request.reason || '-' %></td>
+                        <td><%= request.status || '-' %></td>
+                        <td><%= request.admin_remarks || '-' %></td>
+                        <td><%= request.created_at ? new Date(request.created_at).toLocaleString() : '-' %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="9">No regularization requests found.</td>
+                </tr>
+            <% } %>
+        </table>
+
+    </main>
+
+</div>
+
+</body>
+</html>

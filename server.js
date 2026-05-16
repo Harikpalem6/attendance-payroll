@@ -2167,7 +2167,189 @@ app.post("/employee/notifications/read-all", requireEmployeeLogin, async (req, r
 
   res.redirect(req.get("Referrer") || "/employee/dashboard");
 });
+/* =========================
+   ATTENDANCE REGULARIZATION
+========================= */
 
+app.get("/attendance/regularizations", requireManagerHRorSuperAdmin, async (req, res) => {
+  const requests = await db.query(`
+    SELECT attendance_regularizations.*, employees.name, employees.department
+    FROM attendance_regularizations
+    JOIN employees ON attendance_regularizations.employee_id = employees.id
+    ORDER BY attendance_regularizations.created_at DESC
+  `);
+
+  res.render("attendance-regularizations", {
+    requests: requests.rows,
+  });
+});
+
+app.post("/attendance/regularizations/approve/:id", requireManagerHRorSuperAdmin, async (req, res) => {
+  const { admin_remarks } = req.body;
+
+  const requestResult = await db.query(
+    `
+    SELECT attendance_regularizations.*, employees.name
+    FROM attendance_regularizations
+    JOIN employees ON attendance_regularizations.employee_id = employees.id
+    WHERE attendance_regularizations.id = $1
+    `,
+    [req.params.id]
+  );
+
+  const request = requestResult.rows[0];
+
+  if (!request) {
+    return res.redirect("/attendance/regularizations");
+  }
+
+  await db.query(
+    `
+    INSERT INTO attendance
+      (employee_id, date, status, check_in, check_out)
+    VALUES
+      ($1, $2, $3, $4, $5)
+    ON CONFLICT (employee_id, date)
+    DO UPDATE SET
+      status = EXCLUDED.status,
+      check_in = EXCLUDED.check_in,
+      check_out = EXCLUDED.check_out
+    `,
+    [
+      request.employee_id,
+      request.attendance_date,
+      request.requested_status || "Present",
+      request.requested_check_in || null,
+      request.requested_check_out || null,
+    ]
+  );
+
+  await db.query(
+    `
+    UPDATE attendance_regularizations
+    SET status = 'Approved',
+        admin_remarks = $1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = $2
+    `,
+    [admin_remarks || "", req.params.id]
+  );
+
+  await logActivity(
+    req,
+    "Attendance Regularization Approved",
+    `Approved regularization request ID: ${req.params.id}`
+  );
+
+  await createEmployeeNotification(
+    request.employee_id,
+    "Attendance Regularization Approved",
+    `Your attendance regularization request for ${new Date(request.attendance_date).toLocaleDateString()} was approved.`
+  );
+
+  await createAdminNotification(
+    "Attendance Regularization Approved",
+    `Regularization request ID ${req.params.id} was approved.`
+  );
+
+  res.redirect("/attendance/regularizations");
+});
+
+app.post("/attendance/regularizations/reject/:id", requireManagerHRorSuperAdmin, async (req, res) => {
+  const { admin_remarks } = req.body;
+
+  const requestResult = await db.query(
+    "SELECT * FROM attendance_regularizations WHERE id = $1",
+    [req.params.id]
+  );
+
+  const request = requestResult.rows[0];
+
+  if (!request) {
+    return res.redirect("/attendance/regularizations");
+  }
+
+  await db.query(
+    `
+    UPDATE attendance_regularizations
+    SET status = 'Rejected',
+        admin_remarks = $1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = $2
+    `,
+    [admin_remarks || "", req.params.id]
+  );
+
+  await logActivity(
+    req,
+    "Attendance Regularization Rejected",
+    `Rejected regularization request ID: ${req.params.id}`
+  );
+
+  await createEmployeeNotification(
+    request.employee_id,
+    "Attendance Regularization Rejected",
+    `Your attendance regularization request for ${new Date(request.attendance_date).toLocaleDateString()} was rejected.`
+  );
+
+  await createAdminNotification(
+    "Attendance Regularization Rejected",
+    `Regularization request ID ${req.params.id} was rejected.`
+  );
+
+  res.redirect("/attendance/regularizations");
+});
+
+app.get("/employee/regularizations", requireEmployeeLogin, async (req, res) => {
+  const requests = await db.query(
+    `
+    SELECT *
+    FROM attendance_regularizations
+    WHERE employee_id = $1
+    ORDER BY created_at DESC
+    `,
+    [req.session.employee.id]
+  );
+
+  res.render("employee-regularizations", {
+    employee: req.session.employee,
+    requests: requests.rows,
+  });
+});
+
+app.post("/employee/regularizations/apply", requireEmployeeLogin, async (req, res) => {
+  const {
+    attendance_date,
+    requested_status,
+    requested_check_in,
+    requested_check_out,
+    reason,
+  } = req.body;
+
+  await db.query(
+    `
+    INSERT INTO attendance_regularizations
+      (employee_id, attendance_date, requested_status, requested_check_in, requested_check_out, reason)
+    VALUES
+      ($1, $2, $3, $4, $5, $6)
+    `,
+    [
+      req.session.employee.id,
+      attendance_date,
+      requested_status,
+      requested_check_in || null,
+      requested_check_out || null,
+      reason,
+    ]
+  );
+
+  await createAdminNotification(
+    "Attendance Regularization Request",
+    `${req.session.employee.name} requested attendance regularization for ${attendance_date}`
+  );
+
+  res.redirect("/employee/regularizations");
+});
 /* =========================
    EMPLOYEE PORTAL
 ========================= */
