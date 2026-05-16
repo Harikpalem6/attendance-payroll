@@ -1180,7 +1180,31 @@ app.get("/employee/leaves", requireEmployeeLogin, async (req, res) => {
 app.post("/employee/leaves/apply", requireEmployeeLogin, async (req, res) => {
   const { leave_type, start_date, end_date, reason } = req.body;
   const employeeId = req.session.employee.id;
+const currentYear = new Date(start_date).getFullYear();
+const leaveBalance = await getLeaveBalance(employeeId, currentYear);
+const requestedDays = calculateLeaveDays(start_date, end_date);
 
+let remainingBalance = 0;
+
+if (leave_type === "Sick Leave") {
+  remainingBalance = leaveBalance.sickRemaining;
+}
+
+if (leave_type === "Casual Leave") {
+  remainingBalance = leaveBalance.casualRemaining;
+}
+
+if (leave_type === "Paid Leave") {
+  remainingBalance = leaveBalance.paidRemaining;
+}
+
+if (requestedDays > remainingBalance) {
+  return res.send(`
+    <h2>Insufficient Leave Balance</h2>
+    <p>You requested ${requestedDays} day(s) of ${leave_type}, but only ${remainingBalance} day(s) are remaining.</p>
+    <a href="/employee/leaves">Back to Leaves</a>
+  `);
+}
   const overlap = await db.query(
     `
     SELECT * FROM leaves
