@@ -1034,8 +1034,9 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
   }
 
   const settings = await getCompanySettings();
+
   const doc = new PDFDocument({
-    size: [350, 520],
+    size: [350, 540],
     margin: 0,
   });
 
@@ -1047,41 +1048,81 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
 
   doc.pipe(res);
 
-  // Card background / border
-  doc.rect(15, 15, 320, 490).lineWidth(2).stroke();
+  // Outer card border
+  doc
+    .rect(12, 12, 326, 516)
+    .lineWidth(2)
+    .stroke();
 
-  // Header box
-  doc.rect(15, 15, 320, 80).fillAndStroke("#f2f2f2", "#000000");
+  // Inner border
+  doc
+    .rect(20, 20, 310, 500)
+    .lineWidth(0.8)
+    .stroke();
+
+  // Header background
+  doc
+    .rect(20, 20, 310, 90)
+    .fillAndStroke("#f2f2f2", "#000000");
 
   // Company logo
   try {
     const logoPath = path.join(__dirname, settings.logo_path);
-    doc.image(logoPath, 30, 30, {
-      width: 50,
-      height: 50,
+
+    doc.image(logoPath, 32, 32, {
+      width: 52,
+      height: 52,
     });
   } catch (err) {
     console.log("ID card logo could not be loaded");
   }
 
+  // Company name and address
   doc
     .fillColor("#000000")
-    .fontSize(17)
     .font("Helvetica-Bold")
-    .text(settings.company_name || "Company", 90, 35, {
+    .fontSize(17)
+    .text(settings.company_name || "Company", 90, 34, {
+      width: 220,
+      align: "center",
+    });
+
+  doc
+    .font("Helvetica")
+    .fontSize(8)
+    .text(settings.company_address || "", 90, 60, {
       width: 220,
       align: "center",
     });
 
   doc
     .fontSize(8)
-    .font("Helvetica")
-    .text(settings.company_address || "", 90, 60, {
+    .text(`Phone: ${settings.company_phone || "-"}`, 90, 78, {
       width: 220,
       align: "center",
     });
 
-  // Employee photo
+  // Title strip
+  doc
+    .rect(20, 110, 310, 32)
+    .fillAndStroke("#000000", "#000000");
+
+  doc
+    .fillColor("#ffffff")
+    .font("Helvetica-Bold")
+    .fontSize(14)
+    .text("EMPLOYEE ID CARD", 20, 120, {
+      width: 310,
+      align: "center",
+    });
+
+  // Photo frame
+  doc
+    .fillColor("#000000")
+    .rect(108, 158, 134, 134)
+    .lineWidth(1)
+    .stroke();
+
   let photoLoaded = false;
 
   if (employee.photo_path) {
@@ -1094,7 +1135,7 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
         const photoResponse = await fetch(signedPhoto.signedUrl);
         const photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
 
-        doc.image(photoBuffer, 115, 120, {
+        doc.image(photoBuffer, 115, 165, {
           width: 120,
           height: 120,
         });
@@ -1107,66 +1148,106 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
   }
 
   if (!photoLoaded) {
-    doc.rect(115, 120, 120, 120).stroke();
-    doc.fontSize(10).text("PHOTO", 115, 170, {
-      width: 120,
-      align: "center",
-    });
+    doc
+      .font("Helvetica")
+      .fontSize(11)
+      .fillColor("#000000")
+      .text("PHOTO", 115, 218, {
+        width: 120,
+        align: "center",
+      });
   }
 
-  // Employee name
+  // Employee name and designation
   doc
-    .fontSize(18)
+    .fillColor("#000000")
     .font("Helvetica-Bold")
-    .text(employee.name || "-", 30, 260, {
+    .fontSize(18)
+    .text(employee.name || "-", 30, 305, {
       width: 290,
       align: "center",
     });
 
   doc
-    .fontSize(11)
     .font("Helvetica")
-    .text(employee.designation || "-", 30, 285, {
+    .fontSize(11)
+    .text(employee.designation || "-", 30, 330, {
       width: 290,
       align: "center",
     });
 
-  // Details section
-  const detailsX = 45;
-  let y = 330;
+  // Details box
+  const detailsX = 38;
+  const detailsY = 365;
+  const detailsWidth = 274;
+  const rowHeight = 24;
 
-  function detailRow(label, value) {
-    doc.font("Helvetica-Bold").fontSize(10).text(label, detailsX, y, {
-      width: 95,
-    });
-
-    doc.font("Helvetica").fontSize(10).text(value || "-", detailsX + 105, y, {
-      width: 170,
-    });
-
-    y += 24;
-  }
-
-  detailRow("Employee ID:", String(employee.id));
-  detailRow("Department:", employee.department || "-");
-  detailRow("Phone:", employee.phone || "-");
-  detailRow("Email:", employee.email || "-");
-
-  // Footer
   doc
-    .moveTo(60, 455)
-    .lineTo(180, 455)
+    .rect(detailsX, detailsY, detailsWidth, rowHeight * 4)
+    .lineWidth(0.8)
     .stroke();
 
-  doc.fontSize(9).text("Authorized Signature", 60, 463, {
-    width: 120,
-    align: "center",
-  });
+  for (let i = 1; i < 4; i++) {
+    doc
+      .moveTo(detailsX, detailsY + rowHeight * i)
+      .lineTo(detailsX + detailsWidth, detailsY + rowHeight * i)
+      .stroke();
+  }
 
   doc
-    .fontSize(8)
-    .text(`Phone: ${settings.company_phone || "-"}`, 30, 485, {
-      width: 290,
+    .moveTo(detailsX + 95, detailsY)
+    .lineTo(detailsX + 95, detailsY + rowHeight * 4)
+    .stroke();
+
+  function detailRow(index, label, value) {
+    const y = detailsY + rowHeight * index + 7;
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(9)
+      .fillColor("#000000")
+      .text(label, detailsX + 8, y, {
+        width: 80,
+      });
+
+    doc
+      .font("Helvetica")
+      .fontSize(9)
+      .text(value || "-", detailsX + 105, y, {
+        width: 160,
+      });
+  }
+
+  detailRow(0, "Employee ID", String(employee.id));
+  detailRow(1, "Department", employee.department || "-");
+  detailRow(2, "Phone", employee.phone || "-");
+  detailRow(3, "Email", employee.email || "-");
+
+  // Signature
+  doc
+    .moveTo(110, 485)
+    .lineTo(240, 485)
+    .stroke();
+
+  doc
+    .font("Helvetica")
+    .fontSize(8.5)
+    .text("Authorized Signature", 110, 492, {
+      width: 130,
+      align: "center",
+    });
+
+  // Footer strip
+  doc
+    .rect(20, 510, 310, 10)
+    .fill("#000000");
+
+  doc
+    .fillColor("#ffffff")
+    .font("Helvetica-Bold")
+    .fontSize(7)
+    .text("VALID EMPLOYEE CARD", 20, 512, {
+      width: 310,
       align: "center",
     });
 
