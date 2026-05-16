@@ -62,29 +62,31 @@
         <h2>HRMS</h2>
 
         <nav>
-            <a href="/dashboard">Dashboard</a>
+    <a href="/dashboard">Dashboard</a>
 
-            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
-                <a href="/employees">Employees</a>
-            <% } %>
+    <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+        <a href="/employees">Employees</a>
+    <% } %>
 
-            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
-                <a href="/attendance">Attendance</a>
-                <a href="/attendance/monthly-report">Monthly Report</a>
-                <a href="/leaves">Leaves</a>
-                <a href="/leaves/balances">Leave Balances</a>
-            <% } %>
+    <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+        <a href="/attendance">Attendance</a>
+        <a href="/attendance/monthly-report">Monthly Report</a>
+        <a href="/attendance/regularizations">Regularizations</a>
+        <a href="/leaves">Leaves</a>
+        <a href="/leaves/balances">Leave Balances</a>
+    <% } %>
 
-            <% if (user && user.role === "Super Admin") { %>
-                <a href="/payroll">Payroll</a>
-                <a href="/admin-users">Admin Users</a>
-                <a href="/company-settings">Company Settings</a>
-                <a href="/activity-logs">Activity Logs</a>
-                <a href="/export/backup">Download Backup</a>
-            <% } %>
+    <% if (user && user.role === "Super Admin") { %>
+        <a href="/payroll">Payroll</a>
+        <a href="/admin-users">Admin Users</a>
+        <a href="/company-settings">Company Settings</a>
+        <a href="/activity-logs">Activity Logs</a>
+        <a href="/export/backup">Download Backup</a>
+    <% } %>
 
-            <a href="/logout">Logout</a>
-        </nav>
+    <a href="/change-password">Change Password</a>
+    <a href="/logout">Logout</a>
+</nav>
     </aside>
 
     <main class="content">
