@@ -16,6 +16,18 @@ async function getCompanySettings() {
   const result = await db.query(
     "SELECT * FROM company_settings ORDER BY id ASC LIMIT 1"
   );
+
+  return result.rows[0] || {
+    company_name: "VLCG",
+    company_address: "Main Road, Navipet, Telangana, 503245",
+    company_phone: "6302084794",
+    company_email: "harikpalem@gmail.com",
+    office_start_time: "09:30",
+    office_end_time: "18:00",
+    logo_path: "public/images/logo.jpg",
+  };
+}
+
 async function logActivity(req, action, details) {
   try {
     const user = req.session.user;
@@ -28,28 +40,13 @@ async function logActivity(req, action, details) {
       `INSERT INTO activity_logs
        (user_id, username, role, action, details)
        VALUES ($1, $2, $3, $4, $5)`,
-      [
-        user.id,
-        user.username,
-        user.role,
-        action,
-        details,
-      ]
+      [user.id, user.username, user.role, action, details]
     );
   } catch (err) {
     console.log("Activity log error:", err.message);
   }
 }
-  return result.rows[0] || {
-    company_name: "VLCG",
-    company_address: "Main Road, Navipet, Telangana, 503245",
-    company_phone: "6302084794",
-    company_email: "harikpalem@gmail.com",
-    office_start_time: "09:30",
-    office_end_time: "18:00",
-    logo_path: "public/images/logo.jpg",
-  };
-}
+
 async function ensureLeaveBalance(employeeId, year) {
   const existing = await db.query(
     "SELECT * FROM leave_balances WHERE employee_id = $1 AND year = $2",
@@ -111,17 +108,17 @@ async function getLeaveBalance(employeeId, year) {
 
   return {
     year,
-    sickTotal: balance.sick_total,
-    casualTotal: balance.casual_total,
-    paidTotal: balance.paid_total,
+    sickTotal: Number(balance.sick_total),
+    casualTotal: Number(balance.casual_total),
+    paidTotal: Number(balance.paid_total),
 
     sickUsed,
     casualUsed,
     paidUsed,
 
-    sickRemaining: balance.sick_total - sickUsed,
-    casualRemaining: balance.casual_total - casualUsed,
-    paidRemaining: balance.paid_total - paidUsed,
+    sickRemaining: Number(balance.sick_total) - sickUsed,
+    casualRemaining: Number(balance.casual_total) - casualUsed,
+    paidRemaining: Number(balance.paid_total) - paidUsed,
   };
 }
 
@@ -410,11 +407,7 @@ app.get("/employees", requireHRorSuperAdmin, async (req, res) => {
     search,
   });
 });
-await logActivity(
-  req,
-  "Employee Added",
-  `Added employee: ${name}`
-);
+
 app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
   const {
     name,
@@ -464,6 +457,12 @@ app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
     ]
   );
 
+  await logActivity(
+    req,
+    "Employee Added",
+    `Added employee: ${name}`
+  );
+
   res.redirect("/employees");
 });
 
@@ -477,12 +476,6 @@ app.get("/employees/edit/:id", requireHRorSuperAdmin, async (req, res) => {
     employee: result.rows[0],
   });
 });
-await logActivity(
-  req,
-  "Employee Updated",
-  `Updated employee ID: ${req.params.id}`
-);
-
 app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
   const {
     name,
@@ -544,14 +537,21 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
   );
 await logActivity(
   req,
-  "Employee Deleted",
-  `Deleted employee ID: ${req.params.id}`
+  "Employee Updated",
+  `Updated employee ID: ${req.params.id}`
 );
   res.redirect("/employees");
 });
 
 app.post("/employees/delete/:id", requireHRorSuperAdmin, async (req, res) => {
   await db.query("DELETE FROM employees WHERE id = $1", [req.params.id]);
+
+  await logActivity(
+    req,
+    "Employee Deleted",
+    `Deleted employee ID: ${req.params.id}`
+  );
+
   res.redirect("/employees");
 });
 
@@ -739,8 +739,8 @@ app.post("/leaves/add", requireHRorSuperAdmin, async (req, res) => {
   );
 await logActivity(
   req,
-  "Leave Approved",
-  `Approved leave ID: ${req.params.id}`
+  "Leave Added",
+  `Added leave for employee ID: ${employee_id}`
 );
   res.redirect("/leaves");
 });
@@ -749,6 +749,12 @@ app.post("/leaves/approve/:id", requireManagerHRorSuperAdmin, async (req, res) =
   await db.query(
     "UPDATE leaves SET status = 'Approved' WHERE id = $1",
     [req.params.id]
+  );
+
+  await logActivity(
+    req,
+    "Leave Approved",
+    `Approved leave ID: ${req.params.id}`
   );
 
   res.redirect("/leaves");
