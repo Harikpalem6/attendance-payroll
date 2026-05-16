@@ -27,6 +27,80 @@ async function getCompanySettings() {
     logo_path: "public/images/logo.jpg",
   };
 }
+async function ensureLeaveBalance(employeeId, year) {
+  const existing = await db.query(
+    "SELECT * FROM leave_balances WHERE employee_id = $1 AND year = $2",
+    [employeeId, year]
+  );
+
+  if (existing.rows.length === 0) {
+    await db.query(
+      `INSERT INTO leave_balances
+       (employee_id, year, sick_total, casual_total, paid_total)
+       VALUES ($1, $2, 6, 12, 12)`,
+      [employeeId, year]
+    );
+  }
+}
+
+function calculateLeaveDays(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const diffTime = end - start;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  return diffDays > 0 ? diffDays : 0;
+}
+
+async function getLeaveBalance(employeeId, year) {
+  await ensureLeaveBalance(employeeId, year);
+
+  const balanceResult = await db.query(
+    "SELECT * FROM leave_balances WHERE employee_id = $1 AND year = $2",
+    [employeeId, year]
+  );
+
+  const balance = balanceResult.rows[0];
+
+  const usedResult = await db.query(
+    `
+    SELECT leave_type, start_date, end_date
+    FROM leaves
+    WHERE employee_id = $1
+    AND status = 'Approved'
+    AND EXTRACT(YEAR FROM start_date) = $2
+    `,
+    [employeeId, year]
+  );
+
+  let sickUsed = 0;
+  let casualUsed = 0;
+  let paidUsed = 0;
+
+  usedResult.rows.forEach((leave) => {
+    const days = calculateLeaveDays(leave.start_date, leave.end_date);
+
+    if (leave.leave_type === "Sick Leave") sickUsed += days;
+    if (leave.leave_type === "Casual Leave") casualUsed += days;
+    if (leave.leave_type === "Paid Leave") paidUsed += days;
+  });
+
+  return {
+    year,
+    sickTotal: balance.sick_total,
+    casualTotal: balance.casual_total,
+    paidTotal: balance.paid_total,
+
+    sickUsed,
+    casualUsed,
+    paidUsed,
+
+    sickRemaining: balance.sick_total - sickUsed,
+    casualRemaining: balance.casual_total - casualUsed,
+    paidRemaining: balance.paid_total - paidUsed,
+  };
+}
 
 const app = express();
 const supabase = createClient(
@@ -1090,9 +1164,16 @@ app.get("/employee/leaves", requireEmployeeLogin, async (req, res) => {
     [req.session.employee.id]
   );
 
+  const currentYear = new Date().getFullYear();
+  const leaveBalance = await getLeaveBalance(
+    req.session.employee.id,
+    currentYear
+  );
+
   res.render("employee-leaves", {
     employee: req.session.employee,
     leaves: leaves.rows,
+    leaveBalance,
   });
 });
 
