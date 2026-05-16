@@ -352,35 +352,51 @@ app.get("/employees", requireHRorSuperAdmin, async (req, res) => {
 
 app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
   const {
-    name,
-    department,
-    salary,
-    phone,
-    email,
-    designation,
-    joining_date,
-    address,
-  } = req.body;
+  name,
+  department,
+  salary,
+  basic_salary,
+  hra,
+  allowances,
+  bonus,
+  pf_deduction,
+  esi_deduction,
+  professional_tax,
+  other_deduction,
+  phone,
+  email,
+  designation,
+  joining_date,
+  address,
+} = req.body;
 
   const username = name.toLowerCase().replace(/\s+/g, "");
   const hashedPassword = await bcrypt.hash("employee123", 10);
 
   await db.query(
     `INSERT INTO employees
-    (name, department, salary, username, password, phone, email, designation, joining_date, address)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-    [
-      name,
-      department,
-      salary,
-      username,
-      hashedPassword,
-      phone,
-      email,
-      designation,
-      joining_date || null,
-      address,
-    ]
+(name, department, salary, basic_salary, hra, allowances, bonus, pf_deduction, esi_deduction, professional_tax, other_deduction, username, password, phone, email, designation, joining_date, address)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+  [
+  name,
+  department,
+  salary,
+  basic_salary || 0,
+  hra || 0,
+  allowances || 0,
+  bonus || 0,
+  pf_deduction || 0,
+  esi_deduction || 0,
+  professional_tax || 0,
+  other_deduction || 0,
+  username,
+  hashedPassword,
+  phone,
+  email,
+  designation,
+  joining_date || null,
+  address,
+]
   );
 
   res.redirect("/employees");

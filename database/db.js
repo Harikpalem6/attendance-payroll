@@ -25,6 +25,45 @@ async function initDatabase() {
   ALTER TABLE employees
   ADD COLUMN IF NOT EXISTS photo_path VARCHAR(500);
 `);
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS basic_salary NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS hra NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS allowances NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS bonus NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS pf_deduction NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS esi_deduction NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS professional_tax NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS other_deduction NUMERIC DEFAULT 0;
+`);
 
   await pool.query(`
   UPDATE users
@@ -149,6 +188,46 @@ await pool.query(`
     logo_path VARCHAR(255) DEFAULT 'public/images/logo.jpg'
   );
 `);
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS basic_salary NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS hra NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS allowances NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS bonus NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS pf_deduction NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS esi_deduction NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS professional_tax NUMERIC DEFAULT 0;
+`);
+
+await pool.query(`
+  ALTER TABLE payroll_records
+  ADD COLUMN IF NOT EXISTS other_deduction NUMERIC DEFAULT 0;
+`);
+
 
 const settingsCheck = await pool.query(
   "SELECT * FROM company_settings LIMIT 1"
