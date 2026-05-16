@@ -1688,7 +1688,7 @@ async function drawPayslipPdf(doc, data) {
   });
 
   const empBoxY = 155;
-  const empBoxHeight = 120;
+  const empBoxHeight = 140;
 
   doc
     .rect(margin + 15, empBoxY, contentWidth - 30, empBoxHeight)
@@ -1725,25 +1725,58 @@ async function drawPayslipPdf(doc, data) {
   doc.text(`Department: ${data.department || "-"}`, margin + 30, empBoxY + 46);
   doc.text(`Payroll Month: ${data.month || "-"}`, margin + 30, empBoxY + 62);
 
-  doc.text("Bank Details", margin + 30, empBoxY + 82, {
+  // Bank details table
+  const bankTableX = margin + 30;
+  const bankTableY = empBoxY + 85;
+  const bankTableWidth = contentWidth - 90;
+  const bankRowHeight = 14;
+  const bankCol1 = 105;
+  const bankCol2 = 165;
+  const bankCol3 = 105;
+
+  doc.fontSize(9).text("Bank Details", bankTableX, bankTableY - 14, {
     underline: true,
   });
 
-  doc.fontSize(8.5);
-  doc.text(`Bank: ${data.bank_name || "-"}`, margin + 30, empBoxY + 100, {
-    width: 170,
+  doc
+    .rect(bankTableX, bankTableY, bankTableWidth, bankRowHeight * 2)
+    .lineWidth(0.7)
+    .stroke();
+
+  doc
+    .moveTo(bankTableX + bankCol1, bankTableY)
+    .lineTo(bankTableX + bankCol1, bankTableY + bankRowHeight * 2)
+    .stroke();
+
+  doc
+    .moveTo(bankTableX + bankCol1 + bankCol2, bankTableY)
+    .lineTo(bankTableX + bankCol1 + bankCol2, bankTableY + bankRowHeight * 2)
+    .stroke();
+
+  doc
+    .moveTo(bankTableX + bankCol1 + bankCol2 + bankCol3, bankTableY)
+    .lineTo(bankTableX + bankCol1 + bankCol2 + bankCol3, bankTableY + bankRowHeight * 2)
+    .stroke();
+
+  doc
+    .moveTo(bankTableX, bankTableY + bankRowHeight)
+    .lineTo(bankTableX + bankTableWidth, bankTableY + bankRowHeight)
+    .stroke();
+
+  doc.fontSize(7.8).font("Helvetica-Bold");
+  doc.text("Bank", bankTableX + 5, bankTableY + 4, { width: bankCol1 - 10 });
+  doc.text("Account Holder", bankTableX + bankCol1 + 5, bankTableY + 4, { width: bankCol2 - 10 });
+  doc.text("Account No.", bankTableX + bankCol1 + bankCol2 + 5, bankTableY + 4, { width: bankCol3 - 10 });
+  doc.text("IFSC", bankTableX + bankCol1 + bankCol2 + bankCol3 + 5, bankTableY + 4, {
+    width: bankTableWidth - bankCol1 - bankCol2 - bankCol3 - 10,
   });
 
-  doc.text(`A/C Holder: ${data.account_holder_name || "-"}`, margin + 210, empBoxY + 100, {
-    width: 190,
-  });
-
-  doc.text(`A/C No: ${maskAccountNumber(data.account_number)}`, margin + 30, empBoxY + 113, {
-    width: 170,
-  });
-
-  doc.text(`IFSC: ${data.ifsc_code || "-"}`, margin + 210, empBoxY + 113, {
-    width: 190,
+  doc.font("Helvetica");
+  doc.text(data.bank_name || "-", bankTableX + 5, bankTableY + bankRowHeight + 4, { width: bankCol1 - 10 });
+  doc.text(data.account_holder_name || "-", bankTableX + bankCol1 + 5, bankTableY + bankRowHeight + 4, { width: bankCol2 - 10 });
+  doc.text(maskAccountNumber(data.account_number), bankTableX + bankCol1 + bankCol2 + 5, bankTableY + bankRowHeight + 4, { width: bankCol3 - 10 });
+  doc.text(data.ifsc_code || "-", bankTableX + bankCol1 + bankCol2 + bankCol3 + 5, bankTableY + bankRowHeight + 4, {
+    width: bankTableWidth - bankCol1 - bankCol2 - bankCol3 - 10,
   });
 
   const basicSalary = n(data.basicSalary || data.basic_salary);
@@ -1761,12 +1794,12 @@ async function drawPayslipPdf(doc, data) {
   const finalSalary = n(data.finalSalary || data.final_salary);
 
   const tableX = margin + 15;
-  const tableY = 305;
+  const tableY = 315;
   const tableWidth = contentWidth - 30;
-  const rowHeight = 20;
+  const rowHeight = 19;
   const col1Width = tableWidth * 0.6;
 
-  doc.fontSize(12).text("Salary Details", tableX, tableY - 22, {
+  doc.font("Helvetica").fontSize(11).text("Salary Details", tableX, tableY - 20, {
     underline: true,
   });
 
@@ -1793,7 +1826,7 @@ async function drawPayslipPdf(doc, data) {
   doc.rect(tableX, tableY, tableWidth, rowHeight * totalRows).lineWidth(1).stroke();
   doc.rect(tableX, tableY, tableWidth, rowHeight).fillAndStroke("#f2f2f2", "#000000");
 
-  doc.fillColor("#000000").fontSize(8.5).font("Helvetica-Bold");
+  doc.fillColor("#000000").fontSize(8.3).font("Helvetica-Bold");
   doc.text("Particulars", tableX + 10, tableY + 5);
   doc.text("Value", tableX + col1Width + 10, tableY + 5);
 
@@ -1819,7 +1852,7 @@ async function drawPayslipPdf(doc, data) {
       doc.font("Helvetica");
     }
 
-    doc.fontSize(8.5);
+    doc.fontSize(8.3);
     doc.text(String(row[0]), tableX + 10, y + 5);
     doc.text(String(row[1] || 0), tableX + col1Width + 10, y + 5);
   });
