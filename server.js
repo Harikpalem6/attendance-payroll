@@ -2203,26 +2203,63 @@ app.post("/attendance/regularizations/approve/:id", requireManagerHRorSuperAdmin
     return res.redirect("/attendance/regularizations");
   }
 
-  await db.query(
+  const attendanceDate = new Date(request.attendance_date)
+    .toISOString()
+    .split("T")[0];
+
+  const checkInDateTime = request.requested_check_in
+    ? `${attendanceDate} ${request.requested_check_in}`
+    : null;
+
+  const checkOutDateTime = request.requested_check_out
+    ? `${attendanceDate} ${request.requested_check_out}`
+    : null;
+
+  const existingAttendance = await db.query(
     `
-    INSERT INTO attendance
-      (employee_id, date, status, check_in, check_out)
-    VALUES
-      ($1, $2, $3, $4, $5)
-    ON CONFLICT (employee_id, date)
-    DO UPDATE SET
-      status = EXCLUDED.status,
-      check_in = EXCLUDED.check_in,
-      check_out = EXCLUDED.check_out
+    SELECT *
+    FROM attendance
+    WHERE employee_id = $1
+    AND date = $2
     `,
-    [
-      request.employee_id,
-      request.attendance_date,
-      request.requested_status || "Present",
-      request.requested_check_in || null,
-      request.requested_check_out || null,
-    ]
+    [request.employee_id, attendanceDate]
   );
+
+  if (existingAttendance.rows.length > 0) {
+    await db.query(
+      `
+      UPDATE attendance
+      SET status = $1,
+          check_in = $2,
+          check_out = $3
+      WHERE employee_id = $4
+      AND date = $5
+      `,
+      [
+        request.requested_status || "Present",
+        checkInDateTime,
+        checkOutDateTime,
+        request.employee_id,
+        attendanceDate,
+      ]
+    );
+  } else {
+    await db.query(
+      `
+      INSERT INTO attendance
+        (employee_id, date, status, check_in, check_out)
+      VALUES
+        ($1, $2, $3, $4, $5)
+      `,
+      [
+        request.employee_id,
+        attendanceDate,
+        request.requested_status || "Present",
+        checkInDateTime,
+        checkOutDateTime,
+      ]
+    );
+  }
 
   await db.query(
     `
