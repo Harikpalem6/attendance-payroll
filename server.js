@@ -555,6 +555,29 @@ app.post("/attendance/delete/:id", requireManagerHRorSuperAdmin, async (req, res
 /* =========================
    ADMIN LEAVES
 ========================= */
+app.get("/leaves/balances", requireManagerHRorSuperAdmin, async (req, res) => {
+  const year = Number(req.query.year) || new Date().getFullYear();
+
+  const employees = await db.query(
+    "SELECT * FROM employees ORDER BY name ASC"
+  );
+
+  const balances = [];
+
+  for (const employee of employees.rows) {
+    const balance = await getLeaveBalance(employee.id, year);
+
+    balances.push({
+      employee,
+      balance,
+    });
+  }
+
+  res.render("leave-balances", {
+    balances,
+    year,
+  });
+});
 
 app.get("/leaves", requireManagerHRorSuperAdmin, async (req, res) => {
   const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");

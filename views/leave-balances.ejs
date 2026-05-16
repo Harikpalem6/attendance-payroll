@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leave Balances</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <h2>HRMS</h2>
+
+        <nav>
+            <a href="/dashboard">Dashboard</a>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
+
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
+
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <h1>Leave Balances</h1>
+
+        <form action="/leaves/balances" method="GET" class="toolbar">
+            <input
+                type="number"
+                name="year"
+                value="<%= year %>"
+                min="2020"
+                max="2100"
+                required
+            >
+
+            <button type="submit">View Year</button>
+        </form>
+
+        <table>
+            <tr>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Sick Used</th>
+                <th>Sick Remaining</th>
+                <th>Casual Used</th>
+                <th>Casual Remaining</th>
+                <th>Paid Used</th>
+                <th>Paid Remaining</th>
+            </tr>
+
+            <% if (balances && balances.length > 0) { %>
+                <% balances.forEach(item => { %>
+                    <tr>
+                        <td><%= item.employee.name %></td>
+                        <td><%= item.employee.department || '-' %></td>
+
+                        <td>
+                            <%= item.balance.sickUsed %> / <%= item.balance.sickTotal %>
+                        </td>
+                        <td><%= item.balance.sickRemaining %></td>
+
+                        <td>
+                            <%= item.balance.casualUsed %> / <%= item.balance.casualTotal %>
+                        </td>
+                        <td><%= item.balance.casualRemaining %></td>
+
+                        <td>
+                            <%= item.balance.paidUsed %> / <%= item.balance.paidTotal %>
+                        </td>
+                        <td><%= item.balance.paidRemaining %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="8">No employee records found.</td>
+                </tr>
+            <% } %>
+        </table>
+
+    </main>
+
+</div>
+
+</body>
+</html>
