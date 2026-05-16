@@ -1852,83 +1852,91 @@ app.get("/activity-logs", requireSuperAdmin, async (req, res) => {
 });
 
 app.get("/export/activity-logs", requireSuperAdmin, async (req, res) => {
-  const { username, role, action, date } = req.query;
+  try {
+    const { username, role, action, date } = req.query;
 
-  let query = `
-    SELECT id, username, role, action, details, created_at
-    FROM activity_logs
-    WHERE 1 = 1
-  `;
+    let query = `
+      SELECT id, username, role, action, details, created_at
+      FROM activity_logs
+      WHERE 1 = 1
+    `;
 
-  const params = [];
+    const params = [];
 
-  if (username) {
-    params.push(`%${username}%`);
-    query += ` AND username ILIKE $${params.length}`;
-  }
+    if (username && username.trim() !== "") {
+      params.push(`%${username.trim()}%`);
+      query += ` AND username ILIKE $${params.length}`;
+    }
 
-  if (role) {
-    params.push(role);
-    query += ` AND role = $${params.length}`;
-  }
+    if (role && role.trim() !== "") {
+      params.push(role.trim());
+      query += ` AND role = $${params.length}`;
+    }
 
-  if (action) {
-    params.push(`%${action}%`);
-    query += ` AND action ILIKE $${params.length}`;
-  }
+    if (action && action.trim() !== "") {
+      params.push(`%${action.trim()}%`);
+      query += ` AND action ILIKE $${params.length}`;
+    }
 
-  if (date) {
-    params.push(date);
-    query += ` AND DATE(created_at) = $${params.length}`;
-  }
+    if (date && date.trim() !== "") {
+      params.push(date.trim());
+      query += ` AND DATE(created_at) = $${params.length}`;
+    }
 
-  query += `
-    ORDER BY created_at DESC
-  `;
+    query += `
+      ORDER BY created_at DESC
+    `;
 
-  const result = await db.query(query, params);
+    const result = await db.query(query, params);
 
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Activity Logs");
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Activity Logs");
 
-  sheet.columns = [
-    { header: "ID", key: "id", width: 10 },
-    { header: "Username", key: "username", width: 20 },
-    { header: "Role", key: "role", width: 20 },
-    { header: "Action", key: "action", width: 30 },
-    { header: "Details", key: "details", width: 50 },
-    { header: "Date / Time", key: "created_at", width: 25 },
-  ];
+    sheet.columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Username", key: "username", width: 20 },
+      { header: "Role", key: "role", width: 20 },
+      { header: "Action", key: "action", width: 30 },
+      { header: "Details", key: "details", width: 50 },
+      { header: "Date / Time", key: "created_at", width: 25 },
+    ];
 
-  result.rows.forEach((row) => {
-    sheet.addRow({
-      id: row.id,
-      username: row.username || "-",
-      role: row.role || "-",
-      action: row.action || "-",
-      details: row.details || "-",
-      created_at: row.created_at
-        ? new Date(row.created_at).toLocaleString()
-        : "",
+    result.rows.forEach((row) => {
+      sheet.addRow({
+        id: row.id || "",
+        username: row.username || "-",
+        role: row.role || "-",
+        action: row.action || "-",
+        details: row.details || "-",
+        created_at: row.created_at
+          ? new Date(row.created_at).toLocaleString("en-IN")
+          : "",
+      });
     });
-  });
 
-  sheet.getRow(1).font = {
-    bold: true,
-  };
+    sheet.getRow(1).font = { bold: true };
 
-  res.setHeader(
-    "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
 
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=activity-logs.xlsx"
-  );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=activity-logs.xlsx"
+    );
 
-  await workbook.xlsx.write(res);
-  res.end();
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.log("ACTIVITY LOG EXPORT ERROR:", err.message);
+
+    res.send(`
+      <h2>Activity Log Export Failed</h2>
+      <p>${err.message}</p>
+      <a href="/activity-logs">Back to Activity Logs</a>
+    `);
+  }
 });
 
 /* =========================
