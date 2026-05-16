@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Verification</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="content" style="max-width:600px; margin:40px auto;">
+
+    <div class="card" style="text-align:center;">
+
+        <h1><%= settings.company_name || 'Company' %></h1>
+
+        <p><%= settings.company_address || '' %></p>
+
+        <hr>
+
+        <h2>Verified Employee</h2>
+
+        <img
+            src="<%= photoUrl %>"
+            style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:2px solid #ddd;"
+        >
+
+        <h2><%= employee.name %></h2>
+
+        <p><strong>Employee ID:</strong> <%= employee.id %></p>
+        <p><strong>Department:</strong> <%= employee.department || '-' %></p>
+        <p><strong>Designation:</strong> <%= employee.designation || '-' %></p>
+
+        <br>
+
+        <p style="font-weight:bold; color:green;">
+            Status: Verified Employee
+        </p>
+
+    </div>
+
+</div>
+
+</body>
+</html>

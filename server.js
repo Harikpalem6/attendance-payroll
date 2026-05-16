@@ -10,6 +10,7 @@ const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
+const QRCode = require("qrcode");
 const db = require("./database/db");
 
 async function getCompanySettings() {
@@ -1016,6 +1017,52 @@ await logActivity(
    EMPLOYEE DOCUMENTS
    Super Admin + HR only
 ========================= */
+
+/* =========================
+   PUBLIC EMPLOYEE VERIFICATION
+========================= */
+
+app.get("/employees/verify/:id", async (req, res) => {
+  const employeeResult = await db.query(
+    `SELECT id, name, department, designation, photo_path
+     FROM employees
+     WHERE id = $1`,
+    [req.params.id]
+  );
+
+  const employee = employeeResult.rows[0];
+
+  if (!employee) {
+    return res.send(`
+      <h2>Employee Not Found</h2>
+      <p>This employee ID could not be verified.</p>
+    `);
+  }
+
+  const settings = await getCompanySettings();
+
+  let photoUrl = "/images/default-user.png";
+
+  if (employee.photo_path) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(SUPABASE_PHOTO_BUCKET)
+        .createSignedUrl(employee.photo_path, 300);
+
+      if (!error && data && data.signedUrl) {
+        photoUrl = data.signedUrl;
+      }
+    } catch (err) {
+      console.log("Verification photo could not be loaded");
+    }
+  }
+
+  res.render("employee-verify", {
+    employee,
+    settings,
+    photoUrl,
+  });
+});
 /* =========================
    EMPLOYEE ID CARD PDF
    Super Admin + HR only
@@ -1034,6 +1081,20 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
   }
 
   const settings = await getCompanySettings();
+
+  const baseUrl =
+    process.env.APP_BASE_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    "https://vlcghrms.in";
+
+  const verifyUrl = `${baseUrl}/employees/verify/${employee.id}`;
+  const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+    margin: 1,
+    width: 90,
+  });
+
+  const qrBase64 = qrDataUrl.replace(/^data:image\/png;base64,/, "");
+  const qrBuffer = Buffer.from(qrBase64, "base64");
 
   const doc = new PDFDocument({
     size: [350, 540],
@@ -1119,7 +1180,7 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
   // Photo frame
   doc
     .fillColor("#000000")
-    .rect(108, 158, 134, 134)
+    .rect(108, 155, 134, 134)
     .lineWidth(1)
     .stroke();
 
@@ -1135,7 +1196,7 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
         const photoResponse = await fetch(signedPhoto.signedUrl);
         const photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
 
-        doc.image(photoBuffer, 115, 165, {
+        doc.image(photoBuffer, 115, 162, {
           width: 120,
           height: 120,
         });
@@ -1152,7 +1213,7 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
       .font("Helvetica")
       .fontSize(11)
       .fillColor("#000000")
-      .text("PHOTO", 115, 218, {
+      .text("PHOTO", 115, 215, {
         width: 120,
         align: "center",
       });
@@ -1162,25 +1223,25 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
   doc
     .fillColor("#000000")
     .font("Helvetica-Bold")
-    .fontSize(18)
-    .text(employee.name || "-", 30, 305, {
+    .fontSize(17)
+    .text(employee.name || "-", 30, 300, {
       width: 290,
       align: "center",
     });
 
   doc
     .font("Helvetica")
-    .fontSize(11)
-    .text(employee.designation || "-", 30, 330, {
+    .fontSize(10)
+    .text(employee.designation || "-", 30, 323, {
       width: 290,
       align: "center",
     });
 
   // Details box
-  const detailsX = 38;
-  const detailsY = 365;
-  const detailsWidth = 274;
-  const rowHeight = 24;
+  const detailsX = 35;
+  const detailsY = 350;
+  const detailsWidth = 190;
+  const rowHeight = 22;
 
   doc
     .rect(detailsX, detailsY, detailsWidth, rowHeight * 4)
@@ -1195,33 +1256,47 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
   }
 
   doc
-    .moveTo(detailsX + 95, detailsY)
-    .lineTo(detailsX + 95, detailsY + rowHeight * 4)
+    .moveTo(detailsX + 75, detailsY)
+    .lineTo(detailsX + 75, detailsY + rowHeight * 4)
     .stroke();
 
   function detailRow(index, label, value) {
-    const y = detailsY + rowHeight * index + 7;
+    const y = detailsY + rowHeight * index + 6;
 
     doc
       .font("Helvetica-Bold")
-      .fontSize(9)
+      .fontSize(8.5)
       .fillColor("#000000")
-      .text(label, detailsX + 8, y, {
-        width: 80,
+      .text(label, detailsX + 6, y, {
+        width: 65,
       });
 
     doc
       .font("Helvetica")
-      .fontSize(9)
-      .text(value || "-", detailsX + 105, y, {
-        width: 160,
+      .fontSize(8.5)
+      .text(value || "-", detailsX + 82, y, {
+        width: 100,
       });
   }
 
-  detailRow(0, "Employee ID", String(employee.id));
-  detailRow(1, "Department", employee.department || "-");
+  detailRow(0, "Emp ID", String(employee.id));
+  detailRow(1, "Dept", employee.department || "-");
   detailRow(2, "Phone", employee.phone || "-");
   detailRow(3, "Email", employee.email || "-");
+
+  // QR code
+  doc.image(qrBuffer, 238, 350, {
+    width: 72,
+    height: 72,
+  });
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(7)
+    .text("SCAN TO VERIFY", 225, 426, {
+      width: 100,
+      align: "center",
+    });
 
   // Signature
   doc
