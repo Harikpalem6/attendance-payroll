@@ -1839,18 +1839,53 @@ await logActivity(
 ========================= */
 
 app.get("/activity-logs", requireSuperAdmin, async (req, res) => {
-  const logs = await db.query(`
+  const { username, role, action, date } = req.query;
+
+  let query = `
     SELECT *
     FROM activity_logs
+    WHERE 1 = 1
+  `;
+
+  const params = [];
+
+  if (username && username.trim() !== "") {
+    params.push(`%${username.trim()}%`);
+    query += ` AND username ILIKE $${params.length}`;
+  }
+
+  if (role && role.trim() !== "") {
+    params.push(role.trim());
+    query += ` AND role = $${params.length}`;
+  }
+
+  if (action && action.trim() !== "") {
+    params.push(`%${action.trim()}%`);
+    query += ` AND action ILIKE $${params.length}`;
+  }
+
+  if (date && date.trim() !== "") {
+    params.push(date.trim());
+    query += ` AND DATE(created_at) = $${params.length}`;
+  }
+
+  query += `
     ORDER BY created_at DESC
     LIMIT 300
-  `);
+  `;
+
+  const logs = await db.query(query, params);
 
   res.render("activity-logs", {
     logs: logs.rows,
+    filters: {
+      username: username || "",
+      role: role || "",
+      action: action || "",
+      date: date || "",
+    },
   });
 });
-
 app.get("/export/activity-logs", requireSuperAdmin, async (req, res) => {
   try {
     const { username, role, action, date } = req.query;
