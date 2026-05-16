@@ -96,6 +96,13 @@
                     <a class="secondary-btn" href="/activity-logs">
                         Clear Filter
                     </a>
+
+                    <a
+                        class="secondary-btn"
+                        href="/export/activity-logs?username=<%= encodeURIComponent(filters && filters.username ? filters.username : '') %>&role=<%= encodeURIComponent(filters && filters.role ? filters.role : '') %>&action=<%= encodeURIComponent(filters && filters.action ? filters.action : '') %>&date=<%= encodeURIComponent(filters && filters.date ? filters.date : '') %>"
+                    >
+                        Export Excel
+                    </a>
                 </div>
 
             </form>
