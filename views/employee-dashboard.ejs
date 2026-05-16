@@ -21,7 +21,20 @@
 
     <main class="content">
 
+        <div class="card" style="display:flex; align-items:center; gap:20px;">
+    <img
+        src="<%= photoUrl %>"
+        style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid #ddd;"
+    >
+
+    <div>
         <h1>Welcome, <%= employee.name %></h1>
+        <p><strong>Department:</strong> <%= employee.department || '-' %></p>
+        <p><strong>Designation:</strong> <%= employee.designation || '-' %></p>
+    </div>
+</div>
+
+<br>
 
         <div class="card">
             <h2>Today Attendance</h2>

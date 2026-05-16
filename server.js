@@ -1012,12 +1012,32 @@ app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
 
   const settings = await getCompanySettings();
 
-  res.render("employee-dashboard", {
-    employee: req.session.employee,
-    attendance: attendance.rows,
-    leaves: leaves.rows,
-    settings,
-  });
+const employeeResult = await db.query(
+  "SELECT * FROM employees WHERE id = $1",
+  [req.session.employee.id]
+);
+
+const employee = employeeResult.rows[0];
+
+let photoUrl = "/images/default-user.png";
+
+if (employee.photo_path) {
+  const { data, error } = await supabase.storage
+    .from(SUPABASE_PHOTO_BUCKET)
+    .createSignedUrl(employee.photo_path, 300);
+
+  if (!error) {
+    photoUrl = data.signedUrl;
+  }
+}
+
+res.render("employee-dashboard", {
+  employee,
+  attendance: attendance.rows,
+  leaves: leaves.rows,
+  settings,
+  photoUrl,
+});
 });
 
 app.post("/employee/check-in", requireEmployeeLogin, async (req, res) => {
@@ -1115,11 +1135,31 @@ app.get("/employee/payroll", requireEmployeeLogin, async (req, res) => {
     [req.session.employee.id]
   );
 
-  res.render("employee-payroll", {
-    employee: req.session.employee,
-    payroll: null,
-    records: records.rows,
-  });
+ const employeeResult = await db.query(
+  "SELECT * FROM employees WHERE id = $1",
+  [req.session.employee.id]
+);
+
+const employee = employeeResult.rows[0];
+
+let photoUrl = "/images/default-user.png";
+
+if (employee.photo_path) {
+  const { data, error } = await supabase.storage
+    .from(SUPABASE_PHOTO_BUCKET)
+    .createSignedUrl(employee.photo_path, 300);
+
+  if (!error) {
+    photoUrl = data.signedUrl;
+  }
+}
+
+res.render("employee-payroll", {
+  employee,
+  payroll: null,
+  records: records.rows,
+  photoUrl,
+});
 });
 
 app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) => {
@@ -1152,18 +1192,32 @@ app.post("/employee/payroll/calculate", requireEmployeeLogin, async (req, res) =
     [employee.id]
   );
 
-  res.render("employee-payroll", {
-    employee,
-    records: records.rows,
-    payroll: {
-      month,
-      present,
-      absent,
-      halfday,
-      deduction,
-      finalSalary,
-    },
-  });
+  let photoUrl = "/images/default-user.png";
+
+if (employee.photo_path) {
+  const { data, error } = await supabase.storage
+    .from(SUPABASE_PHOTO_BUCKET)
+    .createSignedUrl(employee.photo_path, 300);
+
+  if (!error) {
+    photoUrl = data.signedUrl;
+  }
+}
+
+res.render("employee-payroll", {
+  employee,
+  records: records.rows,
+  photoUrl,
+  payroll: {
+    month,
+    present,
+    absent,
+    halfday,
+    deduction,
+    finalSalary,
+  },
+});
+  
 });
 
 /* =========================
@@ -1246,15 +1300,36 @@ async function drawPayslipPdf(doc, data) {
     .lineWidth(1)
     .stroke();
 
-  doc.fontSize(12);
+    
 
-  doc.text("Employee Details", margin + 35, empBoxY + 12, {
+   doc.text("Employee Details", margin + 35, empBoxY + 12, {
     underline: true,
-  });
+    });
+      // Employee photo
+  if (data.photo_path) {
+    try {
+      const { data: signedPhoto, error } = await supabase.storage
+        .from(SUPABASE_PHOTO_BUCKET)
+        .createSignedUrl(data.photo_path, 300);
 
-  doc.text(`Employee Name: ${data.employeeName}`, margin + 35, empBoxY + 38);
-  doc.text(`Department: ${data.department || "-"}`, margin + 35, empBoxY + 58);
-  doc.text(`Payroll Month: ${data.month}`, margin + 35, empBoxY + 78);
+      if (!error && signedPhoto && signedPhoto.signedUrl) {
+        const photoResponse = await fetch(signedPhoto.signedUrl);
+        const photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
+
+        doc.image(photoBuffer, 430, 190, {
+          width: 70,
+          height: 70,
+        });
+      }
+    } catch (err) {
+      console.log("Payslip photo could not be loaded");
+    }
+  }
+
+  doc.fontSize(12);
+  doc.text(`Employee Name: ${data.employeeName}`);
+  doc.text(`Department: ${data.department || "-"}`);
+  doc.text(`Payroll Month: ${data.month}`);
 
   // Salary table
   const tableX = margin + 20;

@@ -23,11 +23,19 @@
 
         <h1>Your Payroll</h1>
 
-        <div class="card">
-            <p><strong>Name:</strong> <%= employee.name %></p>
-            <p><strong>Department:</strong> <%= employee.department %></p>
-            <p><strong>Monthly Salary:</strong> ₹ <%= employee.salary %></p>
-        </div>
+        <div class="card" style="display:flex; align-items:center; gap:20px;">
+    <img
+        src="<%= photoUrl %>"
+        style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid #ddd;"
+    >
+
+    <div>
+        <p><strong>Name:</strong> <%= employee.name %></p>
+        <p><strong>Department:</strong> <%= employee.department || '-' %></p>
+        <p><strong>Designation:</strong> <%= employee.designation || '-' %></p>
+        <p><strong>Monthly Salary:</strong> Rs. <%= employee.salary %></p>
+    </div>
+</div>
 
         <br>
 
@@ -63,6 +71,7 @@
                 <input type="hidden" name="deduction" value="<%= payroll.deduction.toFixed(2) %>">
                 <input type="hidden" name="finalSalary" value="<%= payroll.finalSalary.toFixed(2) %>">
                 <input type="hidden" name="month" value="<%= payroll.month %>">
+                <input type="hidden" name="photo_path" value="<%= employee.photo_path || '' %>">
 
                 <button type="submit">Download PDF Payslip</button>
 
