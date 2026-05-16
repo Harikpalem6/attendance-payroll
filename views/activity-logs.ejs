@@ -41,6 +41,70 @@
 
         <h1>Activity Logs</h1>
 
+        <div class="card">
+            <h2>Search / Filter Logs</h2>
+
+            <br>
+
+            <form action="/activity-logs" method="GET" class="stack-form">
+
+                <label>Username</label>
+                <input
+                    type="text"
+                    name="username"
+                    placeholder="Search username"
+                    value="<%= filters && filters.username ? filters.username : '' %>"
+                >
+
+                <label>Role</label>
+                <select name="role">
+                    <option value="">All Roles</option>
+
+                    <option value="Super Admin" <%= filters && filters.role === 'Super Admin' ? 'selected' : '' %>>
+                        Super Admin
+                    </option>
+
+                    <option value="HR" <%= filters && filters.role === 'HR' ? 'selected' : '' %>>
+                        HR
+                    </option>
+
+                    <option value="Manager" <%= filters && filters.role === 'Manager' ? 'selected' : '' %>>
+                        Manager
+                    </option>
+                </select>
+
+                <label>Action</label>
+                <input
+                    type="text"
+                    name="action"
+                    placeholder="Search action, example: Employee Updated"
+                    value="<%= filters && filters.action ? filters.action : '' %>"
+                >
+
+                <label>Date</label>
+                <input
+                    type="date"
+                    name="date"
+                    value="<%= filters && filters.date ? filters.date : '' %>"
+                >
+
+                <div>
+                    <button type="submit">
+                        Search Logs
+                    </button>
+
+                    <a class="secondary-btn" href="/activity-logs">
+                        Clear Filter
+                    </a>
+                </div>
+
+            </form>
+        </div>
+
+        <br>
+
+        <h2>Recent Activity Logs</h2>
+
         <table>
             <tr>
                 <th>ID</th>
@@ -57,14 +121,16 @@
                         <td><%= log.id %></td>
                         <td><%= log.username || '-' %></td>
                         <td><%= log.role || '-' %></td>
-                        <td><%= log.action %></td>
+                        <td><%= log.action || '-' %></td>
                         <td><%= log.details || '-' %></td>
                         <td><%= log.created_at ? new Date(log.created_at).toLocaleString() : '' %></td>
                     </tr>
                 <% }) %>
             <% } else { %>
                 <tr>
-                    <td colspan="6">No activity logs found.</td>
+                    <td colspan="6">
+                        No activity logs found.
+                    </td>
                 </tr>
             <% } %>
         </table>

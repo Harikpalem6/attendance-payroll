@@ -1241,28 +1241,51 @@ await logActivity(
 ========================= */
 
 app.get("/activity-logs", requireSuperAdmin, async (req, res) => {
-  const logs = await db.query(`
+  const { username, role, action, date } = req.query;
+
+  let query = `
     SELECT *
     FROM activity_logs
+    WHERE 1 = 1
+  `;
+
+  const params = [];
+
+  if (username) {
+    params.push(`%${username}%`);
+    query += ` AND username ILIKE $${params.length}`;
+  }
+
+  if (role) {
+    params.push(role);
+    query += ` AND role = $${params.length}`;
+  }
+
+  if (action) {
+    params.push(`%${action}%`);
+    query += ` AND action ILIKE $${params.length}`;
+  }
+
+  if (date) {
+    params.push(date);
+    query += ` AND DATE(created_at) = $${params.length}`;
+  }
+
+  query += `
     ORDER BY created_at DESC
     LIMIT 300
-  `);
+  `;
+
+  const logs = await db.query(query, params);
 
   res.render("activity-logs", {
     logs: logs.rows,
-  });
-});
-/* =========================
-   ADMIN USER MANAGEMENT
-========================= */
-
-app.get("/admin-users", requireSuperAdmin, async (req, res) => {
-  const users = await db.query(
-    "SELECT id, username, role FROM users ORDER BY id DESC"
-  );
-
-  res.render("admin-users", {
-    users: users.rows,
+    filters: {
+      username: username || "",
+      role: role || "",
+      action: action || "",
+      date: date || "",
+    },
   });
 });
 
