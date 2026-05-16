@@ -1311,51 +1311,28 @@ await logActivity(
 ========================= */
 
 app.get("/activity-logs", requireSuperAdmin, async (req, res) => {
-  const { username, role, action, date } = req.query;
-
-  let query = `
+  const logs = await db.query(`
     SELECT *
     FROM activity_logs
-    WHERE 1 = 1
-  `;
-
-  const params = [];
-
-  if (username) {
-    params.push(`%${username}%`);
-    query += ` AND username ILIKE $${params.length}`;
-  }
-
-  if (role) {
-    params.push(role);
-    query += ` AND role = $${params.length}`;
-  }
-
-  if (action) {
-    params.push(`%${action}%`);
-    query += ` AND action ILIKE $${params.length}`;
-  }
-
-  if (date) {
-    params.push(date);
-    query += ` AND DATE(created_at) = $${params.length}`;
-  }
-
-  query += `
     ORDER BY created_at DESC
     LIMIT 300
-  `;
-
-  const logs = await db.query(query, params);
+  `);
 
   res.render("activity-logs", {
     logs: logs.rows,
-    filters: {
-      username: username || "",
-      role: role || "",
-      action: action || "",
-      date: date || "",
-    },
+  });
+});
+/* =========================
+   ADMIN USER MANAGEMENT
+========================= */
+
+app.get("/admin-users", requireSuperAdmin, async (req, res) => {
+  const users = await db.query(
+    "SELECT id, username, role FROM users ORDER BY id DESC"
+  );
+
+  res.render("admin-users", {
+    users: users.rows,
   });
 });
 
@@ -1664,6 +1641,15 @@ async function drawPayslipPdf(doc, data) {
   const margin = 40;
   const contentWidth = pageWidth - margin * 2;
 
+  function maskAccountNumber(accountNumber) {
+    if (!accountNumber) return "-";
+
+    const value = String(accountNumber);
+    if (value.length <= 4) return value;
+
+    return "XXXX XXXX " + value.slice(-4);
+  }
+
   doc.rect(margin, 30, contentWidth, 720).lineWidth(1).stroke();
 
   try {
@@ -1690,6 +1676,7 @@ async function drawPayslipPdf(doc, data) {
   );
 
   doc.moveTo(margin, 125).lineTo(pageWidth - margin, 125).stroke();
+
   doc.rect(margin, 125, contentWidth, 38).fillAndStroke("#f2f2f2", "#000000");
 
   doc.fillColor("#000000").fontSize(16).text("SALARY PAYSLIP", margin, 138, {
@@ -1698,7 +1685,12 @@ async function drawPayslipPdf(doc, data) {
   });
 
   const empBoxY = 175;
-  doc.rect(margin + 20, empBoxY, contentWidth - 40, 95).lineWidth(1).stroke();
+  const empBoxHeight = 125;
+
+  doc
+    .rect(margin + 20, empBoxY, contentWidth - 40, empBoxHeight)
+    .lineWidth(1)
+    .stroke();
 
   if (data.photo_path) {
     try {
@@ -1720,11 +1712,25 @@ async function drawPayslipPdf(doc, data) {
     }
   }
 
-  doc.fontSize(12).fillColor("#000000");
-  doc.text("Employee Details", margin + 35, empBoxY + 12, { underline: true });
-  doc.text(`Employee Name: ${data.employeeName}`, margin + 35, empBoxY + 38);
-  doc.text(`Department: ${data.department || "-"}`, margin + 35, empBoxY + 58);
-  doc.text(`Payroll Month: ${data.month}`, margin + 35, empBoxY + 78);
+  doc.fontSize(11).fillColor("#000000");
+
+  doc.text("Employee Details", margin + 35, empBoxY + 10, {
+    underline: true,
+  });
+
+  doc.text(`Employee Name: ${data.employeeName}`, margin + 35, empBoxY + 32);
+  doc.text(`Department: ${data.department || "-"}`, margin + 35, empBoxY + 50);
+  doc.text(`Payroll Month: ${data.month}`, margin + 35, empBoxY + 68);
+
+  doc.text("Bank Details", margin + 35, empBoxY + 90, {
+    underline: true,
+  });
+
+  doc.fontSize(9);
+  doc.text(`Bank: ${data.bank_name || "-"}`, margin + 35, empBoxY + 108);
+  doc.text(`A/C Holder: ${data.account_holder_name || "-"}`, margin + 220, empBoxY + 108);
+  doc.text(`A/C No: ${maskAccountNumber(data.account_number)}`, margin + 35, empBoxY + 122);
+  doc.text(`IFSC: ${data.ifsc_code || "-"}`, margin + 220, empBoxY + 122);
 
   const basicSalary = n(data.basicSalary || data.basic_salary);
   const hra = n(data.hra);
@@ -1741,12 +1747,12 @@ async function drawPayslipPdf(doc, data) {
   const finalSalary = n(data.finalSalary || data.final_salary);
 
   const tableX = margin + 20;
-  const tableY = 305;
+  const tableY = 330;
   const tableWidth = contentWidth - 40;
-  const rowHeight = 24;
+  const rowHeight = 22;
   const col1Width = tableWidth * 0.6;
 
-  doc.fontSize(14).text("Salary Details", tableX, tableY - 26, {
+  doc.fontSize(13).text("Salary Details", tableX, tableY - 24, {
     underline: true,
   });
 
@@ -1773,11 +1779,12 @@ async function drawPayslipPdf(doc, data) {
   doc.rect(tableX, tableY, tableWidth, rowHeight * totalRows).lineWidth(1).stroke();
   doc.rect(tableX, tableY, tableWidth, rowHeight).fillAndStroke("#f2f2f2", "#000000");
 
-  doc.fillColor("#000000").fontSize(10).font("Helvetica-Bold");
-  doc.text("Particulars", tableX + 12, tableY + 7);
-  doc.text("Value", tableX + col1Width + 12, tableY + 7);
+  doc.fillColor("#000000").fontSize(9).font("Helvetica-Bold");
+  doc.text("Particulars", tableX + 12, tableY + 6);
+  doc.text("Value", tableX + col1Width + 12, tableY + 6);
 
-  doc.moveTo(tableX + col1Width, tableY)
+  doc
+    .moveTo(tableX + col1Width, tableY)
     .lineTo(tableX + col1Width, tableY + rowHeight * totalRows)
     .stroke();
 
@@ -1787,7 +1794,8 @@ async function drawPayslipPdf(doc, data) {
     doc.moveTo(tableX, y).lineTo(tableX + tableWidth, y).stroke();
 
     if (row[0] === "Net Salary") {
-      doc.rect(tableX, y, tableWidth, rowHeight)
+      doc
+        .rect(tableX, y, tableWidth, rowHeight)
         .fillAndStroke("#f7f7f7", "#000000")
         .fillColor("#000000")
         .font("Helvetica-Bold");
@@ -1797,25 +1805,30 @@ async function drawPayslipPdf(doc, data) {
       doc.font("Helvetica");
     }
 
-    doc.fontSize(10);
-    doc.text(String(row[0]), tableX + 12, y + 7);
-    doc.text(String(row[1] || 0), tableX + col1Width + 12, y + 7);
+    doc.fontSize(9);
+    doc.text(String(row[0]), tableX + 12, y + 6);
+    doc.text(String(row[1] || 0), tableX + col1Width + 12, y + 6);
   });
 
   doc.font("Helvetica");
 
-  const footerY = 700;
+  doc.fontSize(9);
+  doc.text(`UPI ID: ${data.upi_id || "-"}`, margin + 60, 700);
+  doc.text(`PAN: ${data.pan_number || "-"}`, margin + 300, 700);
+
+  const footerY = 715;
 
   doc.moveTo(margin + 40, footerY).lineTo(margin + 200, footerY).stroke();
-  doc.fontSize(10).text("Employee Signature", margin + 65, footerY + 8);
+  doc.fontSize(9).text("Employee Signature", margin + 65, footerY + 8);
 
-  doc.moveTo(pageWidth - margin - 220, footerY)
+  doc
+    .moveTo(pageWidth - margin - 220, footerY)
     .lineTo(pageWidth - margin - 60, footerY)
     .stroke();
 
-  doc.fontSize(10).text("Authorized Signature", pageWidth - margin - 200, footerY + 8);
+  doc.fontSize(9).text("Authorized Signature", pageWidth - margin - 200, footerY + 8);
 
-  doc.fontSize(9).text("This is a computer-generated payslip.", margin, 735, {
+  doc.fontSize(8).text("This is a computer-generated payslip.", margin, 742, {
     align: "center",
     width: contentWidth,
   });

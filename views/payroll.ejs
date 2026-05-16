@@ -196,6 +196,12 @@
                 <input type="hidden" name="finalSalary" value="<%= payroll.finalSalary.toFixed(2) %>">
                 <input type="hidden" name="month" value="<%= payroll.month %>">
 
+                <input type="hidden" name="bank_name" value="<%= payroll.employee.bank_name || '' %>">
+<input type="hidden" name="account_holder_name" value="<%= payroll.employee.account_holder_name || '' %>">
+<input type="hidden" name="account_number" value="<%= payroll.employee.account_number || '' %>">
+<input type="hidden" name="ifsc_code" value="<%= payroll.employee.ifsc_code || '' %>">
+<input type="hidden" name="upi_id" value="<%= payroll.employee.upi_id || '' %>">
+<input type="hidden" name="pan_number" value="<%= payroll.employee.pan_number || '' %>">
                 <button type="submit">
                     Email Payslip
                 </button>
@@ -266,6 +272,13 @@
                             <input type="hidden" name="deduction" value="<%= Number(record.deduction || 0).toFixed(2) %>">
                             <input type="hidden" name="finalSalary" value="<%= Number(record.final_salary || 0).toFixed(2) %>">
                             <input type="hidden" name="month" value="<%= record.month %>">
+
+                            <input type="hidden" name="bank_name" value="<%= payroll.employee.bank_name || '' %>">
+<input type="hidden" name="account_holder_name" value="<%= payroll.employee.account_holder_name || '' %>">
+<input type="hidden" name="account_number" value="<%= payroll.employee.account_number || '' %>">
+<input type="hidden" name="ifsc_code" value="<%= payroll.employee.ifsc_code || '' %>">
+<input type="hidden" name="upi_id" value="<%= payroll.employee.upi_id || '' %>">
+<input type="hidden" name="pan_number" value="<%= payroll.employee.pan_number || '' %>">
 
                             <button type="submit">PDF</button>
                         </form>
