@@ -67,6 +67,9 @@
     <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
         <a href="/employees">Employees</a>
     <% } %>
+    <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+    <a href="/password-reset-requests">Password Reset Requests</a>
+<% } %>
 
     <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
         <a href="/attendance">Attendance</a>

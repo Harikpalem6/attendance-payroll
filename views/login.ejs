@@ -1,24 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HRMS Login</title>
+    <title>Admin Login</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="login-page">
+<body>
 
-<div class="login-wrapper">
-    <div class="login-box">
+<div class="login-container">
 
-        <h1>HRMS Admin Portal</h1>
-        <p class="subtitle">
-            Attendance • Payroll • Leave Management
-        </p>
+    <div class="login-card">
 
-        <% if (typeof error !== 'undefined') { %>
-            <p class="error"><%= error %></p>
+        <h1>HRMS Login</h1>
+
+        <p>Admin / HR / Manager Login</p>
+
+        <% if (typeof error !== "undefined" && error) { %>
+            <p style="color:red;"><%= error %></p>
         <% } %>
 
-        <form action="/login" method="POST" class="stack-form">
+        <form action="/login" method="POST">
+
             <input
                 type="text"
                 name="username"
@@ -33,10 +34,20 @@
                 required
             >
 
-            <button type="submit">Sign In</button>
+            <button type="submit">Login</button>
+
         </form>
 
+        <br>
+
+        <a href="/forgot-password">Forgot Password?</a>
+
+        <br><br>
+
+        <a href="/employee/login">Employee Login</a>
+
     </div>
+
 </div>
 
 </body>

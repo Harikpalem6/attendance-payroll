@@ -375,6 +375,115 @@ const requireManagerHRorSuperAdmin = requireRole([
 ]);
 
 /* =========================
+   FORGOT PASSWORD REQUESTS
+========================= */
+
+app.get("/forgot-password", (req, res) => {
+  res.render("forgot-password", {
+    error: null,
+    success: null,
+  });
+});
+
+app.post("/forgot-password", async (req, res) => {
+  const { username, email, message } = req.body;
+
+  if (!username && !email) {
+    return res.render("forgot-password", {
+      error: "Please enter username or email.",
+      success: null,
+    });
+  }
+
+  await db.query(
+    `INSERT INTO password_reset_requests
+     (user_type, username, email, message)
+     VALUES ('admin', $1, $2, $3)`,
+    [username || "", email || "", message || ""]
+  );
+
+  await createAdminNotification(
+    "Password Reset Request",
+    `Admin/HR/Manager password reset requested for: ${username || email}`
+  );
+
+  res.render("forgot-password", {
+    error: null,
+    success:
+      "Password reset request submitted. Please contact Super Admin to reset your password.",
+  });
+});
+
+app.get("/employee/forgot-password", (req, res) => {
+  res.render("employee-forgot-password", {
+    error: null,
+    success: null,
+  });
+});
+
+app.post("/employee/forgot-password", async (req, res) => {
+  const { username, email, message } = req.body;
+
+  if (!username && !email) {
+    return res.render("employee-forgot-password", {
+      error: "Please enter username or email.",
+      success: null,
+    });
+  }
+
+  await db.query(
+    `INSERT INTO password_reset_requests
+     (user_type, username, email, message)
+     VALUES ('employee', $1, $2, $3)`,
+    [username || "", email || "", message || ""]
+  );
+
+  await createAdminNotification(
+    "Employee Password Reset Request",
+    `Employee password reset requested for: ${username || email}`
+  );
+
+  res.render("employee-forgot-password", {
+    error: null,
+    success:
+      "Password reset request submitted. Please contact HR or Super Admin to reset your password.",
+  });
+});
+
+app.get("/password-reset-requests", requireHRorSuperAdmin, async (req, res) => {
+  const requests = await db.query(`
+    SELECT *
+    FROM password_reset_requests
+    ORDER BY created_at DESC
+  `);
+
+  res.render("password-reset-requests", {
+    requests: requests.rows,
+  });
+});
+
+app.post("/password-reset-requests/mark-handled/:id", requireHRorSuperAdmin, async (req, res) => {
+  await db.query(
+    `
+    UPDATE password_reset_requests
+    SET status = 'Handled',
+        handled_by = $1,
+        handled_at = CURRENT_TIMESTAMP
+    WHERE id = $2
+    `,
+    [req.session.user.username, req.params.id]
+  );
+
+  await logActivity(
+    req,
+    "Password Reset Request Handled",
+    `Marked password reset request ID ${req.params.id} as handled`
+  );
+
+  res.redirect("/password-reset-requests");
+});
+
+/* =========================
    CHANGE PASSWORD
 ========================= */
 
