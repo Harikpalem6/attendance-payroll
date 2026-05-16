@@ -273,6 +273,40 @@ await pool.query(`
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 `);
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS bank_name VARCHAR(200);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS account_holder_name VARCHAR(200);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS account_number VARCHAR(100);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS ifsc_code VARCHAR(50);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS upi_id VARCHAR(100);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS pan_number VARCHAR(50);
+`);
+
+await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS aadhaar_number VARCHAR(50);
+`);
 }
 
 initDatabase();
