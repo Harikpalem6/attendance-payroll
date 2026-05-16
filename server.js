@@ -16,7 +16,30 @@ async function getCompanySettings() {
   const result = await db.query(
     "SELECT * FROM company_settings ORDER BY id ASC LIMIT 1"
   );
+async function logActivity(req, action, details) {
+  try {
+    const user = req.session.user;
 
+    if (!user) {
+      return;
+    }
+
+    await db.query(
+      `INSERT INTO activity_logs
+       (user_id, username, role, action, details)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        user.id,
+        user.username,
+        user.role,
+        action,
+        details,
+      ]
+    );
+  } catch (err) {
+    console.log("Activity log error:", err.message);
+  }
+}
   return result.rows[0] || {
     company_name: "VLCG",
     company_address: "Main Road, Navipet, Telangana, 503245",
@@ -387,7 +410,11 @@ app.get("/employees", requireHRorSuperAdmin, async (req, res) => {
     search,
   });
 });
-
+await logActivity(
+  req,
+  "Employee Added",
+  `Added employee: ${name}`
+);
 app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
   const {
     name,
@@ -450,6 +477,11 @@ app.get("/employees/edit/:id", requireHRorSuperAdmin, async (req, res) => {
     employee: result.rows[0],
   });
 });
+await logActivity(
+  req,
+  "Employee Updated",
+  `Updated employee ID: ${req.params.id}`
+);
 
 app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
   const {
@@ -510,7 +542,11 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
       req.params.id,
     ]
   );
-
+await logActivity(
+  req,
+  "Employee Deleted",
+  `Deleted employee ID: ${req.params.id}`
+);
   res.redirect("/employees");
 });
 
@@ -701,7 +737,11 @@ app.post("/leaves/add", requireHRorSuperAdmin, async (req, res) => {
     VALUES ($1, $2, $3, $4, $5)`,
     [employee_id, leave_type, start_date, end_date, reason]
   );
-
+await logActivity(
+  req,
+  "Leave Approved",
+  `Approved leave ID: ${req.params.id}`
+);
   res.redirect("/leaves");
 });
 
@@ -719,7 +759,11 @@ app.post("/leaves/reject/:id", requireManagerHRorSuperAdmin, async (req, res) =>
     "UPDATE leaves SET status = 'Rejected' WHERE id = $1",
     [req.params.id]
   );
-
+await logActivity(
+  req,
+  "Leave Rejected",
+  `Rejected leave ID: ${req.params.id}`
+);
   res.redirect("/leaves");
 });
 
@@ -884,7 +928,11 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
       final_salary,
     ]
   );
-
+await logActivity(
+  req,
+  "Payroll Saved",
+  `Saved payroll for employee ID: ${employee_id}, month: ${month}`
+);
   res.redirect("/payroll");
 });
 
@@ -953,6 +1001,11 @@ app.post(
       [storagePath, employeeId]
     );
 
+      await logActivity(
+  req,
+  "Employee Photo Uploaded",
+  `Uploaded photo for employee ID: ${employeeId}`
+);
     res.redirect("/employees");
   }
 );
@@ -1058,7 +1111,11 @@ app.post(
        VALUES ($1, $2, $3, $4)`,
       [employeeId, document_type, req.file.originalname, storagePath]
     );
-
+await logActivity(
+  req,
+  "Employee Document Uploaded",
+  `Uploaded ${document_type} document for employee ID: ${employeeId}`
+);
     res.redirect(`/employees/documents/${employeeId}`);
   }
 );
@@ -1165,10 +1222,30 @@ app.post("/company-settings/update", requireSuperAdmin, async (req, res) => {
       logo_path,
     ]
   );
-
+await logActivity(
+  req,
+  "Company Settings Updated",
+  "Updated company settings"
+);
   res.redirect("/company-settings");
 });
+/* =========================
+   ACTIVITY LOGS
+   Super Admin only
+========================= */
 
+app.get("/activity-logs", requireSuperAdmin, async (req, res) => {
+  const logs = await db.query(`
+    SELECT *
+    FROM activity_logs
+    ORDER BY created_at DESC
+    LIMIT 300
+  `);
+
+  res.render("activity-logs", {
+    logs: logs.rows,
+  });
+});
 /* =========================
    ADMIN USER MANAGEMENT
 ========================= */

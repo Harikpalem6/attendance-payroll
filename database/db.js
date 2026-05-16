@@ -262,6 +262,17 @@ await pool.query(`
     UNIQUE(employee_id, year)
   );
 `);
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS activity_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    username VARCHAR(100),
+    role VARCHAR(100),
+    action VARCHAR(255),
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`);
 }
 
 initDatabase();

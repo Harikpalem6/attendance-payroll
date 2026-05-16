@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+    <title>Activity Logs</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -22,6 +22,7 @@
                 <a href="/attendance">Attendance</a>
                 <a href="/attendance/monthly-report">Monthly Report</a>
                 <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
             <% } %>
 
             <% if (user && user.role === "Super Admin") { %>
@@ -37,26 +38,37 @@
     </aside>
 
     <main class="content">
-        <h1>Dashboard</h1>
 
-        <div class="stats-grid">
+        <h1>Activity Logs</h1>
 
-            <div class="stat-card">
-                <h3>Total Employees</h3>
-                <p><%= totalEmployees %></p>
-            </div>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>Date / Time</th>
+            </tr>
 
-            <div class="stat-card">
-                <h3>Present Today</h3>
-                <p><%= presentToday %></p>
-            </div>
+            <% if (logs && logs.length > 0) { %>
+                <% logs.forEach(log => { %>
+                    <tr>
+                        <td><%= log.id %></td>
+                        <td><%= log.username || '-' %></td>
+                        <td><%= log.role || '-' %></td>
+                        <td><%= log.action %></td>
+                        <td><%= log.details || '-' %></td>
+                        <td><%= log.created_at ? new Date(log.created_at).toLocaleString() : '' %></td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="6">No activity logs found.</td>
+                </tr>
+            <% } %>
+        </table>
 
-            <div class="stat-card">
-                <h3>Absent Today</h3>
-                <p><%= absentToday %></p>
-            </div>
-
-        </div>
     </main>
 
 </div>
