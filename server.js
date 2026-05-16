@@ -100,7 +100,9 @@ async function getLeaveBalance(employeeId, year) {
     casualRemaining: balance.casual_total - casualUsed,
     paidRemaining: balance.paid_total - paidUsed,
   };
-  function n(value) {
+}
+
+function n(value) {
   return Number(value || 0);
 }
 
@@ -117,7 +119,6 @@ function getSalaryParts(employee) {
 
   let grossSalary = basicSalary + hra + allowances + bonus;
 
-  // If components are not entered, fallback to old salary field
   if (grossSalary <= 0) {
     grossSalary = n(employee.salary);
   }
@@ -137,7 +138,6 @@ function getSalaryParts(employee) {
     otherDeduction,
     fixedDeductions,
   };
-}
 }
 
 const app = express();
@@ -390,51 +390,51 @@ app.get("/employees", requireHRorSuperAdmin, async (req, res) => {
 
 app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
   const {
-  name,
-  department,
-  salary,
-  basic_salary,
-  hra,
-  allowances,
-  bonus,
-  pf_deduction,
-  esi_deduction,
-  professional_tax,
-  other_deduction,
-  phone,
-  email,
-  designation,
-  joining_date,
-  address,
-} = req.body;
+    name,
+    department,
+    salary,
+    basic_salary,
+    hra,
+    allowances,
+    bonus,
+    pf_deduction,
+    esi_deduction,
+    professional_tax,
+    other_deduction,
+    phone,
+    email,
+    designation,
+    joining_date,
+    address,
+  } = req.body;
 
   const username = name.toLowerCase().replace(/\s+/g, "");
   const hashedPassword = await bcrypt.hash("employee123", 10);
 
   await db.query(
     `INSERT INTO employees
-(name, department, salary, basic_salary, hra, allowances, bonus, pf_deduction, esi_deduction, professional_tax, other_deduction, username, password, phone, email, designation, joining_date, address)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
-  [
-  name,
-  department,
-  salary,
-  basic_salary || 0,
-  hra || 0,
-  allowances || 0,
-  bonus || 0,
-  pf_deduction || 0,
-  esi_deduction || 0,
-  professional_tax || 0,
-  other_deduction || 0,
-  username,
-  hashedPassword,
-  phone,
-  email,
-  designation,
-  joining_date || null,
-  address,
-]
+    (name, department, salary, basic_salary, hra, allowances, bonus, pf_deduction, esi_deduction, professional_tax, other_deduction, username, password, phone, email, designation, joining_date, address)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+    [
+      name,
+      department,
+      salary || 0,
+      basic_salary || 0,
+      hra || 0,
+      allowances || 0,
+      bonus || 0,
+      pf_deduction || 0,
+      esi_deduction || 0,
+      professional_tax || 0,
+      other_deduction || 0,
+      username,
+      hashedPassword,
+      phone,
+      email,
+      designation,
+      joining_date || null,
+      address,
+    ]
   );
 
   res.redirect("/employees");
@@ -513,6 +513,7 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
 
   res.redirect("/employees");
 });
+
 app.post("/employees/delete/:id", requireHRorSuperAdmin, async (req, res) => {
   await db.query("DELETE FROM employees WHERE id = $1", [req.params.id]);
   res.redirect("/employees");
@@ -752,6 +753,11 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
   );
 
   const employee = employeeResult.rows[0];
+
+  if (!employee) {
+    return res.redirect("/payroll");
+  }
+
   const salaryParts = getSalaryParts(employee);
 
   const attendance = await db.query(
@@ -772,10 +778,12 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
   });
 
   const dailySalary = salaryParts.grossSalary / 30;
+
   const attendanceDeduction =
     absent * dailySalary + (halfday * dailySalary) / 2;
 
   const deduction = attendanceDeduction + salaryParts.fixedDeductions;
+
   const finalSalary = salaryParts.grossSalary - deduction;
 
   const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
@@ -815,11 +823,20 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
     },
   });
 });
+
 app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
   const {
     employee_id,
     month,
     base_salary,
+    basic_salary,
+    hra,
+    allowances,
+    bonus,
+    pf_deduction,
+    esi_deduction,
+    professional_tax,
+    other_deduction,
     present_days,
     absent_days,
     half_days,
@@ -829,11 +846,19 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
 
   await db.query(
     `INSERT INTO payroll_records
-    (employee_id, month, base_salary, present_days, absent_days, half_days, deduction, final_salary)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    (employee_id, month, base_salary, basic_salary, hra, allowances, bonus, pf_deduction, esi_deduction, professional_tax, other_deduction, present_days, absent_days, half_days, deduction, final_salary)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     ON CONFLICT (employee_id, month)
     DO UPDATE SET
       base_salary = EXCLUDED.base_salary,
+      basic_salary = EXCLUDED.basic_salary,
+      hra = EXCLUDED.hra,
+      allowances = EXCLUDED.allowances,
+      bonus = EXCLUDED.bonus,
+      pf_deduction = EXCLUDED.pf_deduction,
+      esi_deduction = EXCLUDED.esi_deduction,
+      professional_tax = EXCLUDED.professional_tax,
+      other_deduction = EXCLUDED.other_deduction,
       present_days = EXCLUDED.present_days,
       absent_days = EXCLUDED.absent_days,
       half_days = EXCLUDED.half_days,
@@ -843,7 +868,15 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
     [
       employee_id,
       month,
-      base_salary,
+      base_salary || 0,
+      basic_salary || 0,
+      hra || 0,
+      allowances || 0,
+      bonus || 0,
+      pf_deduction || 0,
+      esi_deduction || 0,
+      professional_tax || 0,
+      other_deduction || 0,
       present_days,
       absent_days,
       half_days,
@@ -854,6 +887,7 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
 
   res.redirect("/payroll");
 });
+
 /* =========================
    EMPLOYEE DOCUMENTS
    Super Admin + HR only
@@ -1454,80 +1488,42 @@ async function drawPayslipPdf(doc, data) {
   const margin = 40;
   const contentWidth = pageWidth - margin * 2;
 
-  // Outer border
-  doc
-    .rect(margin, 30, contentWidth, 720)
-    .lineWidth(1)
-    .stroke();
+  doc.rect(margin, 30, contentWidth, 720).lineWidth(1).stroke();
 
-  // Logo
   try {
-    doc.image(logoPath, margin + 15, 45, {
-      width: 75,
-    });
+    doc.image(logoPath, margin + 15, 45, { width: 75 });
   } catch (err) {
     console.log("Logo not found or could not be loaded");
   }
 
-  // Company header
-  doc
-    .fontSize(22)
-    .text(settings.company_name, margin, 45, {
-      align: "center",
-      width: contentWidth,
-    });
+  doc.fontSize(22).text(settings.company_name, margin, 45, {
+    align: "center",
+    width: contentWidth,
+  });
 
-  doc
-    .fontSize(10)
-    .text(settings.company_address, margin, 75, {
-      align: "center",
-      width: contentWidth,
-    });
+  doc.fontSize(10).text(settings.company_address, margin, 75, {
+    align: "center",
+    width: contentWidth,
+  });
 
-  doc
-    .fontSize(10)
-    .text(
-      `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
-      margin,
-      92,
-      {
-        align: "center",
-        width: contentWidth,
-      }
-    );
+  doc.fontSize(10).text(
+    `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
+    margin,
+    92,
+    { align: "center", width: contentWidth }
+  );
 
-  // Header divider
-  doc
-    .moveTo(margin, 125)
-    .lineTo(pageWidth - margin, 125)
-    .stroke();
+  doc.moveTo(margin, 125).lineTo(pageWidth - margin, 125).stroke();
+  doc.rect(margin, 125, contentWidth, 38).fillAndStroke("#f2f2f2", "#000000");
 
-  // Payslip title box
-  doc
-    .rect(margin, 125, contentWidth, 38)
-    .fillAndStroke("#f2f2f2", "#000000");
+  doc.fillColor("#000000").fontSize(16).text("SALARY PAYSLIP", margin, 138, {
+    align: "center",
+    width: contentWidth,
+  });
 
-  doc
-    .fillColor("#000000")
-    .fontSize(16)
-    .text("SALARY PAYSLIP", margin, 138, {
-      align: "center",
-      width: contentWidth,
-    });
+  const empBoxY = 175;
+  doc.rect(margin + 20, empBoxY, contentWidth - 40, 95).lineWidth(1).stroke();
 
-  // Employee details box
-  const empBoxY = 185;
-  doc
-    .rect(margin + 20, empBoxY, contentWidth - 40, 95)
-    .lineWidth(1)
-    .stroke();
-
-    
-
-   doc.text("Employee Details", margin + 35, empBoxY + 12, {
-    underline: true,
-    });
-      // Employee photo
   if (data.photo_path) {
     try {
       const { data: signedPhoto, error } = await supabase.storage
@@ -1539,8 +1535,8 @@ async function drawPayslipPdf(doc, data) {
         const photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
 
         doc.image(photoBuffer, 430, 190, {
-          width: 70,
-          height: 70,
+          width: 65,
+          height: 65,
         });
       }
     } catch (err) {
@@ -1548,106 +1544,105 @@ async function drawPayslipPdf(doc, data) {
     }
   }
 
-  doc.fontSize(12);
-  doc.text(`Employee Name: ${data.employeeName}`);
-  doc.text(`Department: ${data.department || "-"}`);
-  doc.text(`Payroll Month: ${data.month}`);
+  doc.fontSize(12).fillColor("#000000");
+  doc.text("Employee Details", margin + 35, empBoxY + 12, { underline: true });
+  doc.text(`Employee Name: ${data.employeeName}`, margin + 35, empBoxY + 38);
+  doc.text(`Department: ${data.department || "-"}`, margin + 35, empBoxY + 58);
+  doc.text(`Payroll Month: ${data.month}`, margin + 35, empBoxY + 78);
 
-  // Salary table
+  const basicSalary = n(data.basicSalary || data.basic_salary);
+  const hra = n(data.hra);
+  const allowances = n(data.allowances);
+  const bonus = n(data.bonus);
+  const grossSalary = n(data.grossSalary || data.gross_salary || data.salary);
+
+  const pfDeduction = n(data.pfDeduction || data.pf_deduction);
+  const esiDeduction = n(data.esiDeduction || data.esi_deduction);
+  const professionalTax = n(data.professionalTax || data.professional_tax);
+  const otherDeduction = n(data.otherDeduction || data.other_deduction);
+  const attendanceDeduction = n(data.attendanceDeduction || data.attendance_deduction);
+  const totalDeduction = n(data.deduction);
+  const finalSalary = n(data.finalSalary || data.final_salary);
+
   const tableX = margin + 20;
-  const tableY = 315;
+  const tableY = 305;
   const tableWidth = contentWidth - 40;
-  const rowHeight = 32;
+  const rowHeight = 24;
   const col1Width = tableWidth * 0.6;
-  const col2Width = tableWidth * 0.4;
 
-  doc
-    .fontSize(14)
-    .text("Salary Details", tableX, tableY - 30, {
-      underline: true,
-    });
-
-  // Table border
-  doc
-    .rect(tableX, tableY, tableWidth, rowHeight * 7)
-    .lineWidth(1)
-    .stroke();
-
-  // Header row
-  doc
-    .rect(tableX, tableY, tableWidth, rowHeight)
-    .fillAndStroke("#f2f2f2", "#000000");
-
-  doc.fillColor("#000000").fontSize(12);
-  doc.text("Particulars", tableX + 12, tableY + 10);
-  doc.text("Value", tableX + col1Width + 12, tableY + 10);
-
-  // Vertical line
-  doc
-    .moveTo(tableX + col1Width, tableY)
-    .lineTo(tableX + col1Width, tableY + rowHeight * 7)
-    .stroke();
+  doc.fontSize(14).text("Salary Details", tableX, tableY - 26, {
+    underline: true,
+  });
 
   const rows = [
-    ["Base Salary", `Rs. ${data.salary}`],
+    ["Basic Salary", `Rs. ${basicSalary.toFixed(2)}`],
+    ["HRA", `Rs. ${hra.toFixed(2)}`],
+    ["Allowances", `Rs. ${allowances.toFixed(2)}`],
+    ["Bonus", `Rs. ${bonus.toFixed(2)}`],
+    ["Gross Salary", `Rs. ${grossSalary.toFixed(2)}`],
     ["Present Days", data.present],
     ["Absent Days", data.absent],
     ["Half Days", data.halfday],
-    ["Deductions", `Rs. ${data.deduction}`],
-    ["Final Salary", `Rs. ${data.finalSalary}`],
+    ["Attendance Deduction", `Rs. ${attendanceDeduction.toFixed(2)}`],
+    ["PF Deduction", `Rs. ${pfDeduction.toFixed(2)}`],
+    ["ESI Deduction", `Rs. ${esiDeduction.toFixed(2)}`],
+    ["Professional Tax", `Rs. ${professionalTax.toFixed(2)}`],
+    ["Other Deduction", `Rs. ${otherDeduction.toFixed(2)}`],
+    ["Total Deductions", `Rs. ${totalDeduction.toFixed(2)}`],
+    ["Net Salary", `Rs. ${finalSalary.toFixed(2)}`],
   ];
+
+  const totalRows = rows.length + 1;
+
+  doc.rect(tableX, tableY, tableWidth, rowHeight * totalRows).lineWidth(1).stroke();
+  doc.rect(tableX, tableY, tableWidth, rowHeight).fillAndStroke("#f2f2f2", "#000000");
+
+  doc.fillColor("#000000").fontSize(10).font("Helvetica-Bold");
+  doc.text("Particulars", tableX + 12, tableY + 7);
+  doc.text("Value", tableX + col1Width + 12, tableY + 7);
+
+  doc.moveTo(tableX + col1Width, tableY)
+    .lineTo(tableX + col1Width, tableY + rowHeight * totalRows)
+    .stroke();
 
   rows.forEach((row, index) => {
     const y = tableY + rowHeight * (index + 1);
 
-    doc
-      .moveTo(tableX, y)
-      .lineTo(tableX + tableWidth, y)
-      .stroke();
+    doc.moveTo(tableX, y).lineTo(tableX + tableWidth, y).stroke();
 
-    if (row[0] === "Final Salary") {
-      doc
-        .rect(tableX, y, tableWidth, rowHeight)
+    if (row[0] === "Net Salary") {
+      doc.rect(tableX, y, tableWidth, rowHeight)
         .fillAndStroke("#f7f7f7", "#000000")
         .fillColor("#000000")
         .font("Helvetica-Bold");
+    } else if (row[0] === "Gross Salary" || row[0] === "Total Deductions") {
+      doc.font("Helvetica-Bold");
     } else {
       doc.font("Helvetica");
     }
 
-    doc.text(row[0], tableX + 12, y + 10);
-    doc.text(String(row[1]), tableX + col1Width + 12, y + 10);
+    doc.fontSize(10);
+    doc.text(String(row[0]), tableX + 12, y + 7);
+    doc.text(String(row[1] || 0), tableX + col1Width + 12, y + 7);
   });
 
   doc.font("Helvetica");
 
-  // Footer / signature section
-  const footerY = 610;
+  const footerY = 700;
 
-  doc
-    .moveTo(margin + 40, footerY)
-    .lineTo(margin + 200, footerY)
-    .stroke();
+  doc.moveTo(margin + 40, footerY).lineTo(margin + 200, footerY).stroke();
+  doc.fontSize(10).text("Employee Signature", margin + 65, footerY + 8);
 
-  doc
-    .fontSize(10)
-    .text("Employee Signature", margin + 65, footerY + 8);
-
-  doc
-    .moveTo(pageWidth - margin - 220, footerY)
+  doc.moveTo(pageWidth - margin - 220, footerY)
     .lineTo(pageWidth - margin - 60, footerY)
     .stroke();
 
-  doc
-    .fontSize(10)
-    .text("Authorized Signature", pageWidth - margin - 200, footerY + 8);
+  doc.fontSize(10).text("Authorized Signature", pageWidth - margin - 200, footerY + 8);
 
-  doc
-    .fontSize(9)
-    .text("This is a computer-generated payslip.", margin, 710, {
-      align: "center",
-      width: contentWidth,
-    });
+  doc.fontSize(9).text("This is a computer-generated payslip.", margin, 735, {
+    align: "center",
+    width: contentWidth,
+  });
 }
 
 app.post("/payroll/payslip", async (req, res) => {
