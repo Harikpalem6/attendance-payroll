@@ -22,6 +22,7 @@
                 <a href="/attendance">Attendance</a>
                 <a href="/attendance/monthly-report">Monthly Report</a>
                 <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
             <% } %>
 
             <% if (user && user.role === "Super Admin") { %>
@@ -66,13 +67,42 @@
             <br>
 
             <p><strong>Employee:</strong> <%= payroll.employee.name %></p>
-            <p><strong>Department:</strong> <%= payroll.employee.department %></p>
+            <p><strong>Department:</strong> <%= payroll.employee.department || '-' %></p>
             <p><strong>Month:</strong> <%= payroll.month %></p>
-            <p><strong>Base Salary:</strong> Rs. <%= payroll.employee.salary %></p>
+
+            <br>
+
+            <h3>Earnings</h3>
+
+            <p><strong>Basic Salary:</strong> Rs. <%= payroll.basicSalary.toFixed(2) %></p>
+            <p><strong>HRA:</strong> Rs. <%= payroll.hra.toFixed(2) %></p>
+            <p><strong>Allowances:</strong> Rs. <%= payroll.allowances.toFixed(2) %></p>
+            <p><strong>Bonus:</strong> Rs. <%= payroll.bonus.toFixed(2) %></p>
+            <p><strong>Gross Salary:</strong> Rs. <%= payroll.grossSalary.toFixed(2) %></p>
+
+            <br>
+
+            <h3>Attendance</h3>
+
             <p><strong>Present Days:</strong> <%= payroll.present %></p>
             <p><strong>Absent Days:</strong> <%= payroll.absent %></p>
             <p><strong>Half Days:</strong> <%= payroll.halfday %></p>
-            <p><strong>Deductions:</strong> Rs. <%= payroll.deduction.toFixed(2) %></p>
+            <p><strong>Attendance Deduction:</strong> Rs. <%= payroll.attendanceDeduction.toFixed(2) %></p>
+
+            <br>
+
+            <h3>Deductions</h3>
+
+            <p><strong>PF Deduction:</strong> Rs. <%= payroll.pfDeduction.toFixed(2) %></p>
+            <p><strong>ESI Deduction:</strong> Rs. <%= payroll.esiDeduction.toFixed(2) %></p>
+            <p><strong>Professional Tax:</strong> Rs. <%= payroll.professionalTax.toFixed(2) %></p>
+            <p><strong>Other Deduction:</strong> Rs. <%= payroll.otherDeduction.toFixed(2) %></p>
+            <p><strong>Total Deductions:</strong> Rs. <%= payroll.deduction.toFixed(2) %></p>
+
+            <br>
+
+            <h3>Net Salary</h3>
+
             <p><strong>Final Salary:</strong> Rs. <%= payroll.finalSalary.toFixed(2) %></p>
 
             <br>
@@ -81,7 +111,18 @@
 
                 <input type="hidden" name="employee_id" value="<%= payroll.employee.id %>">
                 <input type="hidden" name="month" value="<%= payroll.month %>">
-                <input type="hidden" name="base_salary" value="<%= payroll.employee.salary %>">
+
+                <input type="hidden" name="base_salary" value="<%= payroll.grossSalary.toFixed(2) %>">
+                <input type="hidden" name="basic_salary" value="<%= payroll.basicSalary.toFixed(2) %>">
+                <input type="hidden" name="hra" value="<%= payroll.hra.toFixed(2) %>">
+                <input type="hidden" name="allowances" value="<%= payroll.allowances.toFixed(2) %>">
+                <input type="hidden" name="bonus" value="<%= payroll.bonus.toFixed(2) %>">
+
+                <input type="hidden" name="pf_deduction" value="<%= payroll.pfDeduction.toFixed(2) %>">
+                <input type="hidden" name="esi_deduction" value="<%= payroll.esiDeduction.toFixed(2) %>">
+                <input type="hidden" name="professional_tax" value="<%= payroll.professionalTax.toFixed(2) %>">
+                <input type="hidden" name="other_deduction" value="<%= payroll.otherDeduction.toFixed(2) %>">
+
                 <input type="hidden" name="present_days" value="<%= payroll.present %>">
                 <input type="hidden" name="absent_days" value="<%= payroll.absent %>">
                 <input type="hidden" name="half_days" value="<%= payroll.halfday %>">
@@ -94,13 +135,26 @@
 
             </form>
 
-            <form action="/payroll/payslip" method="POST" style="display:inline-block;">
+            <form action="/payroll/payslip" method="POST" style="display:inline-block; margin-right:10px;">
 
                 <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
-                <input type="hidden" name="department" value="<%= payroll.employee.department %>">
-                <input type="hidden" name="salary" value="<%= payroll.employee.salary %>">
+                <input type="hidden" name="department" value="<%= payroll.employee.department || '' %>">
+                <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
                 <input type="hidden" name="photo_path" value="<%= payroll.employee.photo_path || '' %>">
-                <input type="hidden" name="photo_path" value="<%= payroll.employee.photo_path || '' %>">
+
+                <input type="hidden" name="salary" value="<%= payroll.grossSalary.toFixed(2) %>">
+                <input type="hidden" name="basicSalary" value="<%= payroll.basicSalary.toFixed(2) %>">
+                <input type="hidden" name="hra" value="<%= payroll.hra.toFixed(2) %>">
+                <input type="hidden" name="allowances" value="<%= payroll.allowances.toFixed(2) %>">
+                <input type="hidden" name="bonus" value="<%= payroll.bonus.toFixed(2) %>">
+
+                <input type="hidden" name="grossSalary" value="<%= payroll.grossSalary.toFixed(2) %>">
+                <input type="hidden" name="attendanceDeduction" value="<%= payroll.attendanceDeduction.toFixed(2) %>">
+                <input type="hidden" name="pfDeduction" value="<%= payroll.pfDeduction.toFixed(2) %>">
+                <input type="hidden" name="esiDeduction" value="<%= payroll.esiDeduction.toFixed(2) %>">
+                <input type="hidden" name="professionalTax" value="<%= payroll.professionalTax.toFixed(2) %>">
+                <input type="hidden" name="otherDeduction" value="<%= payroll.otherDeduction.toFixed(2) %>">
+
                 <input type="hidden" name="present" value="<%= payroll.present %>">
                 <input type="hidden" name="absent" value="<%= payroll.absent %>">
                 <input type="hidden" name="halfday" value="<%= payroll.halfday %>">
@@ -113,24 +167,39 @@
                 </button>
 
             </form>
-            <form action="/payroll/email-payslip" method="POST" style="display:inline-block; margin-left:10px;">
 
-    <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
-    <input type="hidden" name="department" value="<%= payroll.employee.department %>">
-    <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
-    <input type="hidden" name="salary" value="<%= payroll.employee.salary %>">
-    <input type="hidden" name="present" value="<%= payroll.present %>">
-    <input type="hidden" name="absent" value="<%= payroll.absent %>">
-    <input type="hidden" name="halfday" value="<%= payroll.halfday %>">
-    <input type="hidden" name="deduction" value="<%= payroll.deduction.toFixed(2) %>">
-    <input type="hidden" name="finalSalary" value="<%= payroll.finalSalary.toFixed(2) %>">
-    <input type="hidden" name="month" value="<%= payroll.month %>">
+            <form action="/payroll/email-payslip" method="POST" style="display:inline-block;">
 
-    <button type="submit">
-        Email Payslip
-    </button>
+                <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
+                <input type="hidden" name="department" value="<%= payroll.employee.department || '' %>">
+                <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
+                <input type="hidden" name="photo_path" value="<%= payroll.employee.photo_path || '' %>">
 
-</form>
+                <input type="hidden" name="salary" value="<%= payroll.grossSalary.toFixed(2) %>">
+                <input type="hidden" name="basicSalary" value="<%= payroll.basicSalary.toFixed(2) %>">
+                <input type="hidden" name="hra" value="<%= payroll.hra.toFixed(2) %>">
+                <input type="hidden" name="allowances" value="<%= payroll.allowances.toFixed(2) %>">
+                <input type="hidden" name="bonus" value="<%= payroll.bonus.toFixed(2) %>">
+
+                <input type="hidden" name="grossSalary" value="<%= payroll.grossSalary.toFixed(2) %>">
+                <input type="hidden" name="attendanceDeduction" value="<%= payroll.attendanceDeduction.toFixed(2) %>">
+                <input type="hidden" name="pfDeduction" value="<%= payroll.pfDeduction.toFixed(2) %>">
+                <input type="hidden" name="esiDeduction" value="<%= payroll.esiDeduction.toFixed(2) %>">
+                <input type="hidden" name="professionalTax" value="<%= payroll.professionalTax.toFixed(2) %>">
+                <input type="hidden" name="otherDeduction" value="<%= payroll.otherDeduction.toFixed(2) %>">
+
+                <input type="hidden" name="present" value="<%= payroll.present %>">
+                <input type="hidden" name="absent" value="<%= payroll.absent %>">
+                <input type="hidden" name="halfday" value="<%= payroll.halfday %>">
+                <input type="hidden" name="deduction" value="<%= payroll.deduction.toFixed(2) %>">
+                <input type="hidden" name="finalSalary" value="<%= payroll.finalSalary.toFixed(2) %>">
+                <input type="hidden" name="month" value="<%= payroll.month %>">
+
+                <button type="submit">
+                    Email Payslip
+                </button>
+
+            </form>
 
         </div>
 
@@ -147,12 +216,12 @@
                 <th>ID</th>
                 <th>Employee</th>
                 <th>Month</th>
-                <th>Base Salary</th>
+                <th>Gross Salary</th>
                 <th>Present</th>
                 <th>Absent</th>
                 <th>Half Days</th>
                 <th>Deduction</th>
-                <th>Final Salary</th>
+                <th>Net Salary</th>
                 <th>Created</th>
                 <th>PDF</th>
             </tr>
@@ -163,23 +232,38 @@
                     <td><%= record.id %></td>
                     <td><%= record.name %></td>
                     <td><%= record.month %></td>
-                    <td>Rs. <%= record.base_salary %></td>
+                    <td>Rs. <%= Number(record.base_salary || 0).toFixed(2) %></td>
                     <td><%= record.present_days %></td>
                     <td><%= record.absent_days %></td>
                     <td><%= record.half_days %></td>
-                    <td>Rs. <%= Number(record.deduction).toFixed(2) %></td>
-                    <td>Rs. <%= Number(record.final_salary).toFixed(2) %></td>
+                    <td>Rs. <%= Number(record.deduction || 0).toFixed(2) %></td>
+                    <td>Rs. <%= Number(record.final_salary || 0).toFixed(2) %></td>
                     <td><%= record.created_at ? new Date(record.created_at).toLocaleString() : '' %></td>
+
                     <td>
                         <form action="/payroll/payslip" method="POST">
+
                             <input type="hidden" name="employeeName" value="<%= record.name %>">
                             <input type="hidden" name="department" value="">
-                            <input type="hidden" name="salary" value="<%= record.base_salary %>">
+                            <input type="hidden" name="salary" value="<%= Number(record.base_salary || 0).toFixed(2) %>">
+
+                            <input type="hidden" name="basicSalary" value="<%= Number(record.basic_salary || 0).toFixed(2) %>">
+                            <input type="hidden" name="hra" value="<%= Number(record.hra || 0).toFixed(2) %>">
+                            <input type="hidden" name="allowances" value="<%= Number(record.allowances || 0).toFixed(2) %>">
+                            <input type="hidden" name="bonus" value="<%= Number(record.bonus || 0).toFixed(2) %>">
+
+                            <input type="hidden" name="grossSalary" value="<%= Number(record.base_salary || 0).toFixed(2) %>">
+                            <input type="hidden" name="attendanceDeduction" value="0">
+                            <input type="hidden" name="pfDeduction" value="<%= Number(record.pf_deduction || 0).toFixed(2) %>">
+                            <input type="hidden" name="esiDeduction" value="<%= Number(record.esi_deduction || 0).toFixed(2) %>">
+                            <input type="hidden" name="professionalTax" value="<%= Number(record.professional_tax || 0).toFixed(2) %>">
+                            <input type="hidden" name="otherDeduction" value="<%= Number(record.other_deduction || 0).toFixed(2) %>">
+
                             <input type="hidden" name="present" value="<%= record.present_days %>">
                             <input type="hidden" name="absent" value="<%= record.absent_days %>">
                             <input type="hidden" name="halfday" value="<%= record.half_days %>">
-                            <input type="hidden" name="deduction" value="<%= Number(record.deduction).toFixed(2) %>">
-                            <input type="hidden" name="finalSalary" value="<%= Number(record.final_salary).toFixed(2) %>">
+                            <input type="hidden" name="deduction" value="<%= Number(record.deduction || 0).toFixed(2) %>">
+                            <input type="hidden" name="finalSalary" value="<%= Number(record.final_salary || 0).toFixed(2) %>">
                             <input type="hidden" name="month" value="<%= record.month %>">
 
                             <button type="submit">PDF</button>

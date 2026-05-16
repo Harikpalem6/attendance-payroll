@@ -100,6 +100,44 @@ async function getLeaveBalance(employeeId, year) {
     casualRemaining: balance.casual_total - casualUsed,
     paidRemaining: balance.paid_total - paidUsed,
   };
+  function n(value) {
+  return Number(value || 0);
+}
+
+function getSalaryParts(employee) {
+  const basicSalary = n(employee.basic_salary);
+  const hra = n(employee.hra);
+  const allowances = n(employee.allowances);
+  const bonus = n(employee.bonus);
+
+  const pfDeduction = n(employee.pf_deduction);
+  const esiDeduction = n(employee.esi_deduction);
+  const professionalTax = n(employee.professional_tax);
+  const otherDeduction = n(employee.other_deduction);
+
+  let grossSalary = basicSalary + hra + allowances + bonus;
+
+  // If components are not entered, fallback to old salary field
+  if (grossSalary <= 0) {
+    grossSalary = n(employee.salary);
+  }
+
+  const fixedDeductions =
+    pfDeduction + esiDeduction + professionalTax + otherDeduction;
+
+  return {
+    basicSalary,
+    hra,
+    allowances,
+    bonus,
+    grossSalary,
+    pfDeduction,
+    esiDeduction,
+    professionalTax,
+    otherDeduction,
+    fixedDeductions,
+  };
+}
 }
 
 const app = express();
@@ -714,6 +752,7 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
   );
 
   const employee = employeeResult.rows[0];
+  const salaryParts = getSalaryParts(employee);
 
   const attendance = await db.query(
     `SELECT * FROM attendance
@@ -732,9 +771,12 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
     if (row.status === "Half Day") halfday++;
   });
 
-  const dailySalary = Number(employee.salary) / 30;
-  const deduction = absent * dailySalary + (halfday * dailySalary) / 2;
-  const finalSalary = Number(employee.salary) - deduction;
+  const dailySalary = salaryParts.grossSalary / 30;
+  const attendanceDeduction =
+    absent * dailySalary + (halfday * dailySalary) / 2;
+
+  const deduction = attendanceDeduction + salaryParts.fixedDeductions;
+  const finalSalary = salaryParts.grossSalary - deduction;
 
   const employees = await db.query("SELECT * FROM employees ORDER BY name ASC");
 
@@ -754,12 +796,25 @@ app.post("/payroll/calculate", requireSuperAdmin, async (req, res) => {
       present,
       absent,
       halfday,
+
+      basicSalary: salaryParts.basicSalary,
+      hra: salaryParts.hra,
+      allowances: salaryParts.allowances,
+      bonus: salaryParts.bonus,
+      grossSalary: salaryParts.grossSalary,
+
+      attendanceDeduction,
+      pfDeduction: salaryParts.pfDeduction,
+      esiDeduction: salaryParts.esiDeduction,
+      professionalTax: salaryParts.professionalTax,
+      otherDeduction: salaryParts.otherDeduction,
+
+      fixedDeductions: salaryParts.fixedDeductions,
       deduction,
       finalSalary,
     },
   });
 });
-
 app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
   const {
     employee_id,
