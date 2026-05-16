@@ -21,6 +21,7 @@
             <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
                 <a href="/attendance">Attendance</a>
                 <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/attendance/regularizations">Regularizations</a>
                 <a href="/leaves">Leaves</a>
                 <a href="/leaves/balances">Leave Balances</a>
             <% } %>
@@ -176,47 +177,57 @@
         <div class="card">
             <h2>Bank / Identity Details</h2>
 
-            <table>
-                <tr>
-                    <th>Field</th>
-                    <th>Value</th>
-                </tr>
+            <% if (user && user.role === "Super Admin") { %>
 
-                <tr>
-                    <td>Bank Name</td>
-                    <td><%= employee.bank_name || '-' %></td>
-                </tr>
+                <table>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
 
-                <tr>
-                    <td>Account Holder Name</td>
-                    <td><%= employee.account_holder_name || '-' %></td>
-                </tr>
+                    <tr>
+                        <td>Bank Name</td>
+                        <td><%= employee.bank_name || '-' %></td>
+                    </tr>
 
-                <tr>
-                    <td>Account Number</td>
-                    <td><%= employee.account_number || '-' %></td>
-                </tr>
+                    <tr>
+                        <td>Account Holder Name</td>
+                        <td><%= employee.account_holder_name || '-' %></td>
+                    </tr>
 
-                <tr>
-                    <td>IFSC Code</td>
-                    <td><%= employee.ifsc_code || '-' %></td>
-                </tr>
+                    <tr>
+                        <td>Account Number</td>
+                        <td><%= employee.account_number || '-' %></td>
+                    </tr>
 
-                <tr>
-                    <td>UPI ID</td>
-                    <td><%= employee.upi_id || '-' %></td>
-                </tr>
+                    <tr>
+                        <td>IFSC Code</td>
+                        <td><%= employee.ifsc_code || '-' %></td>
+                    </tr>
 
-                <tr>
-                    <td>PAN Number</td>
-                    <td><%= employee.pan_number || '-' %></td>
-                </tr>
+                    <tr>
+                        <td>UPI ID</td>
+                        <td><%= employee.upi_id || '-' %></td>
+                    </tr>
 
-                <tr>
-                    <td>Aadhaar Number</td>
-                    <td><%= employee.aadhaar_number || '-' %></td>
-                </tr>
-            </table>
+                    <tr>
+                        <td>PAN Number</td>
+                        <td><%= employee.pan_number || '-' %></td>
+                    </tr>
+
+                    <tr>
+                        <td>Aadhaar Number</td>
+                        <td><%= employee.aadhaar_number || '-' %></td>
+                    </tr>
+                </table>
+
+            <% } else { %>
+
+                <p>
+                    Sensitive bank, PAN, and Aadhaar details are visible only to Super Admin.
+                </p>
+
+            <% } %>
         </div>
 
         <br>

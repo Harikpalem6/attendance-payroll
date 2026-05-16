@@ -21,6 +21,7 @@
             <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
                 <a href="/attendance">Attendance</a>
                 <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/attendance/regularizations">Regularizations</a>
                 <a href="/leaves">Leaves</a>
                 <a href="/leaves/balances">Leave Balances</a>
             <% } %>
@@ -119,28 +120,34 @@
                 <label>Address</label>
                 <input type="text" name="address" placeholder="Enter address">
 
-                <h3>Bank / Identity Details</h3>
+                <% if (user && user.role === "Super Admin") { %>
+                    <h3>Bank / Identity Details</h3>
 
-                <label>Bank Name</label>
-                <input type="text" name="bank_name" placeholder="Enter bank name">
+                    <label>Bank Name</label>
+                    <input type="text" name="bank_name" placeholder="Enter bank name">
 
-                <label>Account Holder Name</label>
-                <input type="text" name="account_holder_name" placeholder="Enter account holder name">
+                    <label>Account Holder Name</label>
+                    <input type="text" name="account_holder_name" placeholder="Enter account holder name">
 
-                <label>Account Number</label>
-                <input type="text" name="account_number" placeholder="Enter account number">
+                    <label>Account Number</label>
+                    <input type="text" name="account_number" placeholder="Enter account number">
 
-                <label>IFSC Code</label>
-                <input type="text" name="ifsc_code" placeholder="Enter IFSC code">
+                    <label>IFSC Code</label>
+                    <input type="text" name="ifsc_code" placeholder="Enter IFSC code">
 
-                <label>UPI ID</label>
-                <input type="text" name="upi_id" placeholder="Enter UPI ID">
+                    <label>UPI ID</label>
+                    <input type="text" name="upi_id" placeholder="Enter UPI ID">
 
-                <label>PAN Number</label>
-                <input type="text" name="pan_number" placeholder="Enter PAN number">
+                    <label>PAN Number</label>
+                    <input type="text" name="pan_number" placeholder="Enter PAN number">
 
-                <label>Aadhaar Number</label>
-                <input type="text" name="aadhaar_number" placeholder="Enter Aadhaar number">
+                    <label>Aadhaar Number</label>
+                    <input type="text" name="aadhaar_number" placeholder="Enter Aadhaar number">
+                <% } else { %>
+                    <div class="card">
+                        <strong>Note:</strong> Bank, PAN, and Aadhaar details can be added only by Super Admin.
+                    </div>
+                <% } %>
 
                 <button type="submit">
                     Add Employee

@@ -1,54 +1,158 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Attendance</title>
+    <title>Edit Employee</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-<div class="simple-page">
+<div class="app-layout">
 
-    <div class="card">
-        <h1>Edit Attendance</h1>
+    <aside class="sidebar">
+        <h2>HRMS</h2>
 
-        <form action="/attendance/update/<%= attendance.id %>" method="POST" class="stack-form">
+        <nav>
+            <a href="/dashboard">Dashboard</a>
 
-            <select name="employee_id" required>
-                <% employees.forEach(emp => { %>
-                    <option
-                        value="<%= emp.id %>"
-                        <%= emp.id === attendance.employee_id ? 'selected' : '' %>>
-                        <%= emp.name %>
-                    </option>
-                <% }) %>
-            </select>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
 
-            <input
-                type="date"
-                name="date"
-                value="<%= attendance.date %>"
-                required
-            >
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/attendance/regularizations">Regularizations</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
 
-            <select name="status" required>
-                <option value="Present" <%= attendance.status === 'Present' ? 'selected' : '' %>>
-                    Present
-                </option>
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/activity-logs">Activity Logs</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
 
-                <option value="Absent" <%= attendance.status === 'Absent' ? 'selected' : '' %>>
-                    Absent
-                </option>
+            <a href="/logout">Logout</a>
+        </nav>
+    </aside>
 
-                <option value="Half Day" <%= attendance.status === 'Half Day' ? 'selected' : '' %>>
-                    Half Day
-                </option>
-            </select>
+    <main class="content">
 
-            <button type="submit">Update Attendance</button>
+        <h1>Edit Employee</h1>
 
-        </form>
+        <div class="card">
 
-    </div>
+            <form action="/employees/update/<%= employee.id %>" method="POST" class="stack-form">
+
+                <h3>Basic Details</h3>
+
+                <label>Name</label>
+                <input type="text" name="name" value="<%= employee.name || '' %>" required>
+
+                <label>Department</label>
+                <input type="text" name="department" value="<%= employee.department || '' %>" required>
+
+                <label>Designation</label>
+                <input type="text" name="designation" value="<%= employee.designation || '' %>">
+
+                <label>Main Salary / Gross Salary</label>
+                <input type="number" name="salary" value="<%= employee.salary || 0 %>" required>
+
+                <h3>Salary Components</h3>
+
+                <label>Basic Salary</label>
+                <input type="number" name="basic_salary" value="<%= employee.basic_salary || 0 %>">
+
+                <label>HRA</label>
+                <input type="number" name="hra" value="<%= employee.hra || 0 %>">
+
+                <label>Allowances</label>
+                <input type="number" name="allowances" value="<%= employee.allowances || 0 %>">
+
+                <label>Bonus</label>
+                <input type="number" name="bonus" value="<%= employee.bonus || 0 %>">
+
+                <h3>Deductions</h3>
+
+                <label>PF Deduction</label>
+                <input type="number" name="pf_deduction" value="<%= employee.pf_deduction || 0 %>">
+
+                <label>ESI Deduction</label>
+                <input type="number" name="esi_deduction" value="<%= employee.esi_deduction || 0 %>">
+
+                <label>Professional Tax</label>
+                <input type="number" name="professional_tax" value="<%= employee.professional_tax || 0 %>">
+
+                <label>Other Deduction</label>
+                <input type="number" name="other_deduction" value="<%= employee.other_deduction || 0 %>">
+
+                <h3>Contact / Profile</h3>
+
+                <label>Phone</label>
+                <input type="text" name="phone" value="<%= employee.phone || '' %>">
+
+                <label>Email</label>
+                <input type="email" name="email" value="<%= employee.email || '' %>">
+
+                <label>Joining Date</label>
+                <input
+                    type="date"
+                    name="joining_date"
+                    value="<%= employee.joining_date ? new Date(employee.joining_date).toISOString().split('T')[0] : '' %>"
+                >
+
+                <label>Address</label>
+                <input type="text" name="address" value="<%= employee.address || '' %>">
+
+                <% if (user && user.role === "Super Admin") { %>
+
+                    <h3>Bank / Identity Details</h3>
+
+                    <label>Bank Name</label>
+                    <input type="text" name="bank_name" value="<%= employee.bank_name || '' %>">
+
+                    <label>Account Holder Name</label>
+                    <input type="text" name="account_holder_name" value="<%= employee.account_holder_name || '' %>">
+
+                    <label>Account Number</label>
+                    <input type="text" name="account_number" value="<%= employee.account_number || '' %>">
+
+                    <label>IFSC Code</label>
+                    <input type="text" name="ifsc_code" value="<%= employee.ifsc_code || '' %>">
+
+                    <label>UPI ID</label>
+                    <input type="text" name="upi_id" value="<%= employee.upi_id || '' %>">
+
+                    <label>PAN Number</label>
+                    <input type="text" name="pan_number" value="<%= employee.pan_number || '' %>">
+
+                    <label>Aadhaar Number</label>
+                    <input type="text" name="aadhaar_number" value="<%= employee.aadhaar_number || '' %>">
+
+                <% } else { %>
+
+                    <div class="card">
+                        <strong>Restricted:</strong>
+                        Bank, PAN, and Aadhaar details are visible and editable only by Super Admin.
+                    </div>
+
+                <% } %>
+
+                <button type="submit">
+                    Update Employee
+                </button>
+
+            </form>
+
+        </div>
+
+        <br>
+
+        <a href="/employees">Back to Employees</a>
+
+    </main>
 
 </div>
 

@@ -329,6 +329,7 @@ function requireAdminLogin(req, res, next) {
   if (!req.session.user) {
     return res.redirect("/");
   }
+
   next();
 }
 
@@ -336,40 +337,42 @@ function requireEmployeeLogin(req, res, next) {
   if (!req.session.employee) {
     return res.redirect("/employee/login");
   }
-  next();
-}
-
-function requireSuperAdmin(req, res, next) {
-  if (!req.session.user) {
-    return res.redirect("/");
-  }
-
-  if (req.session.user.role !== "Super Admin") {
-    return res.send("Access denied: Super Admin only");
-  }
 
   next();
 }
 
-function requireHRorSuperAdmin(req, res, next) {
-  if (!req.session.user) {
-    return res.redirect("/");
-  }
+function requireRole(allowedRoles) {
+  return function (req, res, next) {
+    if (!req.session.user) {
+      return res.redirect("/");
+    }
 
-  if (
-    req.session.user.role !== "Super Admin" &&
-    req.session.user.role !== "HR"
-  ) {
-    return res.send("Access denied: HR or Super Admin only");
-  }
+    const userRole = req.session.user.role;
 
-  next();
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).send(`
+        <h2>Access Denied</h2>
+        <p>You do not have permission to access this page.</p>
+        <a href="/dashboard">Back to Dashboard</a>
+      `);
+    }
+
+    next();
+  };
 }
 
-function requireManagerHRorSuperAdmin(req, res, next) {
-  if (!req.session.user) {
-    return res.redirect("/");
-  }
+const requireSuperAdmin = requireRole(["Super Admin"]);
+
+const requireHRorSuperAdmin = requireRole([
+  "Super Admin",
+  "HR",
+]);
+
+const requireManagerHRorSuperAdmin = requireRole([
+  "Super Admin",
+  "HR",
+  "Manager",
+]);
 
   if (
     req.session.user.role !== "Super Admin" &&
@@ -380,7 +383,7 @@ function requireManagerHRorSuperAdmin(req, res, next) {
   }
 
   next();
-}
+
 
 /* =========================
    ADMIN LOGIN
@@ -624,6 +627,9 @@ app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
   const username = name.toLowerCase().replace(/\s+/g, "");
   const hashedPassword = await bcrypt.hash("employee123", 10);
 
+  const canManageSensitiveDetails =
+    req.session.user && req.session.user.role === "Super Admin";
+
   await db.query(
     `INSERT INTO employees
     (
@@ -680,13 +686,14 @@ app.post("/employees/add", requireHRorSuperAdmin, async (req, res) => {
       designation,
       joining_date || null,
       address,
-      bank_name,
-      account_holder_name,
-      account_number,
-      ifsc_code,
-      upi_id,
-      pan_number,
-      aadhaar_number,
+
+      canManageSensitiveDetails ? bank_name : null,
+      canManageSensitiveDetails ? account_holder_name : null,
+      canManageSensitiveDetails ? account_number : null,
+      canManageSensitiveDetails ? ifsc_code : null,
+      canManageSensitiveDetails ? upi_id : null,
+      canManageSensitiveDetails ? pan_number : null,
+      canManageSensitiveDetails ? aadhaar_number : null,
     ]
   );
 
@@ -742,59 +749,104 @@ app.post("/employees/update/:id", requireHRorSuperAdmin, async (req, res) => {
     aadhaar_number,
   } = req.body;
 
-  await db.query(
-    `UPDATE employees
-     SET name = $1,
-         department = $2,
-         salary = $3,
-         basic_salary = $4,
-         hra = $5,
-         allowances = $6,
-         bonus = $7,
-         pf_deduction = $8,
-         esi_deduction = $9,
-         professional_tax = $10,
-         other_deduction = $11,
-         phone = $12,
-         email = $13,
-         designation = $14,
-         joining_date = $15,
-         address = $16,
-         bank_name = $17,
-         account_holder_name = $18,
-         account_number = $19,
-         ifsc_code = $20,
-         upi_id = $21,
-         pan_number = $22,
-         aadhaar_number = $23
-     WHERE id = $24`,
-    [
-      name,
-      department,
-      salary || 0,
-      basic_salary || 0,
-      hra || 0,
-      allowances || 0,
-      bonus || 0,
-      pf_deduction || 0,
-      esi_deduction || 0,
-      professional_tax || 0,
-      other_deduction || 0,
-      phone,
-      email,
-      designation,
-      joining_date || null,
-      address,
-      bank_name,
-      account_holder_name,
-      account_number,
-      ifsc_code,
-      upi_id,
-      pan_number,
-      aadhaar_number,
-      req.params.id,
-    ]
-  );
+  const canManageSensitiveDetails =
+    req.session.user && req.session.user.role === "Super Admin";
+
+  if (canManageSensitiveDetails) {
+    await db.query(
+      `UPDATE employees
+       SET name = $1,
+           department = $2,
+           salary = $3,
+           basic_salary = $4,
+           hra = $5,
+           allowances = $6,
+           bonus = $7,
+           pf_deduction = $8,
+           esi_deduction = $9,
+           professional_tax = $10,
+           other_deduction = $11,
+           phone = $12,
+           email = $13,
+           designation = $14,
+           joining_date = $15,
+           address = $16,
+           bank_name = $17,
+           account_holder_name = $18,
+           account_number = $19,
+           ifsc_code = $20,
+           upi_id = $21,
+           pan_number = $22,
+           aadhaar_number = $23
+       WHERE id = $24`,
+      [
+        name,
+        department,
+        salary || 0,
+        basic_salary || 0,
+        hra || 0,
+        allowances || 0,
+        bonus || 0,
+        pf_deduction || 0,
+        esi_deduction || 0,
+        professional_tax || 0,
+        other_deduction || 0,
+        phone,
+        email,
+        designation,
+        joining_date || null,
+        address,
+        bank_name,
+        account_holder_name,
+        account_number,
+        ifsc_code,
+        upi_id,
+        pan_number,
+        aadhaar_number,
+        req.params.id,
+      ]
+    );
+  } else {
+    await db.query(
+      `UPDATE employees
+       SET name = $1,
+           department = $2,
+           salary = $3,
+           basic_salary = $4,
+           hra = $5,
+           allowances = $6,
+           bonus = $7,
+           pf_deduction = $8,
+           esi_deduction = $9,
+           professional_tax = $10,
+           other_deduction = $11,
+           phone = $12,
+           email = $13,
+           designation = $14,
+           joining_date = $15,
+           address = $16
+       WHERE id = $17`,
+      [
+        name,
+        department,
+        salary || 0,
+        basic_salary || 0,
+        hra || 0,
+        allowances || 0,
+        bonus || 0,
+        pf_deduction || 0,
+        esi_deduction || 0,
+        professional_tax || 0,
+        other_deduction || 0,
+        phone,
+        email,
+        designation,
+        joining_date || null,
+        address,
+        req.params.id,
+      ]
+    );
+  }
 
   await logActivity(
     req,
