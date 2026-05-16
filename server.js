@@ -486,12 +486,47 @@ app.get("/dashboard", requireAdminLogin, async (req, res) => {
     "SELECT COUNT(*) FROM attendance WHERE date = CURRENT_DATE AND status = 'Absent'"
   );
 
+  const halfDay = await db.query(
+    "SELECT COUNT(*) FROM attendance WHERE date = CURRENT_DATE AND status = 'Half Day'"
+  );
+
+  const leaveSummary = await db.query(`
+    SELECT status, COUNT(*) AS count
+    FROM leaves
+    GROUP BY status
+  `);
+
+  const departmentSummary = await db.query(`
+    SELECT COALESCE(NULLIF(department, ''), 'Not Assigned') AS department,
+           COUNT(*) AS count
+    FROM employees
+    GROUP BY COALESCE(NULLIF(department, ''), 'Not Assigned')
+    ORDER BY count DESC
+  `);
+
   const notifications = await getAdminNotifications();
 
+  let pendingLeaves = 0;
+  let approvedLeaves = 0;
+  let rejectedLeaves = 0;
+
+  leaveSummary.rows.forEach((row) => {
+    if (row.status === "Pending") pendingLeaves = Number(row.count);
+    if (row.status === "Approved") approvedLeaves = Number(row.count);
+    if (row.status === "Rejected") rejectedLeaves = Number(row.count);
+  });
+
   res.render("dashboard", {
-    totalEmployees: employees.rows[0].count,
-    presentToday: present.rows[0].count,
-    absentToday: absent.rows[0].count,
+    totalEmployees: Number(employees.rows[0].count),
+    presentToday: Number(present.rows[0].count),
+    absentToday: Number(absent.rows[0].count),
+    halfDayToday: Number(halfDay.rows[0].count),
+
+    pendingLeaves,
+    approvedLeaves,
+    rejectedLeaves,
+
+    departmentSummary: departmentSummary.rows,
     notifications,
   });
 });
