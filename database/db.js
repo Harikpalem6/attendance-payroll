@@ -21,6 +21,10 @@ async function initDatabase() {
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'Super Admin';
   `);
+  await pool.query(`
+  ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS photo_path VARCHAR(500);
+`);
 
   await pool.query(`
   UPDATE users

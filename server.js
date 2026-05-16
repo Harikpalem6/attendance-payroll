@@ -35,12 +35,32 @@ const supabase = createClient(
 );
 
 const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "employee-documents";
+const SUPABASE_PHOTO_BUCKET =
+  process.env.SUPABASE_PHOTO_BUCKET || "employee-photos";
 const uploadDocument = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
 });
+const uploadPhoto = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024,
+  },
+  fileFilter: function (req, file, cb) {
+    if (
+      file.mimetype === "image/jpeg" ||
+      file.mimetype === "image/png" ||
+      file.mimetype === "image/webp"
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPG, PNG, and WEBP images are allowed"));
+    }
+  },
+});
+
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -647,6 +667,116 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
    EMPLOYEE DOCUMENTS
    Super Admin + HR only
 ========================= */
+
+/* =========================
+   EMPLOYEE PHOTO
+   Super Admin + HR only
+========================= */
+
+app.post(
+  "/employees/photo/upload/:id",
+  requireHRorSuperAdmin,
+  uploadPhoto.single("employee_photo"),
+  async (req, res) => {
+    const employeeId = req.params.id;
+
+    if (!req.file) {
+      return res.redirect("/employees");
+    }
+
+    const employeeResult = await db.query(
+      "SELECT * FROM employees WHERE id = $1",
+      [employeeId]
+    );
+
+    const employee = employeeResult.rows[0];
+
+    if (!employee) {
+      return res.redirect("/employees");
+    }
+
+    // Delete old photo from Supabase if exists
+    if (employee.photo_path) {
+      await supabase.storage
+        .from(SUPABASE_PHOTO_BUCKET)
+        .remove([employee.photo_path]);
+    }
+
+    const fileExt = req.file.originalname.split(".").pop();
+    const safeName = employee.name.replace(/[^a-zA-Z0-9]/g, "_");
+    const storagePath = `${employeeId}/${Date.now()}-${safeName}.${fileExt}`;
+
+    const { error } = await supabase.storage
+      .from(SUPABASE_PHOTO_BUCKET)
+      .upload(storagePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      });
+
+    if (error) {
+      console.log("PHOTO UPLOAD ERROR:", error.message);
+
+      return res.send(`
+        <h2>Photo upload failed</h2>
+        <p>${error.message}</p>
+        <a href="/employees">Back to Employees</a>
+      `);
+    }
+
+    await db.query(
+      "UPDATE employees SET photo_path = $1 WHERE id = $2",
+      [storagePath, employeeId]
+    );
+
+    res.redirect("/employees");
+  }
+);
+
+app.get("/employees/photo/:id", requireAdminLogin, async (req, res) => {
+  const result = await db.query(
+    "SELECT photo_path FROM employees WHERE id = $1",
+    [req.params.id]
+  );
+
+  const employee = result.rows[0];
+
+  if (!employee || !employee.photo_path) {
+    return res.redirect("/images/default-user.png");
+  }
+
+  const { data, error } = await supabase.storage
+    .from(SUPABASE_PHOTO_BUCKET)
+    .createSignedUrl(employee.photo_path, 60);
+
+  if (error) {
+    console.log("PHOTO SIGNED URL ERROR:", error.message);
+    return res.redirect("/images/default-user.png");
+  }
+
+  res.redirect(data.signedUrl);
+});
+
+app.post("/employees/photo/delete/:id", requireHRorSuperAdmin, async (req, res) => {
+  const result = await db.query(
+    "SELECT photo_path FROM employees WHERE id = $1",
+    [req.params.id]
+  );
+
+  const employee = result.rows[0];
+
+  if (employee && employee.photo_path) {
+    await supabase.storage
+      .from(SUPABASE_PHOTO_BUCKET)
+      .remove([employee.photo_path]);
+
+    await db.query(
+      "UPDATE employees SET photo_path = NULL WHERE id = $1",
+      [req.params.id]
+    );
+  }
+
+  res.redirect("/employees");
+});
 
 app.get("/employees/documents/:id", requireHRorSuperAdmin, async (req, res) => {
   const employeeResult = await db.query(

@@ -67,6 +67,7 @@
         <table>
             <tr>
                 <th>ID</th>
+                <th>Photo</th>
                 <th>Name</th>
                 <th>Department</th>
                 <th>Designation</th>
@@ -80,7 +81,15 @@
             <% employees.forEach(employee => { %>
             <tr>
                 <td><%= employee.id %></td>
-                <td><%= employee.name %></td>
+
+<td>
+    <img
+        src="/employees/photo/<%= employee.id %>"
+        style="width:50px; height:50px; border-radius:50%; object-fit:cover;"
+    >
+</td>
+
+<td><%= employee.name %></td>
                 <td><%= employee.department || '' %></td>
                 <td><%= employee.designation || '' %></td>
                 <td><%= employee.phone || '' %></td>
@@ -96,7 +105,28 @@
                     <a class="secondary-btn" href="/employees/documents/<%= employee.id %>">
     Documents
 </a>
+<form
+    action="/employees/photo/upload/<%= employee.id %>"
+    method="POST"
+    enctype="multipart/form-data"
+>
+    <input
+        type="file"
+        name="employee_photo"
+        accept="image/*"
+        required
+        style="width:150px;"
+    >
+    <button class="secondary-btn" type="submit">
+        Upload Photo
+    </button>
+</form>
 
+<form action="/employees/photo/delete/<%= employee.id %>" method="POST">
+    <button class="delete-btn" type="submit">
+        Delete Photo
+    </button>
+</form>
                     <form action="/employees/reset-login/<%= employee.id %>" method="POST">
                         <button class="secondary-btn" type="submit">
                             Reset Login
