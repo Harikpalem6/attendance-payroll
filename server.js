@@ -1638,57 +1638,60 @@ async function drawPayslipPdf(doc, data) {
   const logoPath = path.join(__dirname, settings.logo_path);
 
   const pageWidth = doc.page.width;
-  const margin = 40;
+  const margin = 35;
   const contentWidth = pageWidth - margin * 2;
 
   function maskAccountNumber(accountNumber) {
     if (!accountNumber) return "-";
 
-    const value = String(accountNumber);
+    const value = String(accountNumber).replace(/\s+/g, "");
     if (value.length <= 4) return value;
 
     return "XXXX XXXX " + value.slice(-4);
   }
 
-  doc.rect(margin, 30, contentWidth, 720).lineWidth(1).stroke();
+  doc.rect(margin, 25, contentWidth, 720).lineWidth(1).stroke();
 
   try {
-    doc.image(logoPath, margin + 15, 45, { width: 75 });
+    doc.image(logoPath, margin + 15, 38, { width: 65 });
   } catch (err) {
     console.log("Logo not found or could not be loaded");
   }
 
-  doc.fontSize(22).text(settings.company_name, margin, 45, {
+  doc.fontSize(20).text(settings.company_name, margin, 38, {
     align: "center",
     width: contentWidth,
   });
 
-  doc.fontSize(10).text(settings.company_address, margin, 75, {
+  doc.fontSize(9).text(settings.company_address, margin, 66, {
     align: "center",
     width: contentWidth,
   });
 
-  doc.fontSize(10).text(
+  doc.fontSize(9).text(
     `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
     margin,
-    92,
-    { align: "center", width: contentWidth }
+    82,
+    {
+      align: "center",
+      width: contentWidth,
+    }
   );
 
-  doc.moveTo(margin, 125).lineTo(pageWidth - margin, 125).stroke();
+  doc.moveTo(margin, 110).lineTo(pageWidth - margin, 110).stroke();
 
-  doc.rect(margin, 125, contentWidth, 38).fillAndStroke("#f2f2f2", "#000000");
+  doc.rect(margin, 110, contentWidth, 32).fillAndStroke("#f2f2f2", "#000000");
 
-  doc.fillColor("#000000").fontSize(16).text("SALARY PAYSLIP", margin, 138, {
+  doc.fillColor("#000000").fontSize(15).text("SALARY PAYSLIP", margin, 119, {
     align: "center",
     width: contentWidth,
   });
 
-  const empBoxY = 175;
-  const empBoxHeight = 125;
+  const empBoxY = 155;
+  const empBoxHeight = 120;
 
   doc
-    .rect(margin + 20, empBoxY, contentWidth - 40, empBoxHeight)
+    .rect(margin + 15, empBoxY, contentWidth - 30, empBoxHeight)
     .lineWidth(1)
     .stroke();
 
@@ -1702,9 +1705,9 @@ async function drawPayslipPdf(doc, data) {
         const photoResponse = await fetch(signedPhoto.signedUrl);
         const photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
 
-        doc.image(photoBuffer, 430, 190, {
-          width: 65,
-          height: 65,
+        doc.image(photoBuffer, 440, empBoxY + 18, {
+          width: 58,
+          height: 58,
         });
       }
     } catch (err) {
@@ -1712,25 +1715,36 @@ async function drawPayslipPdf(doc, data) {
     }
   }
 
-  doc.fontSize(11).fillColor("#000000");
+  doc.fontSize(10).fillColor("#000000");
 
-  doc.text("Employee Details", margin + 35, empBoxY + 10, {
+  doc.text("Employee Details", margin + 30, empBoxY + 10, {
     underline: true,
   });
 
-  doc.text(`Employee Name: ${data.employeeName}`, margin + 35, empBoxY + 32);
-  doc.text(`Department: ${data.department || "-"}`, margin + 35, empBoxY + 50);
-  doc.text(`Payroll Month: ${data.month}`, margin + 35, empBoxY + 68);
+  doc.text(`Employee Name: ${data.employeeName || "-"}`, margin + 30, empBoxY + 30);
+  doc.text(`Department: ${data.department || "-"}`, margin + 30, empBoxY + 46);
+  doc.text(`Payroll Month: ${data.month || "-"}`, margin + 30, empBoxY + 62);
 
-  doc.text("Bank Details", margin + 35, empBoxY + 90, {
+  doc.text("Bank Details", margin + 30, empBoxY + 82, {
     underline: true,
   });
 
-  doc.fontSize(9);
-  doc.text(`Bank: ${data.bank_name || "-"}`, margin + 35, empBoxY + 108);
-  doc.text(`A/C Holder: ${data.account_holder_name || "-"}`, margin + 220, empBoxY + 108);
-  doc.text(`A/C No: ${maskAccountNumber(data.account_number)}`, margin + 35, empBoxY + 122);
-  doc.text(`IFSC: ${data.ifsc_code || "-"}`, margin + 220, empBoxY + 122);
+  doc.fontSize(8.5);
+  doc.text(`Bank: ${data.bank_name || "-"}`, margin + 30, empBoxY + 100, {
+    width: 170,
+  });
+
+  doc.text(`A/C Holder: ${data.account_holder_name || "-"}`, margin + 210, empBoxY + 100, {
+    width: 190,
+  });
+
+  doc.text(`A/C No: ${maskAccountNumber(data.account_number)}`, margin + 30, empBoxY + 113, {
+    width: 170,
+  });
+
+  doc.text(`IFSC: ${data.ifsc_code || "-"}`, margin + 210, empBoxY + 113, {
+    width: 190,
+  });
 
   const basicSalary = n(data.basicSalary || data.basic_salary);
   const hra = n(data.hra);
@@ -1746,13 +1760,13 @@ async function drawPayslipPdf(doc, data) {
   const totalDeduction = n(data.deduction);
   const finalSalary = n(data.finalSalary || data.final_salary);
 
-  const tableX = margin + 20;
-  const tableY = 330;
-  const tableWidth = contentWidth - 40;
-  const rowHeight = 22;
+  const tableX = margin + 15;
+  const tableY = 305;
+  const tableWidth = contentWidth - 30;
+  const rowHeight = 20;
   const col1Width = tableWidth * 0.6;
 
-  doc.fontSize(13).text("Salary Details", tableX, tableY - 24, {
+  doc.fontSize(12).text("Salary Details", tableX, tableY - 22, {
     underline: true,
   });
 
@@ -1762,9 +1776,9 @@ async function drawPayslipPdf(doc, data) {
     ["Allowances", `Rs. ${allowances.toFixed(2)}`],
     ["Bonus", `Rs. ${bonus.toFixed(2)}`],
     ["Gross Salary", `Rs. ${grossSalary.toFixed(2)}`],
-    ["Present Days", data.present],
-    ["Absent Days", data.absent],
-    ["Half Days", data.halfday],
+    ["Present Days", data.present || 0],
+    ["Absent Days", data.absent || 0],
+    ["Half Days", data.halfday || 0],
     ["Attendance Deduction", `Rs. ${attendanceDeduction.toFixed(2)}`],
     ["PF Deduction", `Rs. ${pfDeduction.toFixed(2)}`],
     ["ESI Deduction", `Rs. ${esiDeduction.toFixed(2)}`],
@@ -1779,9 +1793,9 @@ async function drawPayslipPdf(doc, data) {
   doc.rect(tableX, tableY, tableWidth, rowHeight * totalRows).lineWidth(1).stroke();
   doc.rect(tableX, tableY, tableWidth, rowHeight).fillAndStroke("#f2f2f2", "#000000");
 
-  doc.fillColor("#000000").fontSize(9).font("Helvetica-Bold");
-  doc.text("Particulars", tableX + 12, tableY + 6);
-  doc.text("Value", tableX + col1Width + 12, tableY + 6);
+  doc.fillColor("#000000").fontSize(8.5).font("Helvetica-Bold");
+  doc.text("Particulars", tableX + 10, tableY + 5);
+  doc.text("Value", tableX + col1Width + 10, tableY + 5);
 
   doc
     .moveTo(tableX + col1Width, tableY)
@@ -1805,30 +1819,29 @@ async function drawPayslipPdf(doc, data) {
       doc.font("Helvetica");
     }
 
-    doc.fontSize(9);
-    doc.text(String(row[0]), tableX + 12, y + 6);
-    doc.text(String(row[1] || 0), tableX + col1Width + 12, y + 6);
+    doc.fontSize(8.5);
+    doc.text(String(row[0]), tableX + 10, y + 5);
+    doc.text(String(row[1] || 0), tableX + col1Width + 10, y + 5);
   });
 
-  doc.font("Helvetica");
+  doc.font("Helvetica").fontSize(8.5);
 
-  doc.fontSize(9);
-  doc.text(`UPI ID: ${data.upi_id || "-"}`, margin + 60, 700);
-  doc.text(`PAN: ${data.pan_number || "-"}`, margin + 300, 700);
+  doc.text(`UPI ID: ${data.upi_id || "-"}`, margin + 45, 650);
+  doc.text(`PAN: ${data.pan_number || "-"}`, margin + 290, 650);
 
-  const footerY = 715;
+  const footerY = 680;
 
-  doc.moveTo(margin + 40, footerY).lineTo(margin + 200, footerY).stroke();
-  doc.fontSize(9).text("Employee Signature", margin + 65, footerY + 8);
+  doc.moveTo(margin + 35, footerY).lineTo(margin + 190, footerY).stroke();
+  doc.fontSize(8.5).text("Employee Signature", margin + 60, footerY + 7);
 
   doc
-    .moveTo(pageWidth - margin - 220, footerY)
-    .lineTo(pageWidth - margin - 60, footerY)
+    .moveTo(pageWidth - margin - 210, footerY)
+    .lineTo(pageWidth - margin - 55, footerY)
     .stroke();
 
-  doc.fontSize(9).text("Authorized Signature", pageWidth - margin - 200, footerY + 8);
+  doc.fontSize(8.5).text("Authorized Signature", pageWidth - margin - 190, footerY + 7);
 
-  doc.fontSize(8).text("This is a computer-generated payslip.", margin, 742, {
+  doc.fontSize(8).text("This is a computer-generated payslip.", margin, 725, {
     align: "center",
     width: contentWidth,
   });
