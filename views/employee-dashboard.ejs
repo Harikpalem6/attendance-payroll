@@ -1,45 +1,504 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Employee Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+
+    <title>Employee Dashboard - VLCG HRMS</title>
     <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f6fb;
+            font-family: Arial, sans-serif;
+            color: #111827;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 22px 18px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 24px;
+            font-size: 22px;
+            letter-spacing: 0.4px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar nav a {
+            color: #e5e7eb;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 24px;
+        }
+
+        .mobile-topbar {
+            display: none;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .mobile-topbar h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .menu-toggle {
+            border: none;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 950;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            margin-bottom: 22px;
+        }
+
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: linear-gradient(135deg, #ffffff, #eef6ff);
+        }
+
+        .profile-photo {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #ffffff;
+            box-shadow: 0 5px 14px rgba(15, 23, 42, 0.18);
+            background: #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .profile-info h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            color: #111827;
+        }
+
+        .profile-info p {
+            margin: 6px 0;
+            color: #4b5563;
+            font-size: 15px;
+        }
+
+        .info-pills {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .info-pill {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #111827;
+        }
+
+        .section-title {
+            margin: 0 0 14px;
+            font-size: 22px;
+            color: #111827;
+        }
+
+        .secondary-btn,
+        .primary-btn,
+        .danger-btn,
+        .quick-action {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 13px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .secondary-btn {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .secondary-btn:hover {
+            background: #d1d5db;
+        }
+
+        .primary-btn {
+            background: #16a34a;
+            color: #ffffff;
+        }
+
+        .primary-btn:hover {
+            background: #15803d;
+        }
+
+        .danger-btn {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .danger-btn:hover {
+            background: #b91c1c;
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+            gap: 14px;
+        }
+
+        .quick-action {
+            background: #f8fafc;
+            color: #111827;
+            border: 1px solid #e5e7eb;
+            min-height: 54px;
+        }
+
+        .quick-action:hover {
+            background: #eef2ff;
+            border-color: #c7d2fe;
+        }
+
+        .attendance-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .attendance-buttons form {
+            margin: 0;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .unread-row {
+            font-weight: bold;
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-read {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-unread {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-present,
+        .status-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-absent,
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-halfday,
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-default {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .empty-text {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        @media (max-width: 1100px) {
+            .quick-actions-grid {
+                grid-template-columns: repeat(2, minmax(160px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .app-layout {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 18px 14px 26px;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+                margin-bottom: 18px;
+            }
+
+            .profile-card {
+                align-items: flex-start;
+            }
+
+            .profile-photo {
+                width: 76px;
+                height: 76px;
+            }
+
+            .profile-info h1 {
+                font-size: 23px;
+            }
+
+            .profile-info p {
+                font-size: 14px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .section-header form,
+            .section-header button {
+                width: 100%;
+            }
+
+            .secondary-btn,
+            .primary-btn,
+            .danger-btn {
+                width: 100%;
+            }
+
+            .quick-actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .attendance-buttons {
+                flex-direction: column;
+            }
+
+            .attendance-buttons form {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .profile-card {
+                flex-direction: column;
+                text-align: center;
+                align-items: center;
+            }
+
+            .info-pills {
+                justify-content: center;
+            }
+
+            .profile-info h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
 </head>
 <body>
 
+<div class="mobile-topbar">
+    <button type="button" class="menu-toggle" id="menuToggle">☰</button>
+    <h2>Employee Portal</h2>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="app-layout">
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <h2>Employee Portal</h2>
 
         <nav>
-    <a href="/employee/dashboard">Dashboard</a>
-    <a href="/employee/leaves">Leaves</a>
-    <a href="/employee/payroll">Payroll</a>
-    <a href="/employee/regularizations">Regularization</a>
-    <a href="/employee/change-password">Change Password</a>
-    <a href="/employee/logout">Logout</a>
-</nav>
+            <a href="/employee/dashboard" class="active">Dashboard</a>
+            <a href="/employee/leaves">Leaves</a>
+            <a href="/employee/payroll">Payroll</a>
+            <a href="/employee/regularizations">Regularization</a>
+            <a href="/employee/change-password">Change Password</a>
+            <a href="/employee/logout">Logout</a>
+        </nav>
     </aside>
 
     <main class="content">
 
-        <div class="card" style="display:flex; align-items:center; gap:20px;">
+        <div class="card profile-card">
             <img
                 src="<%= photoUrl %>"
-                style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:2px solid #ddd;"
+                alt="<%= employee && employee.name ? employee.name : 'Employee' %>"
+                class="profile-photo"
             >
 
-            <div>
-                <h1>Welcome, <%= employee.name %></h1>
-                <p><strong>Department:</strong> <%= employee.department || '-' %></p>
-                <p><strong>Designation:</strong> <%= employee.designation || '-' %></p>
+            <div class="profile-info">
+                <h1>Welcome, <%= employee && employee.name ? employee.name : "Employee" %></h1>
+
+                <p>
+                    <strong>Department:</strong>
+                    <%= employee && employee.department ? employee.department : "-" %>
+                </p>
+
+                <p>
+                    <strong>Designation:</strong>
+                    <%= employee && employee.designation ? employee.designation : "-" %>
+                </p>
+
+                <div class="info-pills">
+                    <span class="info-pill">Employee Portal</span>
+                    <% if (employee && employee.department) { %>
+                        <span class="info-pill"><%= employee.department %></span>
+                    <% } %>
+                </div>
             </div>
         </div>
 
-        <br>
-
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="section-header">
                 <h2>Your Notifications</h2>
 
                 <form action="/employee/notifications/read-all" method="POST">
@@ -49,146 +508,241 @@
                 </form>
             </div>
 
-            <br>
+            <div class="table-wrap">
+                <table>
+                    <tr>
+                        <th>Status</th>
+                        <th>Title</th>
+                        <th>Message</th>
+                        <th>Date / Time</th>
+                        <th>Action</th>
+                    </tr>
 
-            <table>
-                <tr>
-                    <th>Status</th>
-                    <th>Title</th>
-                    <th>Message</th>
-                    <th>Date / Time</th>
-                    <th>Action</th>
-                </tr>
+                    <% if (notifications && notifications.length > 0) { %>
+                        <% notifications.forEach(notification => { %>
+                            <tr class="<%= notification.is_read ? '' : 'unread-row' %>">
+                                <td>
+                                    <% if (notification.is_read) { %>
+                                        <span class="status-badge status-read">Read</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-unread">Unread</span>
+                                    <% } %>
+                                </td>
 
-                <% if (notifications && notifications.length > 0) { %>
-                    <% notifications.forEach(notification => { %>
-                        <tr style="<%= notification.is_read ? '' : 'font-weight:bold; background:#f7f7f7;' %>">
-                            <td>
-                                <%= notification.is_read ? 'Read' : 'Unread' %>
-                            </td>
+                                <td><%= notification.title || "-" %></td>
 
-                            <td><%= notification.title || '-' %></td>
+                                <td><%= notification.message || "-" %></td>
 
-                            <td><%= notification.message || '-' %></td>
+                                <td>
+                                    <%= notification.created_at ? new Date(notification.created_at).toLocaleString() : "" %>
+                                </td>
 
-                            <td>
-                                <%= notification.created_at ? new Date(notification.created_at).toLocaleString() : '' %>
-                            </td>
-
-                            <td>
-                                <% if (notification.is_read) { %>
-                                    <form action="/employee/notifications/unread/<%= notification.id %>" method="POST">
-                                        <button type="submit" class="secondary-btn">
-                                            Mark Unread
-                                        </button>
-                                    </form>
-                                <% } else { %>
-                                    <form action="/employee/notifications/read/<%= notification.id %>" method="POST">
-                                        <button type="submit" class="secondary-btn">
-                                            Mark Read
-                                        </button>
-                                    </form>
-                                <% } %>
-                            </td>
+                                <td>
+                                    <% if (notification.is_read) { %>
+                                        <form action="/employee/notifications/unread/<%= notification.id %>" method="POST">
+                                            <button type="submit" class="secondary-btn">
+                                                Mark Unread
+                                            </button>
+                                        </form>
+                                    <% } else { %>
+                                        <form action="/employee/notifications/read/<%= notification.id %>" method="POST">
+                                            <button type="submit" class="secondary-btn">
+                                                Mark Read
+                                            </button>
+                                        </form>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5">No notifications yet.</td>
                         </tr>
-                    <% }) %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="5">No notifications yet.</td>
-                    </tr>
-                <% } %>
-            </table>
+                    <% } %>
+                </table>
+            </div>
         </div>
-
-        <br>
 
         <div class="card">
-            <h2>Quick Actions</h2>
+            <h2 class="section-title">Quick Actions</h2>
 
-            <br>
+            <div class="quick-actions-grid">
+                <a class="quick-action" href="/employee/leaves">
+                    Apply / View Leaves
+                </a>
 
-            <a class="secondary-btn" href="/employee/leaves">
-                Apply / View Leaves
-            </a>
+                <a class="quick-action" href="/employee/payroll">
+                    View Payroll
+                </a>
 
-            <a class="secondary-btn" href="/employee/payroll">
-                View Payroll
-            </a>
+                <a class="quick-action" href="/employee/regularizations">
+                    Attendance Regularization
+                </a>
+            </div>
         </div>
-
-        <br>
-
-        <h2>Your Attendance</h2>
 
         <div class="card">
-            <form action="/employee/check-in" method="POST" style="display:inline-block; margin-right:10px;">
-                <button type="submit">Check In</button>
-            </form>
+            <div class="section-header">
+                <h2>Your Attendance</h2>
+            </div>
 
-            <form action="/employee/check-out" method="POST" style="display:inline-block;">
-                <button type="submit">Check Out</button>
-            </form>
+            <div class="attendance-buttons">
+                <form action="/employee/check-in" method="POST">
+                    <button type="submit" class="primary-btn">
+                        Check In
+                    </button>
+                </form>
+
+                <form action="/employee/check-out" method="POST">
+                    <button type="submit" class="danger-btn">
+                        Check Out
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <br>
+        <div class="card">
+            <h2 class="section-title">Attendance History</h2>
 
-        <table>
-            <tr>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Check In</th>
-                <th>Check Out</th>
-            </tr>
-
-            <% if (attendance && attendance.length > 0) { %>
-                <% attendance.forEach(record => { %>
+            <div class="table-wrap">
+                <table>
                     <tr>
-                        <td><%= record.date ? new Date(record.date).toLocaleDateString() : '' %></td>
-                        <td><%= record.status || '-' %></td>
-                        <td><%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : '-' %></td>
-                        <td><%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : '-' %></td>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
                     </tr>
-                <% }) %>
-            <% } else { %>
-                <tr>
-                    <td colspan="4">No attendance records found.</td>
-                </tr>
-            <% } %>
-        </table>
 
-        <br>
+                    <% if (attendance && attendance.length > 0) { %>
+                        <% attendance.forEach(record => { %>
+                            <tr>
+                                <td>
+                                    <%= record.date ? new Date(record.date).toLocaleDateString() : "" %>
+                                </td>
 
-        <h2>Your Leave Requests</h2>
+                                <td>
+                                    <% if (record.status === "Present") { %>
+                                        <span class="status-badge status-present">Present</span>
+                                    <% } else if (record.status === "Absent") { %>
+                                        <span class="status-badge status-absent">Absent</span>
+                                    <% } else if (record.status === "Half Day") { %>
+                                        <span class="status-badge status-halfday">Half Day</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-default"><%= record.status || "-" %></span>
+                                    <% } %>
+                                </td>
 
-        <table>
-            <tr>
-                <th>Leave Type</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Reason</th>
-                <th>Status</th>
-            </tr>
+                                <td>
+                                    <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : "-" %>
+                                </td>
 
-            <% if (leaves && leaves.length > 0) { %>
-                <% leaves.forEach(leave => { %>
+                                <td>
+                                    <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : "-" %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4">No attendance records found.</td>
+                        </tr>
+                    <% } %>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">Your Leave Requests</h2>
+
+            <div class="table-wrap">
+                <table>
                     <tr>
-                        <td><%= leave.leave_type || '-' %></td>
-                        <td><%= leave.start_date ? new Date(leave.start_date).toLocaleDateString() : '' %></td>
-                        <td><%= leave.end_date ? new Date(leave.end_date).toLocaleDateString() : '' %></td>
-                        <td><%= leave.reason || '-' %></td>
-                        <td><%= leave.status || '-' %></td>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
                     </tr>
-                <% }) %>
-            <% } else { %>
-                <tr>
-                    <td colspan="5">No leave records found.</td>
-                </tr>
-            <% } %>
-        </table>
+
+                    <% if (leaves && leaves.length > 0) { %>
+                        <% leaves.forEach(leave => { %>
+                            <tr>
+                                <td><%= leave.leave_type || "-" %></td>
+
+                                <td>
+                                    <%= leave.start_date ? new Date(leave.start_date).toLocaleDateString() : "" %>
+                                </td>
+
+                                <td>
+                                    <%= leave.end_date ? new Date(leave.end_date).toLocaleDateString() : "" %>
+                                </td>
+
+                                <td><%= leave.reason || "-" %></td>
+
+                                <td>
+                                    <% if (leave.status === "Approved") { %>
+                                        <span class="status-badge status-approved">Approved</span>
+                                    <% } else if (leave.status === "Rejected") { %>
+                                        <span class="status-badge status-rejected">Rejected</span>
+                                    <% } else if (leave.status === "Pending") { %>
+                                        <span class="status-badge status-pending">Pending</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-default"><%= leave.status || "-" %></span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5">No leave records found.</td>
+                        </tr>
+                    <% } %>
+                </table>
+            </div>
+        </div>
 
     </main>
 
 </div>
+
+<script>
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarOverlay.classList.add("show");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("show");
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener("click", openSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeSidebar);
+    }
+
+    document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+        link.addEventListener("click", closeSidebar);
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function () {
+                    console.log("VLCG HRMS service worker registered");
+                })
+                .catch(function (error) {
+                    console.log("Service worker registration failed:", error);
+                });
+        });
+    }
+</script>
 
 </body>
 </html>
