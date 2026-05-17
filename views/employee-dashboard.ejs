@@ -95,27 +95,15 @@
         }
 
         .menu-toggle {
-            border: none;
-            background: #1e293b;
-            width: 42px;
-            height: 38px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 4px;
-            padding: 0;
-        }
-
-        .menu-line {
-            display: block;
-            width: 20px;
-            height: 2px;
-            background: #ffffff;
-            border-radius: 10px;
-        }
+    border: none;
+    background: #1e293b;
+    color: #ffffff;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
 
         .sidebar-overlay {
             display: none;
@@ -452,10 +440,8 @@
 <body>
 
 <div class="mobile-topbar">
-    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open menu">
-        <span class="menu-line"></span>
-        <span class="menu-line"></span>
-        <span class="menu-line"></span>
+    <button type="button" class="menu-toggle" id="menuToggle">
+        Menu
     </button>
 
     <h2>Employee Portal</h2>
