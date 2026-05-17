@@ -1,72 +1,433 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Employee Leaves</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+
+    <title>Employee Leaves - VLCG HRMS</title>
     <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f6fb;
+            font-family: Arial, sans-serif;
+            color: #111827;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 22px 18px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 24px;
+            font-size: 22px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar nav a {
+            color: #e5e7eb;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 24px;
+        }
+
+        .mobile-topbar {
+            display: none;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .mobile-topbar h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .menu-toggle {
+            border: none;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 950;
+        }
+
+        .page-header {
+            margin-bottom: 22px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .page-header p {
+            margin: 7px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            margin-bottom: 22px;
+        }
+
+        .card h2 {
+            margin: 0 0 16px;
+            font-size: 20px;
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .balance-card {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .balance-card h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .balance-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 7px 0;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .balance-row strong {
+            color: #111827;
+        }
+
+        .remaining-pill {
+            margin-top: 12px;
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .stack-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .stack-form select,
+        .stack-form input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: #ffffff;
+        }
+
+        .stack-form select:focus,
+        .stack-form input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .reason-input {
+            grid-column: 1 / -1;
+        }
+
+        .submit-btn {
+            grid-column: 1 / -1;
+            border: none;
+            background: #2563eb;
+            color: #ffffff;
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+            background: #ffffff;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-default {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        @media (max-width: 900px) {
+            .balance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stack-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .app-layout {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 18px 14px 26px;
+            }
+
+            .page-header h1 {
+                font-size: 26px;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
 
+<div class="mobile-topbar">
+    <button type="button" class="menu-toggle" id="menuToggle">
+        Menu
+    </button>
+
+    <h2>Employee Portal</h2>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="app-layout">
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <h2>Employee Portal</h2>
 
         <nav>
-    <a href="/employee/dashboard">Dashboard</a>
-    <a href="/employee/leaves">Leaves</a>
-    <a href="/employee/payroll">Payroll</a>
-    <a href="/employee/regularizations">Regularization</a>
-    <a href="/employee/change-password">Change Password</a>
-    <a href="/employee/logout">Logout</a>
-</nav>
+            <a href="/employee/dashboard">Dashboard</a>
+            <a href="/employee/leaves" class="active">Leaves</a>
+            <a href="/employee/payroll">Payroll</a>
+            <a href="/employee/regularizations">Regularization</a>
+            <a href="/employee/change-password">Change Password</a>
+            <a href="/employee/logout">Logout</a>
+        </nav>
     </aside>
 
     <main class="content">
 
-        <h1>Your Leaves</h1>
+        <div class="page-header">
+            <h1>Your Leaves</h1>
+            <p>View your leave balance, apply for leave, and check leave request status.</p>
+        </div>
 
         <div class="card">
             <h2>Leave Balance - <%= leaveBalance.year %></h2>
 
-            <br>
+            <div class="balance-grid">
 
-            <table>
-                <tr>
-                    <th>Leave Type</th>
-                    <th>Total</th>
-                    <th>Used</th>
-                    <th>Remaining</th>
-                </tr>
+                <div class="balance-card">
+                    <h3>Sick Leave</h3>
 
-                <tr>
-                    <td>Sick Leave</td>
-                    <td><%= leaveBalance.sickTotal %></td>
-                    <td><%= leaveBalance.sickUsed %></td>
-                    <td><%= leaveBalance.sickRemaining %></td>
-                </tr>
+                    <div class="balance-row">
+                        <span>Total</span>
+                        <strong><%= leaveBalance.sickTotal %></strong>
+                    </div>
 
-                <tr>
-                    <td>Casual Leave</td>
-                    <td><%= leaveBalance.casualTotal %></td>
-                    <td><%= leaveBalance.casualUsed %></td>
-                    <td><%= leaveBalance.casualRemaining %></td>
-                </tr>
+                    <div class="balance-row">
+                        <span>Used</span>
+                        <strong><%= leaveBalance.sickUsed %></strong>
+                    </div>
 
-                <tr>
-                    <td>Paid Leave</td>
-                    <td><%= leaveBalance.paidTotal %></td>
-                    <td><%= leaveBalance.paidUsed %></td>
-                    <td><%= leaveBalance.paidRemaining %></td>
-                </tr>
-            </table>
+                    <span class="remaining-pill">
+                        Remaining: <%= leaveBalance.sickRemaining %>
+                    </span>
+                </div>
+
+                <div class="balance-card">
+                    <h3>Casual Leave</h3>
+
+                    <div class="balance-row">
+                        <span>Total</span>
+                        <strong><%= leaveBalance.casualTotal %></strong>
+                    </div>
+
+                    <div class="balance-row">
+                        <span>Used</span>
+                        <strong><%= leaveBalance.casualUsed %></strong>
+                    </div>
+
+                    <span class="remaining-pill">
+                        Remaining: <%= leaveBalance.casualRemaining %>
+                    </span>
+                </div>
+
+                <div class="balance-card">
+                    <h3>Paid Leave</h3>
+
+                    <div class="balance-row">
+                        <span>Total</span>
+                        <strong><%= leaveBalance.paidTotal %></strong>
+                    </div>
+
+                    <div class="balance-row">
+                        <span>Used</span>
+                        <strong><%= leaveBalance.paidUsed %></strong>
+                    </div>
+
+                    <span class="remaining-pill">
+                        Remaining: <%= leaveBalance.paidRemaining %>
+                    </span>
+                </div>
+
+            </div>
         </div>
-
-        <br>
 
         <div class="card">
             <h2>Apply Leave</h2>
-
-            <br>
 
             <form action="/employee/leaves/apply" method="POST" class="stack-form">
 
@@ -84,49 +445,104 @@
                     type="text"
                     name="reason"
                     placeholder="Reason"
+                    class="reason-input"
                     required
                 >
 
-                <button type="submit">Apply Leave</button>
+                <button type="submit" class="submit-btn">
+                    Apply Leave
+                </button>
 
             </form>
         </div>
 
-        <br>
+        <div class="card">
+            <h2>Your Leave History</h2>
 
-        <h2>Your Leave History</h2>
-
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Leave Type</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Reason</th>
-                <th>Status</th>
-            </tr>
-
-            <% if (leaves && leaves.length > 0) { %>
-                <% leaves.forEach(leave => { %>
+            <div class="table-wrap">
+                <table>
                     <tr>
-                        <td><%= leave.id %></td>
-                        <td><%= leave.leave_type %></td>
-                        <td><%= leave.start_date ? new Date(leave.start_date).toLocaleDateString() : '' %></td>
-                        <td><%= leave.end_date ? new Date(leave.end_date).toLocaleDateString() : '' %></td>
-                        <td><%= leave.reason %></td>
-                        <td><%= leave.status %></td>
+                        <th>ID</th>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
                     </tr>
-                <% }) %>
-            <% } else { %>
-                <tr>
-                    <td colspan="6">No leave records found.</td>
-                </tr>
-            <% } %>
-        </table>
+
+                    <% if (leaves && leaves.length > 0) { %>
+                        <% leaves.forEach(leave => { %>
+                            <tr>
+                                <td><%= leave.id %></td>
+                                <td><%= leave.leave_type || "-" %></td>
+                                <td><%= leave.start_date ? new Date(leave.start_date).toLocaleDateString() : "" %></td>
+                                <td><%= leave.end_date ? new Date(leave.end_date).toLocaleDateString() : "" %></td>
+                                <td><%= leave.reason || "-" %></td>
+                                <td>
+                                    <% if (leave.status === "Approved") { %>
+                                        <span class="status-badge status-approved">Approved</span>
+                                    <% } else if (leave.status === "Rejected") { %>
+                                        <span class="status-badge status-rejected">Rejected</span>
+                                    <% } else if (leave.status === "Pending") { %>
+                                        <span class="status-badge status-pending">Pending</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-default"><%= leave.status || "-" %></span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6">No leave records found.</td>
+                        </tr>
+                    <% } %>
+                </table>
+            </div>
+        </div>
 
     </main>
 
 </div>
+
+<script>
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarOverlay.classList.add("show");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("show");
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener("click", openSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeSidebar);
+    }
+
+    document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+        link.addEventListener("click", closeSidebar);
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function () {
+                    console.log("VLCG HRMS service worker registered");
+                })
+                .catch(function (error) {
+                    console.log("Service worker registration failed:", error);
+                });
+        });
+    }
+</script>
 
 </body>
 </html>
