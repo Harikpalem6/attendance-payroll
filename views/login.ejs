@@ -146,5 +146,84 @@
   }
 </script>
 
+<style>
+  .install-app-box {
+    margin-top: 18px;
+    text-align: center;
+  }
+
+  .install-app-btn {
+    display: none;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .install-app-btn:hover {
+    background: #1e293b;
+  }
+</style>
+
+<div class="install-app-box">
+  <button id="installAppBtn" class="install-app-btn">
+    Install VLCG HRMS App
+  </button>
+</div>
+
+<script>
+  let deferredPrompt;
+  const installAppBtn = document.getElementById("installAppBtn");
+
+  window.addEventListener("beforeinstallprompt", function (event) {
+    event.preventDefault();
+    deferredPrompt = event;
+
+    if (installAppBtn) {
+      installAppBtn.style.display = "block";
+    }
+  });
+
+  if (installAppBtn) {
+    installAppBtn.addEventListener("click", async function () {
+      if (!deferredPrompt) {
+        return;
+      }
+
+      deferredPrompt.prompt();
+
+      const choiceResult = await deferredPrompt.userChoice;
+
+      deferredPrompt = null;
+      installAppBtn.style.display = "none";
+    });
+  }
+
+  window.addEventListener("appinstalled", function () {
+    if (installAppBtn) {
+      installAppBtn.style.display = "none";
+    }
+
+    console.log("VLCG HRMS app installed");
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/service-worker.js")
+        .then(function () {
+          console.log("VLCG HRMS service worker registered");
+        })
+        .catch(function (error) {
+          console.log("Service worker registration failed:", error);
+        });
+    });
+  }
+</script>
+
 </body>
 </html>
