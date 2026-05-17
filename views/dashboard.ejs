@@ -141,6 +141,21 @@
             color: #374151;
         }
 
+        .user-badge span {
+    color: #6b7280;
+}
+
+.role-pill {
+    display: inline-block;
+    margin-left: 8px;
+    background: #dbeafe;
+    color: #1d4ed8 !important;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(160px, 1fr));
@@ -504,13 +519,13 @@
             </div>
 
             <div class="user-badge">
-                Logged in as:
-                <strong><%= user && user.username ? user.username : "User" %></strong>
-                <% if (user && user.role) { %>
-                    —
-                    <strong><%= user.role %></strong>
-                <% } %>
-            </div>
+    <span>Logged in as</span>
+    <strong><%= user && user.username ? user.username : "User" %></strong>
+
+    <% if (user && user.role) { %>
+        <span class="role-pill"><%= user.role %></span>
+    <% } %>
+</div>
         </div>
 
         <div class="stats-grid">
