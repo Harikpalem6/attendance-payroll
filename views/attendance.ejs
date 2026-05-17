@@ -1,178 +1,665 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Attendance Management</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+
+    <title>Attendance Management - VLCG HRMS</title>
     <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f6fb;
+            font-family: Arial, sans-serif;
+            color: #111827;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 22px 18px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 24px;
+            font-size: 24px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar nav a {
+            color: #e5e7eb;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 24px;
+        }
+
+        .mobile-topbar {
+            display: none;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .mobile-topbar h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .menu-toggle {
+            border: none;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 950;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .page-header p {
+            margin: 7px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .office-time-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            font-size: 14px;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .office-time-card strong {
+            color: #111827;
+        }
+
+        .card,
+        .toolbar-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            margin-bottom: 22px;
+        }
+
+        .toolbar-title {
+            margin: 0 0 14px;
+            font-size: 18px;
+            color: #111827;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toolbar input,
+        .toolbar select {
+            flex: 1;
+            min-width: 190px;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: #ffffff;
+        }
+
+        .toolbar input:focus,
+        .toolbar select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .primary-btn,
+        .secondary-btn,
+        .edit-btn,
+        .delete-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 13px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .primary-btn {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .primary-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .secondary-btn {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .secondary-btn:hover {
+            background: #d1d5db;
+        }
+
+        .edit-btn {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+
+        .edit-btn:hover {
+            background: #d97706;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .delete-btn:hover {
+            background: #b91c1c;
+        }
+
+        .section-title {
+            margin: 0 0 14px;
+            font-size: 22px;
+            color: #111827;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+            background: #ffffff;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-present,
+        .status-ontime,
+        .status-fullday {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-absent,
+        .status-late,
+        .status-early {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-halfday {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-default {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-width: 150px;
+        }
+
+        .action-buttons form {
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .app-layout {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 18px 14px 26px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-header h1 {
+                font-size: 26px;
+            }
+
+            .office-time-card {
+                width: 100%;
+                white-space: normal;
+            }
+
+            .card,
+            .toolbar-card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar input,
+            .toolbar select,
+            .toolbar button,
+            .toolbar a {
+                width: 100%;
+                min-width: 0;
+            }
+        }
+    </style>
 </head>
 <body>
 
+<div class="mobile-topbar">
+    <button type="button" class="menu-toggle" id="menuToggle">
+        Menu
+    </button>
+
+    <h2>VLCG HRMS</h2>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="app-layout">
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <h2>HRMS</h2>
 
         <nav>
-    <a href="/dashboard">Dashboard</a>
+            <a href="/dashboard">Dashboard</a>
 
-    <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
-        <a href="/employees">Employees</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
 
-    <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
-        <a href="/attendance">Attendance</a>
-        <a href="/attendance/monthly-report">Monthly Report</a>
-        <a href="/attendance/regularizations">Regularizations</a>
-        <a href="/leaves">Leaves</a>
-        <a href="/leaves/balances">Leave Balances</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/password-reset-requests">Password Reset Requests</a>
+            <% } %>
 
-    <% if (user && user.role === "Super Admin") { %>
-        <a href="/payroll">Payroll</a>
-        <a href="/admin-users">Admin Users</a>
-        <a href="/company-settings">Company Settings</a>
-        <a href="/activity-logs">Activity Logs</a>
-        <a href="/export/backup">Download Backup</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance" class="active">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/attendance/regularizations">Regularizations</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
 
-    <a href="/change-password">Change Password</a>
-    <a href="/logout">Logout</a>
-</nav>
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/activity-logs">Activity Logs</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/change-password">Change Password</a>
+            <a href="/logout">Logout</a>
+        </nav>
     </aside>
 
     <main class="content">
 
-        <h1>Attendance Management</h1>
+        <div class="page-header">
+            <div>
+                <h1>Attendance Management</h1>
+                <p>Mark attendance, filter records, review check-in/check-out status, and export reports.</p>
+            </div>
 
-        <p>
-            <strong>Office Time:</strong>
-<%= settings.office_start_time %> to <%= settings.office_end_time %>
-        </p>
+            <div class="office-time-card">
+                <strong>Office Time:</strong>
+                <%= settings.office_start_time %> to <%= settings.office_end_time %>
+            </div>
+        </div>
 
-        <br>
+        <div class="toolbar-card">
+            <h2 class="toolbar-title">Filter Attendance</h2>
 
-        <form action="/attendance" method="GET" class="toolbar">
-            <input type="date" name="date" value="<%= filterDate || '' %>">
+            <form action="/attendance" method="GET" class="toolbar">
+                <input type="date" name="date" value="<%= filterDate || '' %>">
 
-            <button type="submit">Filter</button>
+                <button type="submit" class="primary-btn">
+                    Filter
+                </button>
 
-            <a class="secondary-btn" href="/export/attendance">
-                Export Excel
-            </a>
-        </form>
+                <a class="secondary-btn" href="/attendance">
+                    Clear
+                </a>
 
-        <form action="/attendance/add" method="POST" class="toolbar">
+                <a class="secondary-btn" href="/export/attendance">
+                    Export Excel
+                </a>
+            </form>
+        </div>
 
-            <select name="employee_id" required>
-                <option value="">Select Employee</option>
+        <div class="toolbar-card">
+            <h2 class="toolbar-title">Mark Attendance</h2>
 
-                <% employees.forEach(emp => { %>
-                    <option value="<%= emp.id %>">
-                        <%= emp.name %>
-                    </option>
-                <% }) %>
-            </select>
+            <form action="/attendance/add" method="POST" class="toolbar">
 
-            <input type="date" name="date" required>
+                <select name="employee_id" required>
+                    <option value="">Select Employee</option>
 
-            <select name="status" required>
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Half Day">Half Day</option>
-            </select>
+                    <% employees.forEach(emp => { %>
+                        <option value="<%= emp.id %>">
+                            <%= emp.name %>
+                        </option>
+                    <% }) %>
+                </select>
 
-            <button type="submit">Mark Attendance</button>
+                <input type="date" name="date" required>
 
-        </form>
+                <select name="status" required>
+                    <option value="Present">Present</option>
+                    <option value="Absent">Absent</option>
+                    <option value="Half Day">Half Day</option>
+                </select>
 
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Employee</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Check In</th>
-                <th>Check In Status</th>
-                <th>Check Out</th>
-                <th>Check Out Status</th>
-                <th>Working Hours</th>
-                <th>Actions</th>
-            </tr>
+                <button type="submit" class="primary-btn">
+                    Mark Attendance
+                </button>
 
-            <% records.forEach(record => { %>
+            </form>
+        </div>
 
-            <%
-                let checkInStatus = "-";
-                let checkOutStatus = "-";
-                let workingHours = "-";
+        <div class="card">
+            <h2 class="section-title">Attendance Records</h2>
 
-                if (record.check_in) {
-                    const checkIn = new Date(record.check_in);
-                    const officeStart = new Date(record.check_in);
-                    const [startHour, startMinute] = settings.office_start_time.split(":");
-officeStart.setHours(Number(startHour), Number(startMinute), 0, 0);
+            <div class="table-wrap">
+                <table>
+                    <tr>
+                        <th>ID</th>
+                        <th>Employee</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Check In</th>
+                        <th>Check In Status</th>
+                        <th>Check Out</th>
+                        <th>Check Out Status</th>
+                        <th>Working Hours</th>
+                        <th>Actions</th>
+                    </tr>
 
-                    checkInStatus = checkIn > officeStart ? "Late" : "On Time";
-                }
+                    <% if (records && records.length > 0) { %>
+                        <% records.forEach(record => { %>
 
-                if (record.check_out) {
-                    const checkOut = new Date(record.check_out);
-                    const officeEnd = new Date(record.check_out);
-                    const [endHour, endMinute] = settings.office_end_time.split(":");
-officeEnd.setHours(Number(endHour), Number(endMinute), 0, 0);
+                            <%
+                                let checkInStatus = "-";
+                                let checkOutStatus = "-";
+                                let workingHours = "-";
 
-                    checkOutStatus = checkOut < officeEnd ? "Early Checkout" : "Full Day";
-                }
+                                if (record.check_in) {
+                                    const checkIn = new Date(record.check_in);
+                                    const officeStart = new Date(record.check_in);
+                                    const [startHour, startMinute] = settings.office_start_time.split(":");
+                                    officeStart.setHours(Number(startHour), Number(startMinute), 0, 0);
 
-                if (record.check_in && record.check_out) {
-                    const diffMs = new Date(record.check_out) - new Date(record.check_in);
-                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                    const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+                                    checkInStatus = checkIn > officeStart ? "Late" : "On Time";
+                                }
 
-                    workingHours = `${hours}h ${minutes}m`;
-                }
-            %>
+                                if (record.check_out) {
+                                    const checkOut = new Date(record.check_out);
+                                    const officeEnd = new Date(record.check_out);
+                                    const [endHour, endMinute] = settings.office_end_time.split(":");
+                                    officeEnd.setHours(Number(endHour), Number(endMinute), 0, 0);
 
-            <tr>
-                <td><%= record.id %></td>
-                <td><%= record.name %></td>
-                <td><%= record.date ? new Date(record.date).toLocaleDateString() : '' %></td>
-                <td><%= record.status %></td>
+                                    checkOutStatus = checkOut < officeEnd ? "Early Checkout" : "Full Day";
+                                }
 
-                <td>
-                    <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : '-' %>
-                </td>
+                                if (record.check_in && record.check_out) {
+                                    const diffMs = new Date(record.check_out) - new Date(record.check_in);
+                                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                                    const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
 
-                <td><%= checkInStatus %></td>
+                                    workingHours = `${hours}h ${minutes}m`;
+                                }
+                            %>
 
-                <td>
-                    <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : '-' %>
-                </td>
+                            <tr>
+                                <td><%= record.id %></td>
+                                <td><%= record.name || "-" %></td>
+                                <td><%= record.date ? new Date(record.date).toLocaleDateString() : "" %></td>
 
-                <td><%= checkOutStatus %></td>
+                                <td>
+                                    <% if (record.status === "Present") { %>
+                                        <span class="status-badge status-present">Present</span>
+                                    <% } else if (record.status === "Absent") { %>
+                                        <span class="status-badge status-absent">Absent</span>
+                                    <% } else if (record.status === "Half Day") { %>
+                                        <span class="status-badge status-halfday">Half Day</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-default"><%= record.status || "-" %></span>
+                                    <% } %>
+                                </td>
 
-                <td><%= workingHours %></td>
+                                <td>
+                                    <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : "-" %>
+                                </td>
 
-                <td class="action-buttons">
+                                <td>
+                                    <% if (checkInStatus === "On Time") { %>
+                                        <span class="status-badge status-ontime">On Time</span>
+                                    <% } else if (checkInStatus === "Late") { %>
+                                        <span class="status-badge status-late">Late</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-default">-</span>
+                                    <% } %>
+                                </td>
 
-                    <a class="edit-btn" href="/attendance/edit/<%= record.id %>">
-                        Edit
-                    </a>
+                                <td>
+                                    <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : "-" %>
+                                </td>
 
-                    <form action="/attendance/delete/<%= record.id %>" method="POST">
-                        <button class="delete-btn" type="submit">
-                            Delete
-                        </button>
-                    </form>
+                                <td>
+                                    <% if (checkOutStatus === "Full Day") { %>
+                                        <span class="status-badge status-fullday">Full Day</span>
+                                    <% } else if (checkOutStatus === "Early Checkout") { %>
+                                        <span class="status-badge status-early">Early Checkout</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-default">-</span>
+                                    <% } %>
+                                </td>
 
-                </td>
-            </tr>
-            <% }) %>
+                                <td><%= workingHours %></td>
 
-        </table>
+                                <td>
+                                    <div class="action-buttons">
+
+                                        <a class="edit-btn" href="/attendance/edit/<%= record.id %>">
+                                            Edit
+                                        </a>
+
+                                        <form action="/attendance/delete/<%= record.id %>" method="POST">
+                                            <button class="delete-btn" type="submit">
+                                                Delete
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="10">No attendance records found.</td>
+                        </tr>
+                    <% } %>
+                </table>
+            </div>
+        </div>
 
     </main>
 
 </div>
+
+<script>
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarOverlay.classList.add("show");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("show");
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener("click", openSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeSidebar);
+    }
+
+    document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+        link.addEventListener("click", closeSidebar);
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function () {
+                    console.log("VLCG HRMS service worker registered");
+                })
+                .catch(function (error) {
+                    console.log("Service worker registration failed:", error);
+                });
+        });
+    }
+</script>
 
 </body>
 </html>

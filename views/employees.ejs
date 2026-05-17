@@ -1,47 +1,549 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Employee Management</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+
+    <title>Employee Management - VLCG HRMS</title>
     <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f6fb;
+            font-family: Arial, sans-serif;
+            color: #111827;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 22px 18px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 24px;
+            font-size: 24px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar nav a {
+            color: #e5e7eb;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 24px;
+        }
+
+        .mobile-topbar {
+            display: none;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .mobile-topbar h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .menu-toggle {
+            border: none;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 950;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .page-header p {
+            margin: 7px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .role-badge {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            font-size: 14px;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .role-pill {
+            display: inline-block;
+            margin-left: 6px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            margin-bottom: 22px;
+        }
+
+        .card h2 {
+            margin: 0 0 16px;
+            font-size: 20px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+        }
+
+        .toolbar input {
+            flex: 1;
+            min-width: 220px;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .toolbar input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .primary-btn,
+        .secondary-btn,
+        .edit-btn,
+        .delete-btn,
+        .upload-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 13px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .primary-btn {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .primary-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .secondary-btn {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .secondary-btn:hover {
+            background: #d1d5db;
+        }
+
+        .edit-btn {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+
+        .edit-btn:hover {
+            background: #d97706;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .delete-btn:hover {
+            background: #b91c1c;
+        }
+
+        .upload-btn {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        .upload-btn:hover {
+            background: #1e293b;
+        }
+
+        .stack-form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .form-section-title {
+            grid-column: 1 / -1;
+            margin: 10px 0 0;
+            padding-top: 8px;
+            border-top: 1px solid #e5e7eb;
+            color: #111827;
+            font-size: 17px;
+        }
+
+        .form-section-title:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .stack-form input {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: #ffffff;
+        }
+
+        .stack-form input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .note-box {
+            grid-column: 1 / -1;
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 13px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .submit-row {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .table-card h2 {
+            margin-bottom: 14px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+            background: #ffffff;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .employee-photo {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+            background: #f1f5f9;
+        }
+
+        .employee-name {
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .small-muted {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .salary-text {
+            font-weight: 700;
+            color: #166534;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-width: 360px;
+        }
+
+        .action-buttons form {
+            margin: 0;
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .photo-upload-input {
+            width: 150px;
+            max-width: 100%;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1000px) {
+            .stack-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .app-layout {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 18px 14px 26px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-header h1 {
+                font-size: 26px;
+            }
+
+            .role-badge {
+                width: 100%;
+                white-space: normal;
+            }
+
+            .card,
+            .toolbar {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar input,
+            .toolbar button,
+            .toolbar a {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .submit-row {
+                justify-content: stretch;
+            }
+
+            .submit-row button {
+                width: 100%;
+            }
+
+            .action-buttons {
+                min-width: 320px;
+            }
+        }
+    </style>
 </head>
 <body>
 
+<div class="mobile-topbar">
+    <button type="button" class="menu-toggle" id="menuToggle">
+        Menu
+    </button>
+
+    <h2>VLCG HRMS</h2>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="app-layout">
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <h2>HRMS</h2>
 
         <nav>
-    <a href="/dashboard">Dashboard</a>
+            <a href="/dashboard">Dashboard</a>
 
-    <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
-        <a href="/employees">Employees</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees" class="active">Employees</a>
+            <% } %>
 
-    <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
-        <a href="/attendance">Attendance</a>
-        <a href="/attendance/monthly-report">Monthly Report</a>
-        <a href="/attendance/regularizations">Regularizations</a>
-        <a href="/leaves">Leaves</a>
-        <a href="/leaves/balances">Leave Balances</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/password-reset-requests">Password Reset Requests</a>
+            <% } %>
 
-    <% if (user && user.role === "Super Admin") { %>
-        <a href="/payroll">Payroll</a>
-        <a href="/admin-users">Admin Users</a>
-        <a href="/company-settings">Company Settings</a>
-        <a href="/activity-logs">Activity Logs</a>
-        <a href="/export/backup">Download Backup</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/attendance/regularizations">Regularizations</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
 
-    <a href="/change-password">Change Password</a>
-    <a href="/logout">Logout</a>
-</nav>
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/activity-logs">Activity Logs</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/change-password">Change Password</a>
+            <a href="/logout">Logout</a>
+        </nav>
     </aside>
 
     <main class="content">
 
-        <h1>Employee Management</h1>
+        <div class="page-header">
+            <div>
+                <h1>Employee Management</h1>
+                <p>Add employees, manage profiles, documents, photos, login resets, and employee records.</p>
+            </div>
+
+            <div class="role-badge">
+                Logged in as
+                <strong><%= user && user.username ? user.username : "User" %></strong>
+
+                <% if (user && user.role) { %>
+                    <span class="role-pill"><%= user.role %></span>
+                <% } %>
+            </div>
+        </div>
 
         <form action="/employees" method="GET" class="toolbar">
             <input
@@ -51,7 +553,13 @@
                 value="<%= search || '' %>"
             >
 
-            <button type="submit">Search</button>
+            <button type="submit" class="primary-btn">
+                Search
+            </button>
+
+            <a class="secondary-btn" href="/employees">
+                Clear
+            </a>
 
             <a class="secondary-btn" href="/export/employees">
                 Export Excel
@@ -61,207 +569,302 @@
         <div class="card">
             <h2>Add Employee</h2>
 
-            <br>
-
             <form action="/employees/add" method="POST" class="stack-form">
 
-                <h3>Basic Details</h3>
+                <h3 class="form-section-title">Basic Details</h3>
 
-                <label>Employee Name</label>
-                <input type="text" name="name" placeholder="Enter employee name" required>
+                <div class="form-group">
+                    <label>Employee Name</label>
+                    <input type="text" name="name" placeholder="Enter employee name" required>
+                </div>
 
-                <label>Department</label>
-                <input type="text" name="department" placeholder="Enter department" required>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" name="department" placeholder="Enter department" required>
+                </div>
 
-                <label>Designation</label>
-                <input type="text" name="designation" placeholder="Enter designation">
+                <div class="form-group">
+                    <label>Designation</label>
+                    <input type="text" name="designation" placeholder="Enter designation">
+                </div>
 
-                <label>Main Salary / Gross Salary</label>
-                <input type="number" name="salary" placeholder="Enter main salary" required>
+                <div class="form-group">
+                    <label>Main Salary / Gross Salary</label>
+                    <input type="number" name="salary" placeholder="Enter main salary" required>
+                </div>
 
-                <h3>Salary Components</h3>
+                <h3 class="form-section-title">Salary Components</h3>
 
-                <label>Basic Salary</label>
-                <input type="number" name="basic_salary" placeholder="Enter basic salary" value="0">
+                <div class="form-group">
+                    <label>Basic Salary</label>
+                    <input type="number" name="basic_salary" placeholder="Enter basic salary" value="0">
+                </div>
 
-                <label>HRA</label>
-                <input type="number" name="hra" placeholder="Enter HRA" value="0">
+                <div class="form-group">
+                    <label>HRA</label>
+                    <input type="number" name="hra" placeholder="Enter HRA" value="0">
+                </div>
 
-                <label>Allowances</label>
-                <input type="number" name="allowances" placeholder="Enter allowances" value="0">
+                <div class="form-group">
+                    <label>Allowances</label>
+                    <input type="number" name="allowances" placeholder="Enter allowances" value="0">
+                </div>
 
-                <label>Bonus</label>
-                <input type="number" name="bonus" placeholder="Enter bonus" value="0">
+                <div class="form-group">
+                    <label>Bonus</label>
+                    <input type="number" name="bonus" placeholder="Enter bonus" value="0">
+                </div>
 
-                <h3>Deductions</h3>
+                <h3 class="form-section-title">Deductions</h3>
 
-                <label>PF Deduction</label>
-                <input type="number" name="pf_deduction" placeholder="Enter PF deduction" value="0">
+                <div class="form-group">
+                    <label>PF Deduction</label>
+                    <input type="number" name="pf_deduction" placeholder="Enter PF deduction" value="0">
+                </div>
 
-                <label>ESI Deduction</label>
-                <input type="number" name="esi_deduction" placeholder="Enter ESI deduction" value="0">
+                <div class="form-group">
+                    <label>ESI Deduction</label>
+                    <input type="number" name="esi_deduction" placeholder="Enter ESI deduction" value="0">
+                </div>
 
-                <label>Professional Tax</label>
-                <input type="number" name="professional_tax" placeholder="Enter professional tax" value="0">
+                <div class="form-group">
+                    <label>Professional Tax</label>
+                    <input type="number" name="professional_tax" placeholder="Enter professional tax" value="0">
+                </div>
 
-                <label>Other Deduction</label>
-                <input type="number" name="other_deduction" placeholder="Enter other deduction" value="0">
+                <div class="form-group">
+                    <label>Other Deduction</label>
+                    <input type="number" name="other_deduction" placeholder="Enter other deduction" value="0">
+                </div>
 
-                <h3>Contact / Profile</h3>
+                <h3 class="form-section-title">Contact / Profile</h3>
 
-                <label>Phone Number</label>
-                <input type="text" name="phone" placeholder="Enter phone number">
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone" placeholder="Enter phone number">
+                </div>
 
-                <label>Email Address</label>
-                <input type="email" name="email" placeholder="Enter email address">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="Enter email address">
+                </div>
 
-                <label>Joining Date</label>
-                <input type="date" name="joining_date">
+                <div class="form-group">
+                    <label>Joining Date</label>
+                    <input type="date" name="joining_date">
+                </div>
 
-                <label>Address</label>
-                <input type="text" name="address" placeholder="Enter address">
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" name="address" placeholder="Enter address">
+                </div>
 
                 <% if (user && user.role === "Super Admin") { %>
-                    <h3>Bank / Identity Details</h3>
+                    <h3 class="form-section-title">Bank / Identity Details</h3>
 
-                    <label>Bank Name</label>
-                    <input type="text" name="bank_name" placeholder="Enter bank name">
+                    <div class="form-group">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" placeholder="Enter bank name">
+                    </div>
 
-                    <label>Account Holder Name</label>
-                    <input type="text" name="account_holder_name" placeholder="Enter account holder name">
+                    <div class="form-group">
+                        <label>Account Holder Name</label>
+                        <input type="text" name="account_holder_name" placeholder="Enter account holder name">
+                    </div>
 
-                    <label>Account Number</label>
-                    <input type="text" name="account_number" placeholder="Enter account number">
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" name="account_number" placeholder="Enter account number">
+                    </div>
 
-                    <label>IFSC Code</label>
-                    <input type="text" name="ifsc_code" placeholder="Enter IFSC code">
+                    <div class="form-group">
+                        <label>IFSC Code</label>
+                        <input type="text" name="ifsc_code" placeholder="Enter IFSC code">
+                    </div>
 
-                    <label>UPI ID</label>
-                    <input type="text" name="upi_id" placeholder="Enter UPI ID">
+                    <div class="form-group">
+                        <label>UPI ID</label>
+                        <input type="text" name="upi_id" placeholder="Enter UPI ID">
+                    </div>
 
-                    <label>PAN Number</label>
-                    <input type="text" name="pan_number" placeholder="Enter PAN number">
+                    <div class="form-group">
+                        <label>PAN Number</label>
+                        <input type="text" name="pan_number" placeholder="Enter PAN number">
+                    </div>
 
-                    <label>Aadhaar Number</label>
-                    <input type="text" name="aadhaar_number" placeholder="Enter Aadhaar number">
+                    <div class="form-group">
+                        <label>Aadhaar Number</label>
+                        <input type="text" name="aadhaar_number" placeholder="Enter Aadhaar number">
+                    </div>
                 <% } else { %>
-                    <div class="card">
+                    <div class="note-box">
                         <strong>Note:</strong> Bank, PAN, and Aadhaar details can be added only by Super Admin.
                     </div>
                 <% } %>
 
-                <button type="submit">
-                    Add Employee
-                </button>
+                <div class="submit-row">
+                    <button type="submit" class="primary-btn">
+                        Add Employee
+                    </button>
+                </div>
 
             </form>
         </div>
 
-        <br>
+        <div class="card table-card">
+            <h2>Employee List</h2>
 
-        <h2>Employee List</h2>
-
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Photo</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Designation</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Salary</th>
-                <th>Username</th>
-                <th>Actions</th>
-            </tr>
-
-            <% if (employees && employees.length > 0) { %>
-                <% employees.forEach(employee => { %>
+            <div class="table-wrap">
+                <table>
                     <tr>
-                        <td><%= employee.id %></td>
-
-                        <td>
-                            <img
-                                src="/employees/photo/<%= employee.id %>"
-                                style="width:50px; height:50px; border-radius:50%; object-fit:cover;"
-                            >
-                        </td>
-
-                        <td><%= employee.name %></td>
-                        <td><%= employee.department || '-' %></td>
-                        <td><%= employee.designation || '-' %></td>
-                        <td><%= employee.phone || '-' %></td>
-                        <td><%= employee.email || '-' %></td>
-                        <td>Rs. <%= employee.salary || 0 %></td>
-                        <td><%= employee.username || '-' %></td>
-
-                        <td class="action-buttons">
-
-                            <a class="secondary-btn" href="/employees/profile/<%= employee.id %>">
-                                Profile
-                            </a>
-
-                            <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
-                                Edit
-                            </a>
-
-                            <a class="secondary-btn" href="/employees/documents/<%= employee.id %>">
-                                Documents
-                            </a>
-
-                            <a class="secondary-btn" href="/employees/id-card/<%= employee.id %>">
-                                ID Card
-                            </a>
-
-                            <form
-                                action="/employees/photo/upload/<%= employee.id %>"
-                                method="POST"
-                                enctype="multipart/form-data"
-                            >
-                                <input
-                                    type="file"
-                                    name="employee_photo"
-                                    accept="image/*"
-                                    required
-                                    style="width:150px;"
-                                >
-
-                                <button class="secondary-btn" type="submit">
-                                    Upload Photo
-                                </button>
-                            </form>
-
-                            <form action="/employees/photo/delete/<%= employee.id %>" method="POST">
-                                <button class="delete-btn" type="submit">
-                                    Delete Photo
-                                </button>
-                            </form>
-
-                            <form action="/employees/reset-login/<%= employee.id %>" method="POST">
-                                <button class="secondary-btn" type="submit">
-                                    Reset Login
-                                </button>
-                            </form>
-
-                            <form action="/employees/delete/<%= employee.id %>" method="POST">
-                                <button class="delete-btn" type="submit">
-                                    Delete
-                                </button>
-                            </form>
-
-                        </td>
+                        <th>ID</th>
+                        <th>Photo</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Designation</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Salary</th>
+                        <th>Username</th>
+                        <th>Actions</th>
                     </tr>
-                <% }) %>
-            <% } else { %>
-                <tr>
-                    <td colspan="10">No employees found.</td>
-                </tr>
-            <% } %>
-        </table>
+
+                    <% if (employees && employees.length > 0) { %>
+                        <% employees.forEach(employee => { %>
+                            <tr>
+                                <td><%= employee.id %></td>
+
+                                <td>
+                                    <img
+                                        src="/employees/photo/<%= employee.id %>"
+                                        alt="<%= employee.name || 'Employee' %>"
+                                        class="employee-photo"
+                                    >
+                                </td>
+
+                                <td>
+                                    <div class="employee-name"><%= employee.name || "-" %></div>
+                                    <div class="small-muted">ID: <%= employee.id %></div>
+                                </td>
+
+                                <td><%= employee.department || "-" %></td>
+                                <td><%= employee.designation || "-" %></td>
+                                <td><%= employee.phone || "-" %></td>
+                                <td><%= employee.email || "-" %></td>
+                                <td class="salary-text">Rs. <%= employee.salary || 0 %></td>
+                                <td><%= employee.username || "-" %></td>
+
+                                <td>
+                                    <div class="action-buttons">
+
+                                        <a class="secondary-btn" href="/employees/profile/<%= employee.id %>">
+                                            Profile
+                                        </a>
+
+                                        <a class="edit-btn" href="/employees/edit/<%= employee.id %>">
+                                            Edit
+                                        </a>
+
+                                        <a class="secondary-btn" href="/employees/documents/<%= employee.id %>">
+                                            Documents
+                                        </a>
+
+                                        <a class="secondary-btn" href="/employees/id-card/<%= employee.id %>">
+                                            ID Card
+                                        </a>
+
+                                        <form
+                                            action="/employees/photo/upload/<%= employee.id %>"
+                                            method="POST"
+                                            enctype="multipart/form-data"
+                                        >
+                                            <input
+                                                type="file"
+                                                name="employee_photo"
+                                                accept="image/*"
+                                                required
+                                                class="photo-upload-input"
+                                            >
+
+                                            <button class="upload-btn" type="submit">
+                                                Upload Photo
+                                            </button>
+                                        </form>
+
+                                        <form action="/employees/photo/delete/<%= employee.id %>" method="POST">
+                                            <button class="delete-btn" type="submit">
+                                                Delete Photo
+                                            </button>
+                                        </form>
+
+                                        <form action="/employees/reset-login/<%= employee.id %>" method="POST">
+                                            <button class="secondary-btn" type="submit">
+                                                Reset Login
+                                            </button>
+                                        </form>
+
+                                        <form action="/employees/delete/<%= employee.id %>" method="POST">
+                                            <button class="delete-btn" type="submit">
+                                                Delete
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="10">No employees found.</td>
+                        </tr>
+                    <% } %>
+                </table>
+            </div>
+        </div>
 
     </main>
 
 </div>
+
+<script>
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarOverlay.classList.add("show");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("show");
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener("click", openSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeSidebar);
+    }
+
+    document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+        link.addEventListener("click", closeSidebar);
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function () {
+                    console.log("VLCG HRMS service worker registered");
+                })
+                .catch(function (error) {
+                    console.log("Service worker registration failed:", error);
+                });
+        });
+    }
+</script>
 
 </body>
 </html>

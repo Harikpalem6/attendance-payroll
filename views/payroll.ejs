@@ -1,65 +1,545 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Payroll Management</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+
+    <title>Payroll Management - VLCG HRMS</title>
     <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f6fb;
+            font-family: Arial, sans-serif;
+            color: #111827;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 22px 18px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 24px;
+            font-size: 24px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar nav a {
+            color: #e5e7eb;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 24px;
+        }
+
+        .mobile-topbar {
+            display: none;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .mobile-topbar h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .menu-toggle {
+            border: none;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 950;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .page-header p {
+            margin: 7px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .role-badge {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            font-size: 14px;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .role-pill {
+            display: inline-block;
+            margin-left: 6px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .card,
+        .toolbar-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            margin-bottom: 22px;
+        }
+
+        .toolbar-title {
+            margin: 0 0 14px;
+            font-size: 20px;
+            color: #111827;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toolbar select,
+        .toolbar input {
+            flex: 1;
+            min-width: 220px;
+            padding: 12px 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: #ffffff;
+        }
+
+        .toolbar select:focus,
+        .toolbar input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .primary-btn,
+        .secondary-btn,
+        .save-btn,
+        .email-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 13px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .primary-btn {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .primary-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .secondary-btn {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        .secondary-btn:hover {
+            background: #1e293b;
+        }
+
+        .save-btn {
+            background: #16a34a;
+            color: #ffffff;
+        }
+
+        .save-btn:hover {
+            background: #15803d;
+        }
+
+        .email-btn {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+
+        .email-btn:hover {
+            background: #d97706;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .result-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .employee-pill {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 7px 11px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .payroll-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .payroll-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 15px;
+        }
+
+        .payroll-item span {
+            display: block;
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 7px;
+        }
+
+        .payroll-item strong {
+            display: block;
+            color: #111827;
+            font-size: 19px;
+        }
+
+        .net-salary {
+            background: #dcfce7;
+            border-color: #bbf7d0;
+        }
+
+        .net-salary strong {
+            color: #166534;
+        }
+
+        .deduction-item {
+            background: #fee2e2;
+            border-color: #fecaca;
+        }
+
+        .deduction-item strong {
+            color: #991b1b;
+        }
+
+        .sub-section-title {
+            margin: 22px 0 12px;
+            font-size: 18px;
+            color: #111827;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .button-row form {
+            margin: 0;
+        }
+
+        .section-title {
+            margin: 0 0 14px;
+            font-size: 22px;
+            color: #111827;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1180px;
+            background: #ffffff;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .amount-strong {
+            font-weight: 700;
+            color: #166534;
+        }
+
+        @media (max-width: 1200px) {
+            .payroll-grid {
+                grid-template-columns: repeat(2, minmax(160px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .app-layout {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 18px 14px 26px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-header h1 {
+                font-size: 26px;
+            }
+
+            .role-badge {
+                width: 100%;
+                white-space: normal;
+            }
+
+            .card,
+            .toolbar-card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar select,
+            .toolbar input,
+            .toolbar button {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .payroll-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-row {
+                flex-direction: column;
+            }
+
+            .button-row form,
+            .button-row button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
 
+<div class="mobile-topbar">
+    <button type="button" class="menu-toggle" id="menuToggle">
+        Menu
+    </button>
+
+    <h2>VLCG HRMS</h2>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="app-layout">
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <h2>HRMS</h2>
 
         <nav>
-    <a href="/dashboard">Dashboard</a>
+            <a href="/dashboard">Dashboard</a>
 
-    <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
-        <a href="/employees">Employees</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/employees">Employees</a>
+            <% } %>
 
-    <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
-        <a href="/attendance">Attendance</a>
-        <a href="/attendance/monthly-report">Monthly Report</a>
-        <a href="/attendance/regularizations">Regularizations</a>
-        <a href="/leaves">Leaves</a>
-        <a href="/leaves/balances">Leave Balances</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR")) { %>
+                <a href="/password-reset-requests">Password Reset Requests</a>
+            <% } %>
 
-    <% if (user && user.role === "Super Admin") { %>
-        <a href="/payroll">Payroll</a>
-        <a href="/admin-users">Admin Users</a>
-        <a href="/company-settings">Company Settings</a>
-        <a href="/activity-logs">Activity Logs</a>
-        <a href="/export/backup">Download Backup</a>
-    <% } %>
+            <% if (user && (user.role === "Super Admin" || user.role === "HR" || user.role === "Manager")) { %>
+                <a href="/attendance">Attendance</a>
+                <a href="/attendance/monthly-report">Monthly Report</a>
+                <a href="/attendance/regularizations">Regularizations</a>
+                <a href="/leaves">Leaves</a>
+                <a href="/leaves/balances">Leave Balances</a>
+            <% } %>
 
-    <a href="/change-password">Change Password</a>
-    <a href="/logout">Logout</a>
-</nav>
+            <% if (user && user.role === "Super Admin") { %>
+                <a href="/payroll" class="active">Payroll</a>
+                <a href="/admin-users">Admin Users</a>
+                <a href="/company-settings">Company Settings</a>
+                <a href="/activity-logs">Activity Logs</a>
+                <a href="/export/backup">Download Backup</a>
+            <% } %>
+
+            <a href="/change-password">Change Password</a>
+            <a href="/logout">Logout</a>
+        </nav>
     </aside>
 
     <main class="content">
 
-        <h1>Payroll Management</h1>
+        <div class="page-header">
+            <div>
+                <h1>Payroll Management</h1>
+                <p>Calculate employee payroll, save payroll records, download PDF payslips, and email payslips.</p>
+            </div>
 
-        <form action="/payroll/calculate" method="POST" class="toolbar">
+            <div class="role-badge">
+                Logged in as
+                <strong><%= user && user.username ? user.username : "User" %></strong>
 
-            <select name="employee_id" required>
-                <option value="">Select Employee</option>
+                <% if (user && user.role) { %>
+                    <span class="role-pill"><%= user.role %></span>
+                <% } %>
+            </div>
+        </div>
 
-                <% employees.forEach(emp => { %>
-                    <option value="<%= emp.id %>">
-                        <%= emp.name %>
-                    </option>
-                <% }) %>
-            </select>
+        <div class="toolbar-card">
+            <h2 class="toolbar-title">Calculate Payroll</h2>
 
-            <input type="month" name="month" required>
+            <form action="/payroll/calculate" method="POST" class="toolbar">
 
-            <button type="submit">Calculate Payroll</button>
+                <select name="employee_id" required>
+                    <option value="">Select Employee</option>
 
-        </form>
+                    <% employees.forEach(emp => { %>
+                        <option value="<%= emp.id %>">
+                            <%= emp.name %>
+                        </option>
+                    <% }) %>
+                </select>
+
+                <input type="month" name="month" required>
+
+                <button type="submit" class="primary-btn">
+                    Calculate Payroll
+                </button>
+
+            </form>
+        </div>
 
         <% if (payroll) { %>
 
@@ -81,234 +561,348 @@
 
             <div class="card">
 
-                <h2>Payroll Result</h2>
+                <div class="result-header">
+                    <div>
+                        <h2>Payroll Result</h2>
+                        <p style="margin: 7px 0 0; color: #6b7280;">
+                            <strong>Month:</strong> <%= payroll.month %>
+                        </p>
+                    </div>
 
-                <br>
+                    <span class="employee-pill">
+                        <%= payroll.employee.name %>
+                        <% if (payroll.employee.department) { %>
+                            - <%= payroll.employee.department %>
+                        <% } %>
+                    </span>
+                </div>
 
-                <p><strong>Employee:</strong> <%= payroll.employee.name %></p>
-                <p><strong>Department:</strong> <%= payroll.employee.department || '-' %></p>
-                <p><strong>Month:</strong> <%= payroll.month %></p>
+                <h3 class="sub-section-title">Earnings</h3>
 
-                <br>
+                <div class="payroll-grid">
+                    <div class="payroll-item">
+                        <span>Basic Salary</span>
+                        <strong>Rs. <%= basicSalary.toFixed(2) %></strong>
+                    </div>
 
-                <h3>Earnings</h3>
+                    <div class="payroll-item">
+                        <span>HRA</span>
+                        <strong>Rs. <%= hra.toFixed(2) %></strong>
+                    </div>
 
-                <p><strong>Basic Salary:</strong> Rs. <%= basicSalary.toFixed(2) %></p>
-                <p><strong>HRA:</strong> Rs. <%= hra.toFixed(2) %></p>
-                <p><strong>Allowances:</strong> Rs. <%= allowances.toFixed(2) %></p>
-                <p><strong>Bonus:</strong> Rs. <%= bonus.toFixed(2) %></p>
-                <p><strong>Gross Salary:</strong> Rs. <%= grossSalary.toFixed(2) %></p>
+                    <div class="payroll-item">
+                        <span>Allowances</span>
+                        <strong>Rs. <%= allowances.toFixed(2) %></strong>
+                    </div>
 
-                <br>
+                    <div class="payroll-item">
+                        <span>Bonus</span>
+                        <strong>Rs. <%= bonus.toFixed(2) %></strong>
+                    </div>
 
-                <h3>Attendance</h3>
+                    <div class="payroll-item">
+                        <span>Gross Salary</span>
+                        <strong>Rs. <%= grossSalary.toFixed(2) %></strong>
+                    </div>
+                </div>
 
-                <p><strong>Present Days:</strong> <%= payroll.present || 0 %></p>
-                <p><strong>Absent Days:</strong> <%= payroll.absent || 0 %></p>
-                <p><strong>Half Days:</strong> <%= payroll.halfday || 0 %></p>
-                <p><strong>Attendance Deduction:</strong> Rs. <%= attendanceDeduction.toFixed(2) %></p>
+                <h3 class="sub-section-title">Attendance</h3>
 
-                <br>
+                <div class="payroll-grid">
+                    <div class="payroll-item">
+                        <span>Present Days</span>
+                        <strong><%= payroll.present || 0 %></strong>
+                    </div>
 
-                <h3>Deductions</h3>
+                    <div class="payroll-item">
+                        <span>Absent Days</span>
+                        <strong><%= payroll.absent || 0 %></strong>
+                    </div>
 
-                <p><strong>PF Deduction:</strong> Rs. <%= pfDeduction.toFixed(2) %></p>
-                <p><strong>ESI Deduction:</strong> Rs. <%= esiDeduction.toFixed(2) %></p>
-                <p><strong>Professional Tax:</strong> Rs. <%= professionalTax.toFixed(2) %></p>
-                <p><strong>Other Deduction:</strong> Rs. <%= otherDeduction.toFixed(2) %></p>
-                <p><strong>Total Deductions:</strong> Rs. <%= totalDeduction.toFixed(2) %></p>
+                    <div class="payroll-item">
+                        <span>Half Days</span>
+                        <strong><%= payroll.halfday || 0 %></strong>
+                    </div>
 
-                <br>
+                    <div class="payroll-item deduction-item">
+                        <span>Attendance Deduction</span>
+                        <strong>Rs. <%= attendanceDeduction.toFixed(2) %></strong>
+                    </div>
+                </div>
 
-                <h3>Net Salary</h3>
+                <h3 class="sub-section-title">Deductions</h3>
 
-                <p><strong>Final Salary:</strong> Rs. <%= finalSalary.toFixed(2) %></p>
+                <div class="payroll-grid">
+                    <div class="payroll-item deduction-item">
+                        <span>PF Deduction</span>
+                        <strong>Rs. <%= pfDeduction.toFixed(2) %></strong>
+                    </div>
 
-                <br>
+                    <div class="payroll-item deduction-item">
+                        <span>ESI Deduction</span>
+                        <strong>Rs. <%= esiDeduction.toFixed(2) %></strong>
+                    </div>
 
-                <form action="/payroll/save" method="POST" style="display:inline-block; margin-right:10px;">
+                    <div class="payroll-item deduction-item">
+                        <span>Professional Tax</span>
+                        <strong>Rs. <%= professionalTax.toFixed(2) %></strong>
+                    </div>
 
-                    <input type="hidden" name="employee_id" value="<%= payroll.employee.id %>">
-                    <input type="hidden" name="month" value="<%= payroll.month %>">
+                    <div class="payroll-item deduction-item">
+                        <span>Other Deduction</span>
+                        <strong>Rs. <%= otherDeduction.toFixed(2) %></strong>
+                    </div>
 
-                    <input type="hidden" name="base_salary" value="<%= grossSalary.toFixed(2) %>">
-                    <input type="hidden" name="basic_salary" value="<%= basicSalary.toFixed(2) %>">
-                    <input type="hidden" name="hra" value="<%= hra.toFixed(2) %>">
-                    <input type="hidden" name="allowances" value="<%= allowances.toFixed(2) %>">
-                    <input type="hidden" name="bonus" value="<%= bonus.toFixed(2) %>">
+                    <div class="payroll-item deduction-item">
+                        <span>Total Deductions</span>
+                        <strong>Rs. <%= totalDeduction.toFixed(2) %></strong>
+                    </div>
 
-                    <input type="hidden" name="pf_deduction" value="<%= pfDeduction.toFixed(2) %>">
-                    <input type="hidden" name="esi_deduction" value="<%= esiDeduction.toFixed(2) %>">
-                    <input type="hidden" name="professional_tax" value="<%= professionalTax.toFixed(2) %>">
-                    <input type="hidden" name="other_deduction" value="<%= otherDeduction.toFixed(2) %>">
+                    <div class="payroll-item net-salary">
+                        <span>Final Salary</span>
+                        <strong>Rs. <%= finalSalary.toFixed(2) %></strong>
+                    </div>
+                </div>
 
-                    <input type="hidden" name="present_days" value="<%= payroll.present || 0 %>">
-                    <input type="hidden" name="absent_days" value="<%= payroll.absent || 0 %>">
-                    <input type="hidden" name="half_days" value="<%= payroll.halfday || 0 %>">
-                    <input type="hidden" name="deduction" value="<%= totalDeduction.toFixed(2) %>">
-                    <input type="hidden" name="final_salary" value="<%= finalSalary.toFixed(2) %>">
+                <div class="button-row">
 
-                    <button type="submit">Save Payroll Record</button>
+                    <form action="/payroll/save" method="POST">
 
-                </form>
+                        <input type="hidden" name="employee_id" value="<%= payroll.employee.id %>">
+                        <input type="hidden" name="month" value="<%= payroll.month %>">
 
-                <form action="/payroll/payslip" method="POST" style="display:inline-block; margin-right:10px;">
+                        <input type="hidden" name="base_salary" value="<%= grossSalary.toFixed(2) %>">
+                        <input type="hidden" name="basic_salary" value="<%= basicSalary.toFixed(2) %>">
+                        <input type="hidden" name="hra" value="<%= hra.toFixed(2) %>">
+                        <input type="hidden" name="allowances" value="<%= allowances.toFixed(2) %>">
+                        <input type="hidden" name="bonus" value="<%= bonus.toFixed(2) %>">
 
-                    <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
-                    <input type="hidden" name="department" value="<%= payroll.employee.department || '' %>">
-                    <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
-                    <input type="hidden" name="photo_path" value="<%= payroll.employee.photo_path || '' %>">
+                        <input type="hidden" name="pf_deduction" value="<%= pfDeduction.toFixed(2) %>">
+                        <input type="hidden" name="esi_deduction" value="<%= esiDeduction.toFixed(2) %>">
+                        <input type="hidden" name="professional_tax" value="<%= professionalTax.toFixed(2) %>">
+                        <input type="hidden" name="other_deduction" value="<%= otherDeduction.toFixed(2) %>">
 
-                    <input type="hidden" name="bank_name" value="<%= payroll.employee.bank_name || '' %>">
-                    <input type="hidden" name="account_holder_name" value="<%= payroll.employee.account_holder_name || '' %>">
-                    <input type="hidden" name="account_number" value="<%= payroll.employee.account_number || '' %>">
-                    <input type="hidden" name="ifsc_code" value="<%= payroll.employee.ifsc_code || '' %>">
-                    <input type="hidden" name="upi_id" value="<%= payroll.employee.upi_id || '' %>">
-                    <input type="hidden" name="pan_number" value="<%= payroll.employee.pan_number || '' %>">
+                        <input type="hidden" name="present_days" value="<%= payroll.present || 0 %>">
+                        <input type="hidden" name="absent_days" value="<%= payroll.absent || 0 %>">
+                        <input type="hidden" name="half_days" value="<%= payroll.halfday || 0 %>">
+                        <input type="hidden" name="deduction" value="<%= totalDeduction.toFixed(2) %>">
+                        <input type="hidden" name="final_salary" value="<%= finalSalary.toFixed(2) %>">
 
-                    <input type="hidden" name="salary" value="<%= grossSalary.toFixed(2) %>">
-                    <input type="hidden" name="basicSalary" value="<%= basicSalary.toFixed(2) %>">
-                    <input type="hidden" name="hra" value="<%= hra.toFixed(2) %>">
-                    <input type="hidden" name="allowances" value="<%= allowances.toFixed(2) %>">
-                    <input type="hidden" name="bonus" value="<%= bonus.toFixed(2) %>">
+                        <button type="submit" class="save-btn">
+                            Save Payroll Record
+                        </button>
 
-                    <input type="hidden" name="grossSalary" value="<%= grossSalary.toFixed(2) %>">
-                    <input type="hidden" name="attendanceDeduction" value="<%= attendanceDeduction.toFixed(2) %>">
-                    <input type="hidden" name="pfDeduction" value="<%= pfDeduction.toFixed(2) %>">
-                    <input type="hidden" name="esiDeduction" value="<%= esiDeduction.toFixed(2) %>">
-                    <input type="hidden" name="professionalTax" value="<%= professionalTax.toFixed(2) %>">
-                    <input type="hidden" name="otherDeduction" value="<%= otherDeduction.toFixed(2) %>">
+                    </form>
 
-                    <input type="hidden" name="present" value="<%= payroll.present || 0 %>">
-                    <input type="hidden" name="absent" value="<%= payroll.absent || 0 %>">
-                    <input type="hidden" name="halfday" value="<%= payroll.halfday || 0 %>">
-                    <input type="hidden" name="deduction" value="<%= totalDeduction.toFixed(2) %>">
-                    <input type="hidden" name="finalSalary" value="<%= finalSalary.toFixed(2) %>">
-                    <input type="hidden" name="month" value="<%= payroll.month %>">
+                    <form action="/payroll/payslip" method="POST">
 
-                    <button type="submit">Download PDF Payslip</button>
+                        <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
+                        <input type="hidden" name="department" value="<%= payroll.employee.department || '' %>">
+                        <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
+                        <input type="hidden" name="photo_path" value="<%= payroll.employee.photo_path || '' %>">
 
-                </form>
+                        <input type="hidden" name="bank_name" value="<%= payroll.employee.bank_name || '' %>">
+                        <input type="hidden" name="account_holder_name" value="<%= payroll.employee.account_holder_name || '' %>">
+                        <input type="hidden" name="account_number" value="<%= payroll.employee.account_number || '' %>">
+                        <input type="hidden" name="ifsc_code" value="<%= payroll.employee.ifsc_code || '' %>">
+                        <input type="hidden" name="upi_id" value="<%= payroll.employee.upi_id || '' %>">
+                        <input type="hidden" name="pan_number" value="<%= payroll.employee.pan_number || '' %>">
 
-                <form action="/payroll/email-payslip" method="POST" style="display:inline-block;">
+                        <input type="hidden" name="salary" value="<%= grossSalary.toFixed(2) %>">
+                        <input type="hidden" name="basicSalary" value="<%= basicSalary.toFixed(2) %>">
+                        <input type="hidden" name="hra" value="<%= hra.toFixed(2) %>">
+                        <input type="hidden" name="allowances" value="<%= allowances.toFixed(2) %>">
+                        <input type="hidden" name="bonus" value="<%= bonus.toFixed(2) %>">
 
-                    <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
-                    <input type="hidden" name="department" value="<%= payroll.employee.department || '' %>">
-                    <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
-                    <input type="hidden" name="photo_path" value="<%= payroll.employee.photo_path || '' %>">
+                        <input type="hidden" name="grossSalary" value="<%= grossSalary.toFixed(2) %>">
+                        <input type="hidden" name="attendanceDeduction" value="<%= attendanceDeduction.toFixed(2) %>">
+                        <input type="hidden" name="pfDeduction" value="<%= pfDeduction.toFixed(2) %>">
+                        <input type="hidden" name="esiDeduction" value="<%= esiDeduction.toFixed(2) %>">
+                        <input type="hidden" name="professionalTax" value="<%= professionalTax.toFixed(2) %>">
+                        <input type="hidden" name="otherDeduction" value="<%= otherDeduction.toFixed(2) %>">
 
-                    <input type="hidden" name="bank_name" value="<%= payroll.employee.bank_name || '' %>">
-                    <input type="hidden" name="account_holder_name" value="<%= payroll.employee.account_holder_name || '' %>">
-                    <input type="hidden" name="account_number" value="<%= payroll.employee.account_number || '' %>">
-                    <input type="hidden" name="ifsc_code" value="<%= payroll.employee.ifsc_code || '' %>">
-                    <input type="hidden" name="upi_id" value="<%= payroll.employee.upi_id || '' %>">
-                    <input type="hidden" name="pan_number" value="<%= payroll.employee.pan_number || '' %>">
+                        <input type="hidden" name="present" value="<%= payroll.present || 0 %>">
+                        <input type="hidden" name="absent" value="<%= payroll.absent || 0 %>">
+                        <input type="hidden" name="halfday" value="<%= payroll.halfday || 0 %>">
+                        <input type="hidden" name="deduction" value="<%= totalDeduction.toFixed(2) %>">
+                        <input type="hidden" name="finalSalary" value="<%= finalSalary.toFixed(2) %>">
+                        <input type="hidden" name="month" value="<%= payroll.month %>">
 
-                    <input type="hidden" name="salary" value="<%= grossSalary.toFixed(2) %>">
-                    <input type="hidden" name="basicSalary" value="<%= basicSalary.toFixed(2) %>">
-                    <input type="hidden" name="hra" value="<%= hra.toFixed(2) %>">
-                    <input type="hidden" name="allowances" value="<%= allowances.toFixed(2) %>">
-                    <input type="hidden" name="bonus" value="<%= bonus.toFixed(2) %>">
+                        <button type="submit" class="secondary-btn">
+                            Download PDF Payslip
+                        </button>
 
-                    <input type="hidden" name="grossSalary" value="<%= grossSalary.toFixed(2) %>">
-                    <input type="hidden" name="attendanceDeduction" value="<%= attendanceDeduction.toFixed(2) %>">
-                    <input type="hidden" name="pfDeduction" value="<%= pfDeduction.toFixed(2) %>">
-                    <input type="hidden" name="esiDeduction" value="<%= esiDeduction.toFixed(2) %>">
-                    <input type="hidden" name="professionalTax" value="<%= professionalTax.toFixed(2) %>">
-                    <input type="hidden" name="otherDeduction" value="<%= otherDeduction.toFixed(2) %>">
+                    </form>
 
-                    <input type="hidden" name="present" value="<%= payroll.present || 0 %>">
-                    <input type="hidden" name="absent" value="<%= payroll.absent || 0 %>">
-                    <input type="hidden" name="halfday" value="<%= payroll.halfday || 0 %>">
-                    <input type="hidden" name="deduction" value="<%= totalDeduction.toFixed(2) %>">
-                    <input type="hidden" name="finalSalary" value="<%= finalSalary.toFixed(2) %>">
-                    <input type="hidden" name="month" value="<%= payroll.month %>">
+                    <form action="/payroll/email-payslip" method="POST">
 
-                    <button type="submit">Email Payslip</button>
+                        <input type="hidden" name="employeeName" value="<%= payroll.employee.name %>">
+                        <input type="hidden" name="department" value="<%= payroll.employee.department || '' %>">
+                        <input type="hidden" name="email" value="<%= payroll.employee.email || '' %>">
+                        <input type="hidden" name="photo_path" value="<%= payroll.employee.photo_path || '' %>">
 
-                </form>
+                        <input type="hidden" name="bank_name" value="<%= payroll.employee.bank_name || '' %>">
+                        <input type="hidden" name="account_holder_name" value="<%= payroll.employee.account_holder_name || '' %>">
+                        <input type="hidden" name="account_number" value="<%= payroll.employee.account_number || '' %>">
+                        <input type="hidden" name="ifsc_code" value="<%= payroll.employee.ifsc_code || '' %>">
+                        <input type="hidden" name="upi_id" value="<%= payroll.employee.upi_id || '' %>">
+                        <input type="hidden" name="pan_number" value="<%= payroll.employee.pan_number || '' %>">
+
+                        <input type="hidden" name="salary" value="<%= grossSalary.toFixed(2) %>">
+                        <input type="hidden" name="basicSalary" value="<%= basicSalary.toFixed(2) %>">
+                        <input type="hidden" name="hra" value="<%= hra.toFixed(2) %>">
+                        <input type="hidden" name="allowances" value="<%= allowances.toFixed(2) %>">
+                        <input type="hidden" name="bonus" value="<%= bonus.toFixed(2) %>">
+
+                        <input type="hidden" name="grossSalary" value="<%= grossSalary.toFixed(2) %>">
+                        <input type="hidden" name="attendanceDeduction" value="<%= attendanceDeduction.toFixed(2) %>">
+                        <input type="hidden" name="pfDeduction" value="<%= pfDeduction.toFixed(2) %>">
+                        <input type="hidden" name="esiDeduction" value="<%= esiDeduction.toFixed(2) %>">
+                        <input type="hidden" name="professionalTax" value="<%= professionalTax.toFixed(2) %>">
+                        <input type="hidden" name="otherDeduction" value="<%= otherDeduction.toFixed(2) %>">
+
+                        <input type="hidden" name="present" value="<%= payroll.present || 0 %>">
+                        <input type="hidden" name="absent" value="<%= payroll.absent || 0 %>">
+                        <input type="hidden" name="halfday" value="<%= payroll.halfday || 0 %>">
+                        <input type="hidden" name="deduction" value="<%= totalDeduction.toFixed(2) %>">
+                        <input type="hidden" name="finalSalary" value="<%= finalSalary.toFixed(2) %>">
+                        <input type="hidden" name="month" value="<%= payroll.month %>">
+
+                        <button type="submit" class="email-btn">
+                            Email Payslip
+                        </button>
+
+                    </form>
+
+                </div>
 
             </div>
 
-            <br>
-
         <% } %>
 
-        <h2>Payroll History</h2>
+        <div class="card">
+            <h2 class="section-title">Payroll History</h2>
 
-        <br>
-
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Employee</th>
-                <th>Month</th>
-                <th>Gross Salary</th>
-                <th>Present</th>
-                <th>Absent</th>
-                <th>Half Days</th>
-                <th>Deduction</th>
-                <th>Net Salary</th>
-                <th>Created</th>
-                <th>PDF</th>
-            </tr>
-
-            <% if (history && history.length > 0) { %>
-                <% history.forEach(record => { %>
+            <div class="table-wrap">
+                <table>
                     <tr>
-                        <td><%= record.id %></td>
-                        <td><%= record.name %></td>
-                        <td><%= record.month %></td>
-                        <td>Rs. <%= Number(record.base_salary || 0).toFixed(2) %></td>
-                        <td><%= record.present_days || 0 %></td>
-                        <td><%= record.absent_days || 0 %></td>
-                        <td><%= record.half_days || 0 %></td>
-                        <td>Rs. <%= Number(record.deduction || 0).toFixed(2) %></td>
-                        <td>Rs. <%= Number(record.final_salary || 0).toFixed(2) %></td>
-                        <td><%= record.created_at ? new Date(record.created_at).toLocaleString() : '' %></td>
-
-                        <td>
-                            <form action="/payroll/payslip" method="POST">
-
-                                <input type="hidden" name="employeeName" value="<%= record.name %>">
-                                <input type="hidden" name="department" value="">
-                                <input type="hidden" name="salary" value="<%= Number(record.base_salary || 0).toFixed(2) %>">
-
-                                <input type="hidden" name="basicSalary" value="<%= Number(record.basic_salary || 0).toFixed(2) %>">
-                                <input type="hidden" name="hra" value="<%= Number(record.hra || 0).toFixed(2) %>">
-                                <input type="hidden" name="allowances" value="<%= Number(record.allowances || 0).toFixed(2) %>">
-                                <input type="hidden" name="bonus" value="<%= Number(record.bonus || 0).toFixed(2) %>">
-
-                                <input type="hidden" name="grossSalary" value="<%= Number(record.base_salary || 0).toFixed(2) %>">
-                                <input type="hidden" name="attendanceDeduction" value="0">
-                                <input type="hidden" name="pfDeduction" value="<%= Number(record.pf_deduction || 0).toFixed(2) %>">
-                                <input type="hidden" name="esiDeduction" value="<%= Number(record.esi_deduction || 0).toFixed(2) %>">
-                                <input type="hidden" name="professionalTax" value="<%= Number(record.professional_tax || 0).toFixed(2) %>">
-                                <input type="hidden" name="otherDeduction" value="<%= Number(record.other_deduction || 0).toFixed(2) %>">
-
-                                <input type="hidden" name="present" value="<%= record.present_days || 0 %>">
-                                <input type="hidden" name="absent" value="<%= record.absent_days || 0 %>">
-                                <input type="hidden" name="halfday" value="<%= record.half_days || 0 %>">
-                                <input type="hidden" name="deduction" value="<%= Number(record.deduction || 0).toFixed(2) %>">
-                                <input type="hidden" name="finalSalary" value="<%= Number(record.final_salary || 0).toFixed(2) %>">
-                                <input type="hidden" name="month" value="<%= record.month %>">
-
-                                <button type="submit">PDF</button>
-
-                            </form>
-                        </td>
+                        <th>ID</th>
+                        <th>Employee</th>
+                        <th>Month</th>
+                        <th>Gross Salary</th>
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Half Days</th>
+                        <th>Deduction</th>
+                        <th>Net Salary</th>
+                        <th>Created</th>
+                        <th>PDF</th>
                     </tr>
-                <% }) %>
-            <% } else { %>
-                <tr>
-                    <td colspan="11">No payroll records saved yet.</td>
-                </tr>
-            <% } %>
-        </table>
+
+                    <% if (history && history.length > 0) { %>
+                        <% history.forEach(record => { %>
+                            <tr>
+                                <td><%= record.id %></td>
+                                <td><%= record.name || "-" %></td>
+                                <td><%= record.month || "-" %></td>
+                                <td>Rs. <%= Number(record.base_salary || 0).toFixed(2) %></td>
+                                <td><%= record.present_days || 0 %></td>
+                                <td><%= record.absent_days || 0 %></td>
+                                <td><%= record.half_days || 0 %></td>
+                                <td>Rs. <%= Number(record.deduction || 0).toFixed(2) %></td>
+                                <td class="amount-strong">
+                                    Rs. <%= Number(record.final_salary || 0).toFixed(2) %>
+                                </td>
+                                <td>
+                                    <%= record.created_at ? new Date(record.created_at).toLocaleString() : "" %>
+                                </td>
+
+                                <td>
+                                    <form action="/payroll/payslip" method="POST">
+
+                                        <input type="hidden" name="employeeName" value="<%= record.name %>">
+                                        <input type="hidden" name="department" value="">
+                                        <input type="hidden" name="salary" value="<%= Number(record.base_salary || 0).toFixed(2) %>">
+
+                                        <input type="hidden" name="basicSalary" value="<%= Number(record.basic_salary || 0).toFixed(2) %>">
+                                        <input type="hidden" name="hra" value="<%= Number(record.hra || 0).toFixed(2) %>">
+                                        <input type="hidden" name="allowances" value="<%= Number(record.allowances || 0).toFixed(2) %>">
+                                        <input type="hidden" name="bonus" value="<%= Number(record.bonus || 0).toFixed(2) %>">
+
+                                        <input type="hidden" name="grossSalary" value="<%= Number(record.base_salary || 0).toFixed(2) %>">
+                                        <input type="hidden" name="attendanceDeduction" value="0">
+                                        <input type="hidden" name="pfDeduction" value="<%= Number(record.pf_deduction || 0).toFixed(2) %>">
+                                        <input type="hidden" name="esiDeduction" value="<%= Number(record.esi_deduction || 0).toFixed(2) %>">
+                                        <input type="hidden" name="professionalTax" value="<%= Number(record.professional_tax || 0).toFixed(2) %>">
+                                        <input type="hidden" name="otherDeduction" value="<%= Number(record.other_deduction || 0).toFixed(2) %>">
+
+                                        <input type="hidden" name="present" value="<%= record.present_days || 0 %>">
+                                        <input type="hidden" name="absent" value="<%= record.absent_days || 0 %>">
+                                        <input type="hidden" name="halfday" value="<%= record.half_days || 0 %>">
+                                        <input type="hidden" name="deduction" value="<%= Number(record.deduction || 0).toFixed(2) %>">
+                                        <input type="hidden" name="finalSalary" value="<%= Number(record.final_salary || 0).toFixed(2) %>">
+                                        <input type="hidden" name="month" value="<%= record.month %>">
+
+                                        <button type="submit" class="secondary-btn">
+                                            PDF
+                                        </button>
+
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="11">No payroll records saved yet.</td>
+                        </tr>
+                    <% } %>
+                </table>
+            </div>
+        </div>
 
     </main>
 
 </div>
+
+<script>
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarOverlay.classList.add("show");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("show");
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener("click", openSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeSidebar);
+    }
+
+    document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+        link.addEventListener("click", closeSidebar);
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function () {
+                    console.log("VLCG HRMS service worker registered");
+                })
+                .catch(function (error) {
+                    console.log("Service worker registration failed:", error);
+                });
+        });
+    }
+</script>
 
 </body>
 </html>
