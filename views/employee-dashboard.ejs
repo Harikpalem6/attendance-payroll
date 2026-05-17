@@ -94,27 +94,26 @@
             font-size: 18px;
         }
 
-        .menu-toggle {
+    .menu-toggle {
     border: none;
     background: #1e293b;
-    color: #ffffff;
     width: 42px;
     height: 38px;
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     gap: 4px;
+    padding: 0;
 }
 
-.menu-toggle span {
-    display: block;
+.menu-line {
     width: 20px;
     height: 2px;
     background: #ffffff;
-    border-radius: 999px;
+    border-radius: 10px;
 }
         
 
@@ -460,9 +459,10 @@
 
 <div class="mobile-topbar">
 <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open menu">
-    <span></span>
-    <span></span>
-    <span></span>
+    <div class="menu-line"></div>
+    <div class="menu-line"></div>
+    <div class="menu-line"></div>
+</button>
 </button>    <h2>Employee Portal</h2>
 </div>
 
