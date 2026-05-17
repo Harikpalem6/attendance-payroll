@@ -94,28 +94,28 @@
             font-size: 18px;
         }
 
-    .menu-toggle {
-    border: none;
-    background: #1e293b;
-    width: 42px;
-    height: 38px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-    padding: 0;
-}
+        .menu-toggle {
+            border: none;
+            background: #1e293b;
+            width: 42px;
+            height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+        }
 
-.menu-line {
-    width: 20px;
-    height: 2px;
-    background: #ffffff;
-    border-radius: 10px;
-}
-        
+        .menu-line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #ffffff;
+            border-radius: 10px;
+        }
 
         .sidebar-overlay {
             display: none;
@@ -345,12 +345,6 @@
             color: #374151;
         }
 
-        .empty-text {
-            color: #6b7280;
-            font-size: 14px;
-            margin: 0;
-        }
-
         @media (max-width: 1100px) {
             .quick-actions-grid {
                 grid-template-columns: repeat(2, minmax(160px, 1fr));
@@ -458,12 +452,13 @@
 <body>
 
 <div class="mobile-topbar">
-<button type="button" class="menu-toggle" id="menuToggle" aria-label="Open menu">
-    <div class="menu-line"></div>
-    <div class="menu-line"></div>
-    <div class="menu-line"></div>
-</button>
-</button>    <h2>Employee Portal</h2>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open menu">
+        <span class="menu-line"></span>
+        <span class="menu-line"></span>
+        <span class="menu-line"></span>
+    </button>
+
+    <h2>Employee Portal</h2>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
