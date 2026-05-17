@@ -1,73 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0f172a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>HRMS Login</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+
+    <title>VLCG HRMS Login</title>
     <link rel="stylesheet" href="/css/style.css">
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
-            background: #f3f6fb;
+            background: linear-gradient(135deg, #e0f2fe, #f8fafc);
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: Arial, sans-serif;
+            padding: 18px;
         }
 
         .login-box {
-            width: 380px;
+            width: 100%;
+            max-width: 410px;
             background: #ffffff;
-            padding: 35px;
-            border-radius: 14px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            padding: 34px 28px;
+            border-radius: 18px;
+            box-shadow: 0 12px 35px rgba(15, 23, 42, 0.16);
             text-align: center;
         }
 
+        .app-logo {
+            width: 78px;
+            height: 78px;
+            border-radius: 20px;
+            object-fit: cover;
+            margin-bottom: 14px;
+            background: #0f172a;
+        }
+
         .login-box h1 {
-            margin-bottom: 8px;
+            margin: 0 0 8px;
             color: #111827;
+            font-size: 27px;
+            font-weight: 700;
         }
 
         .login-box p {
-            margin-bottom: 25px;
+            margin: 0 0 25px;
             color: #4b5563;
+            font-size: 15px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 11px 12px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
         }
 
         .login-box input {
             width: 100%;
-            padding: 13px;
-            margin-bottom: 14px;
+            padding: 14px 13px;
             border: 1px solid #cbd5e1;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 15px;
-            box-sizing: border-box;
+            outline: none;
+            background: #ffffff;
         }
 
-        .login-box button {
+        .login-box input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .login-btn {
             width: 100%;
-            padding: 13px;
+            padding: 14px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             background: #2563eb;
-            color: white;
+            color: #ffffff;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            margin-top: 4px;
         }
 
-        .login-box button:hover {
+        .login-btn:hover {
             background: #1d4ed8;
         }
 
+        .install-app-box {
+            margin-top: 14px;
+        }
+
+        .install-app-btn {
+            display: none;
+            width: 100%;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 10px;
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .install-app-btn:hover {
+            background: #1e293b;
+        }
+
         .login-links {
-            margin-top: 18px;
+            margin-top: 20px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -77,15 +140,38 @@
             color: #2563eb;
             text-decoration: none;
             font-size: 14px;
+            font-weight: 500;
         }
 
         .login-links a:hover {
             text-decoration: underline;
         }
 
-        .error-message {
-            color: red;
-            margin-bottom: 15px;
+        .footer-note {
+            margin-top: 22px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                align-items: flex-start;
+                padding-top: 35px;
+            }
+
+            .login-box {
+                padding: 28px 22px;
+                border-radius: 16px;
+            }
+
+            .login-box h1 {
+                font-size: 24px;
+            }
+
+            .app-logo {
+                width: 68px;
+                height: 68px;
+            }
         }
     </style>
 </head>
@@ -93,7 +179,9 @@
 
 <div class="login-box">
 
-    <h1>HRMS Login</h1>
+    <img src="/icons/icon-192.png" alt="VLCG HRMS" class="app-logo">
+
+    <h1>VLCG HRMS</h1>
 
     <p>Admin / HR / Manager Login</p>
 
@@ -105,124 +193,96 @@
 
     <form action="/login" method="POST">
 
-        <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            required
-        >
+        <div class="form-group">
+            <input
+                type="text"
+                name="username"
+                placeholder="Username"
+                autocomplete="username"
+                required
+            >
+        </div>
 
-        <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            required
-        >
+        <div class="form-group">
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                autocomplete="current-password"
+                required
+            >
+        </div>
 
-        <button type="submit">
+        <button type="submit" class="login-btn">
             Login
         </button>
 
     </form>
+
+    <div class="install-app-box">
+        <button id="installAppBtn" class="install-app-btn">
+            Install VLCG HRMS App
+        </button>
+    </div>
 
     <div class="login-links">
         <a href="/forgot-password">Forgot Password?</a>
         <a href="/employee/login">Employee Login</a>
     </div>
 
+    <div class="footer-note">
+        Secure HRMS Portal
+    </div>
+
 </div>
 
 <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(function () {
-          console.log("VLCG HRMS service worker registered");
-        })
-        .catch(function (error) {
-          console.log("Service worker registration failed:", error);
-        });
+    let deferredPrompt;
+    const installAppBtn = document.getElementById("installAppBtn");
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        deferredPrompt = event;
+
+        if (installAppBtn) {
+            installAppBtn.style.display = "block";
+        }
     });
-  }
-</script>
-
-<style>
-  .install-app-box {
-    margin-top: 18px;
-    text-align: center;
-  }
-
-  .install-app-btn {
-    display: none;
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    border-radius: 10px;
-    background: #0f172a;
-    color: #ffffff;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .install-app-btn:hover {
-    background: #1e293b;
-  }
-</style>
-
-<div class="install-app-box">
-  <button id="installAppBtn" class="install-app-btn">
-    Install VLCG HRMS App
-  </button>
-</div>
-
-<script>
-  let deferredPrompt;
-  const installAppBtn = document.getElementById("installAppBtn");
-
-  window.addEventListener("beforeinstallprompt", function (event) {
-    event.preventDefault();
-    deferredPrompt = event;
 
     if (installAppBtn) {
-      installAppBtn.style.display = "block";
-    }
-  });
+        installAppBtn.addEventListener("click", async function () {
+            if (!deferredPrompt) {
+                return;
+            }
 
-  if (installAppBtn) {
-    installAppBtn.addEventListener("click", async function () {
-      if (!deferredPrompt) {
-        return;
-      }
+            deferredPrompt.prompt();
 
-      deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
 
-      const choiceResult = await deferredPrompt.userChoice;
-
-      deferredPrompt = null;
-      installAppBtn.style.display = "none";
-    });
-  }
-
-  window.addEventListener("appinstalled", function () {
-    if (installAppBtn) {
-      installAppBtn.style.display = "none";
-    }
-
-    console.log("VLCG HRMS app installed");
-  });
-
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(function () {
-          console.log("VLCG HRMS service worker registered");
-        })
-        .catch(function (error) {
-          console.log("Service worker registration failed:", error);
+            deferredPrompt = null;
+            installAppBtn.style.display = "none";
         });
+    }
+
+    window.addEventListener("appinstalled", function () {
+        if (installAppBtn) {
+            installAppBtn.style.display = "none";
+        }
+
+        console.log("VLCG HRMS app installed");
     });
-  }
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function () {
+                    console.log("VLCG HRMS service worker registered");
+                })
+                .catch(function (error) {
+                    console.log("Service worker registration failed:", error);
+                });
+        });
+    }
 </script>
 
 </body>
