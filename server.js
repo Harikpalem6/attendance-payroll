@@ -324,6 +324,11 @@ async function uploadAttendanceProofPhoto(employeeId, file, type) {
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.sendFile(path.join(__dirname, "public", ".well-known", "assetlinks.json"));
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
 
