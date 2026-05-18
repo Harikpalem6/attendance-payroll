@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VLCG HRMS">
+
+    <title>Employee Notifications - VLCG HRMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f6fb;
+            font-family: Arial, sans-serif;
+            color: #111827;
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 22px 18px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            margin: 0 0 24px;
+            font-size: 22px;
+        }
+
+        .sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar nav a {
+            color: #e5e7eb;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 24px;
+        }
+
+        .mobile-topbar {
+            display: none;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 14px 16px;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .mobile-topbar h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .menu-toggle {
+            border: none;
+            background: #1e293b;
+            color: #ffffff;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 950;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .page-header p {
+            margin: 7px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .employee-badge {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            font-size: 14px;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .unread-pill {
+            display: inline-block;
+            margin-left: 6px;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            margin-bottom: 22px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .toolbar h2 {
+            margin: 0;
+            font-size: 22px;
+            color: #111827;
+        }
+
+        .secondary-btn,
+        .read-btn,
+        .unread-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 13px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .secondary-btn {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        .secondary-btn:hover {
+            background: #1e293b;
+        }
+
+        .read-btn {
+            background: #16a34a;
+            color: #ffffff;
+        }
+
+        .read-btn:hover {
+            background: #15803d;
+        }
+
+        .unread-btn {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+
+        .unread-btn:hover {
+            background: #d97706;
+        }
+
+        .notification-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .notification-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 15px;
+            background: #ffffff;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .notification-item.unread {
+            background: #f8fafc;
+            border-color: #bfdbfe;
+        }
+
+        .notification-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 7px;
+        }
+
+        .notification-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-read {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-unread {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .notification-message {
+            margin: 0 0 8px;
+            color: #374151;
+            line-height: 1.45;
+            font-size: 14px;
+        }
+
+        .notification-time {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .notification-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 125px;
+        }
+
+        .notification-actions form {
+            margin: 0;
+        }
+
+        .notification-actions button {
+            width: 100%;
+        }
+
+        .empty-box {
+            text-align: center;
+            padding: 34px 16px;
+            color: #6b7280;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-topbar {
+                display: flex;
+            }
+
+            .app-layout {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .content {
+                margin-left: 0;
+                width: 100%;
+                padding: 18px 14px 26px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-header h1 {
+                font-size: 26px;
+            }
+
+            .employee-badge {
+                width: 100%;
+                white-space: normal;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar form,
+            .toolbar button {
+                width: 100%;
+            }
+
+            .notification-item {
+                grid-template-columns: 1fr;
+            }
+
+            .notification-actions {
+                min-width: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-topbar">
+    <button type="button" class="menu-toggle" id="menuToggle">
+        Menu
+    </button>
+
+    <h2>Employee Portal</h2>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="app-layout">
+
+    <aside class="sidebar" id="sidebar">
+        <h2>Employee Portal</h2>
+
+        <nav>
+            <a href="/employee/dashboard">Dashboard</a>
+            <a href="/employee/notifications" class="active">Notifications</a>
+            <a href="/employee/leaves">Leaves</a>
+            <a href="/employee/payroll">Payroll</a>
+            <a href="/employee/regularizations">Regularization</a>
+            <a href="/employee/change-password">Change Password</a>
+            <a href="/employee/logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="content">
+
+        <div class="page-header">
+            <div>
+                <h1>Notifications</h1>
+                <p>View salary, leave, attendance, and password update notifications.</p>
+            </div>
+
+            <div class="employee-badge">
+                Logged in as
+                <strong><%= employee && employee.name ? employee.name : "Employee" %></strong>
+
+                <% if (unreadCount > 0) { %>
+                    <span class="unread-pill">
+                        <%= unreadCount %> unread
+                    </span>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="toolbar">
+                <h2>Employee Notifications</h2>
+
+                <form action="/employee/notifications/read-all" method="POST">
+                    <button type="submit" class="secondary-btn">
+                        Mark All Read
+                    </button>
+                </form>
+            </div>
+
+            <% if (notifications && notifications.length > 0) { %>
+                <div class="notification-list">
+                    <% notifications.forEach(notification => { %>
+                        <div class="notification-item <%= notification.is_read ? '' : 'unread' %>">
+
+                            <div>
+                                <div class="notification-title-row">
+                                    <span class="notification-title">
+                                        <%= notification.title || "Notification" %>
+                                    </span>
+
+                                    <% if (notification.is_read) { %>
+                                        <span class="status-badge status-read">Read</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-unread">Unread</span>
+                                    <% } %>
+                                </div>
+
+                                <p class="notification-message">
+                                    <%= notification.message || "-" %>
+                                </p>
+
+                                <div class="notification-time">
+                                    <%= notification.created_at ? new Date(notification.created_at).toLocaleString() : "" %>
+                                </div>
+                            </div>
+
+                            <div class="notification-actions">
+                                <% if (notification.is_read) { %>
+                                    <form action="/employee/notifications/unread/<%= notification.id %>" method="POST">
+                                        <button type="submit" class="unread-btn">
+                                            Mark Unread
+                                        </button>
+                                    </form>
+                                <% } else { %>
+                                    <form action="/employee/notifications/read/<%= notification.id %>" method="POST">
+                                        <button type="submit" class="read-btn">
+                                            Mark Read
+                                        </button>
+                                    </form>
+                                <% } %>
+                            </div>
+
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="empty-box">
+                    No notifications found.
+                </div>
+            <% } %>
+        </div>
+
+    </main>
+
+</div>
+
+<script>
+    const menuToggle = document.getElementById("menuToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    function openSidebar() {
+        sidebar.classList.add("open");
+        sidebarOverlay.classList.add("show");
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("show");
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener("click", openSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeSidebar);
+    }
+
+    document.querySelectorAll(".sidebar nav a").forEach(function (link) {
+        link.addEventListener("click", closeSidebar);
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function () {
+                    console.log("VLCG HRMS service worker registered");
+                })
+                .catch(function (error) {
+                    console.log("Service worker registration failed:", error);
+                });
+        });
+    }
+</script>
+
+</body>
+</html>

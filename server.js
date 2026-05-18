@@ -2587,6 +2587,60 @@ app.post("/employee/notifications/read-all", requireEmployeeLogin, async (req, r
 
   res.redirect(req.get("Referrer") || "/employee/dashboard");
 });
+
+app.get("/employee/notifications", requireEmployeeLogin, async (req, res) => {
+  try {
+    const employeeId = req.session.employee.id;
+
+    const employeeResult = await db.query(
+      "SELECT * FROM employees WHERE id = $1",
+      [employeeId]
+    );
+
+    const employee = employeeResult.rows[0];
+
+    if (!employee) {
+      return res.redirect("/employee/login");
+    }
+
+    const notificationsResult = await db.query(
+      `
+      SELECT *
+      FROM notifications
+      WHERE user_type = 'employee'
+      AND employee_id = $1
+      ORDER BY created_at DESC
+      LIMIT 100
+      `,
+      [employeeId]
+    );
+
+    const unreadResult = await db.query(
+      `
+      SELECT COUNT(*) AS count
+      FROM notifications
+      WHERE user_type = 'employee'
+      AND employee_id = $1
+      AND is_read = false
+      `,
+      [employeeId]
+    );
+
+    res.render("employee-notifications", {
+      employee,
+      notifications: notificationsResult.rows,
+      unreadCount: Number(unreadResult.rows[0].count || 0),
+    });
+  } catch (error) {
+    console.log("EMPLOYEE NOTIFICATIONS ERROR:", error.message);
+
+    res.status(500).send(`
+      <h2>Notifications Error</h2>
+      <p>${error.message}</p>
+      <a href="/employee/dashboard">Back to Dashboard</a>
+    `);
+  }
+});
 /* =========================
    ATTENDANCE REGULARIZATION
 ========================= */
