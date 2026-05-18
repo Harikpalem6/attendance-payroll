@@ -2993,67 +2993,249 @@ res.render("employee-payroll", {
    PDF PAYSLIP + EMAIL
 ========================= */
 
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+
+  return `Rs. ${amount.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function safePdfFileName(value) {
+  return String(value || "payslip")
+    .replace(/[^a-zA-Z0-9-_]/g, "_")
+    .replace(/_+/g, "_");
+}
+
+function maskAccountNumber(accountNumber) {
+  if (!accountNumber) {
+    return "-";
+  }
+
+  const value = String(accountNumber).replace(/\s+/g, "");
+
+  if (value.length <= 4) {
+    return value;
+  }
+
+  return "XXXX XXXX " + value.slice(-4);
+}
+
+function cleanPdfText(value) {
+  if (value === undefined || value === null || value === "") {
+    return "-";
+  }
+
+  return String(value);
+}
+
 async function drawPayslipPdf(doc, data) {
   const settings = await getCompanySettings();
-  const logoPath = path.join(__dirname, settings.logo_path);
 
   const pageWidth = doc.page.width;
-  const margin = 35;
+  const pageHeight = doc.page.height;
+  const margin = 36;
   const contentWidth = pageWidth - margin * 2;
 
-  function maskAccountNumber(accountNumber) {
-    if (!accountNumber) return "-";
+  const grossSalary = Number(data.grossSalary || data.salary || 0);
+  const basicSalary = Number(data.basicSalary || data.basic_salary || 0);
+  const hra = Number(data.hra || 0);
+  const allowances = Number(data.allowances || 0);
+  const bonus = Number(data.bonus || 0);
 
-    const value = String(accountNumber).replace(/\s+/g, "");
-    if (value.length <= 4) return value;
+  const attendanceDeduction = Number(data.attendanceDeduction || 0);
+  const pfDeduction = Number(data.pfDeduction || data.pf_deduction || 0);
+  const esiDeduction = Number(data.esiDeduction || data.esi_deduction || 0);
+  const professionalTax = Number(data.professionalTax || data.professional_tax || 0);
+  const otherDeduction = Number(data.otherDeduction || data.other_deduction || 0);
 
-    return "XXXX XXXX " + value.slice(-4);
-  }
-
-  doc.rect(margin, 25, contentWidth, 720).lineWidth(1).stroke();
-
-  try {
-    doc.image(logoPath, margin + 15, 38, { width: 65 });
-  } catch (err) {
-    console.log("Logo not found or could not be loaded");
-  }
-
-  doc.fontSize(20).text(settings.company_name, margin, 38, {
-    align: "center",
-    width: contentWidth,
-  });
-
-  doc.fontSize(9).text(settings.company_address, margin, 66, {
-    align: "center",
-    width: contentWidth,
-  });
-
-  doc.fontSize(9).text(
-    `Phone: ${settings.company_phone} | Email: ${settings.company_email}`,
-    margin,
-    82,
-    {
-      align: "center",
-      width: contentWidth,
-    }
+  const totalDeduction = Number(
+    data.deduction ||
+      attendanceDeduction +
+        pfDeduction +
+        esiDeduction +
+        professionalTax +
+        otherDeduction ||
+      0
   );
 
-  doc.moveTo(margin, 110).lineTo(pageWidth - margin, 110).stroke();
+  const finalSalary = Number(data.finalSalary || data.final_salary || 0);
 
-  doc.rect(margin, 110, contentWidth, 32).fillAndStroke("#f2f2f2", "#000000");
+  const primaryColor = "#0f172a";
+  const accentColor = "#2563eb";
+  const lightBlue = "#eff6ff";
+  const lightGray = "#f8fafc";
+  const borderColor = "#d1d5db";
+  const successColor = "#dcfce7";
+  const dangerColor = "#fee2e2";
 
-  doc.fillColor("#000000").fontSize(15).text("SALARY PAYSLIP", margin, 119, {
-    align: "center",
-    width: contentWidth,
-  });
+  function drawLabelValue(label, value, x, y, width) {
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(8.6)
+      .fillColor("#6b7280")
+      .text(label, x, y, { width });
 
-  const empBoxY = 155;
-  const empBoxHeight = 140;
+    doc
+      .font("Helvetica")
+      .fontSize(9.2)
+      .fillColor("#111827")
+      .text(cleanPdfText(value), x, y + 12, { width });
+  }
 
+  function drawTable(x, y, width, title, rows, options = {}) {
+    const rowHeight = 22;
+    const titleHeight = 26;
+    const labelWidth = width * 0.58;
+    const tableHeight = titleHeight + rows.length * rowHeight;
+
+    doc
+      .roundedRect(x, y, width, tableHeight, 8)
+      .fillAndStroke("#ffffff", borderColor);
+
+    doc
+      .roundedRect(x, y, width, titleHeight, 8)
+      .fill(options.titleColor || lightBlue);
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .fillColor(options.titleTextColor || primaryColor)
+      .text(title, x + 10, y + 8, { width: width - 20 });
+
+    rows.forEach((row, index) => {
+      const rowY = y + titleHeight + index * rowHeight;
+
+      if (index % 2 === 1) {
+        doc
+          .rect(x, rowY, width, rowHeight)
+          .fill(lightGray);
+      }
+
+      doc
+        .moveTo(x, rowY)
+        .lineTo(x + width, rowY)
+        .strokeColor("#e5e7eb")
+        .stroke();
+
+      doc
+        .font(row.bold ? "Helvetica-Bold" : "Helvetica")
+        .fontSize(8.8)
+        .fillColor("#374151")
+        .text(row.label, x + 10, rowY + 7, {
+          width: labelWidth - 15,
+        });
+
+      doc
+        .font(row.bold ? "Helvetica-Bold" : "Helvetica")
+        .fontSize(8.8)
+        .fillColor(row.color || "#111827")
+        .text(row.value, x + labelWidth, rowY + 7, {
+          width: width - labelWidth - 10,
+          align: "right",
+        });
+    });
+
+    return tableHeight;
+  }
+
+  // Page border
   doc
-    .rect(margin + 15, empBoxY, contentWidth - 30, empBoxHeight)
+    .roundedRect(margin - 8, 24, contentWidth + 16, pageHeight - 48, 12)
+    .strokeColor(borderColor)
     .lineWidth(1)
     .stroke();
+
+  // Header strip
+  doc
+    .roundedRect(margin, 34, contentWidth, 86, 10)
+    .fill(primaryColor);
+
+  try {
+    const logoPath = path.join(__dirname, settings.logo_path);
+
+    doc.image(logoPath, margin + 16, 48, {
+      width: 52,
+      height: 52,
+    });
+  } catch (err) {
+    console.log("Payslip logo could not be loaded");
+  }
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(18)
+    .fillColor("#ffffff")
+    .text(settings.company_name || "Company", margin + 80, 47, {
+      width: contentWidth - 100,
+      align: "left",
+    });
+
+  doc
+    .font("Helvetica")
+    .fontSize(8.5)
+    .fillColor("#cbd5e1")
+    .text(settings.company_address || "-", margin + 80, 72, {
+      width: contentWidth - 100,
+      align: "left",
+    });
+
+  doc
+    .fontSize(8.5)
+    .text(
+      `Phone: ${settings.company_phone || "-"}   |   Email: ${settings.company_email || "-"}`,
+      margin + 80,
+      91,
+      {
+        width: contentWidth - 100,
+        align: "left",
+      }
+    );
+
+  // Payslip title row
+  doc
+    .roundedRect(margin, 132, contentWidth, 38, 8)
+    .fillAndStroke(lightBlue, "#bfdbfe");
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(15)
+    .fillColor(primaryColor)
+    .text("SALARY PAYSLIP", margin + 14, 144, {
+      width: contentWidth / 2,
+    });
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .fillColor(accentColor)
+    .text(`Month: ${cleanPdfText(data.month)}`, margin, 145, {
+      width: contentWidth - 14,
+      align: "right",
+    });
+
+  // Employee details card
+  const empY = 186;
+  const empCardHeight = 132;
+
+  doc
+    .roundedRect(margin, empY, contentWidth, empCardHeight, 10)
+    .fillAndStroke("#ffffff", borderColor);
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(11)
+    .fillColor(primaryColor)
+    .text("Employee Details", margin + 14, empY + 13);
+
+  drawLabelValue("Employee Name", data.employeeName, margin + 14, empY + 40, 155);
+  drawLabelValue("Department", data.department, margin + 184, empY + 40, 120);
+  drawLabelValue("Email", data.email, margin + 14, empY + 80, 205);
+  drawLabelValue("Payroll Month", data.month, margin + 234, empY + 80, 100);
+
+  // Employee photo
+  let photoLoaded = false;
 
   if (data.photo_path) {
     try {
@@ -3065,194 +3247,234 @@ async function drawPayslipPdf(doc, data) {
         const photoResponse = await fetch(signedPhoto.signedUrl);
         const photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
 
-        doc.image(photoBuffer, 440, empBoxY + 18, {
-          width: 58,
-          height: 58,
+        doc
+          .roundedRect(pageWidth - margin - 92, empY + 24, 68, 68, 8)
+          .strokeColor(borderColor)
+          .stroke();
+
+        doc.image(photoBuffer, pageWidth - margin - 88, empY + 28, {
+          width: 60,
+          height: 60,
         });
+
+        photoLoaded = true;
       }
     } catch (err) {
       console.log("Payslip photo could not be loaded");
     }
   }
 
-  doc.fontSize(10).fillColor("#000000");
+  if (!photoLoaded) {
+    doc
+      .roundedRect(pageWidth - margin - 92, empY + 24, 68, 68, 8)
+      .fillAndStroke(lightGray, borderColor);
 
-  doc.text("Employee Details", margin + 30, empBoxY + 10, {
-    underline: true,
-  });
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(8)
+      .fillColor("#6b7280")
+      .text("PHOTO", pageWidth - margin - 92, empY + 53, {
+        width: 68,
+        align: "center",
+      });
+  }
 
-  doc.text(`Employee Name: ${data.employeeName || "-"}`, margin + 30, empBoxY + 30);
-  doc.text(`Department: ${data.department || "-"}`, margin + 30, empBoxY + 46);
-  doc.text(`Payroll Month: ${data.month || "-"}`, margin + 30, empBoxY + 62);
-
-  // Bank details table
-  const bankTableX = margin + 30;
-  const bankTableY = empBoxY + 85;
-  const bankTableWidth = contentWidth - 90;
-  const bankRowHeight = 14;
-  const bankCol1 = 105;
-  const bankCol2 = 165;
-  const bankCol3 = 105;
-
-  doc.fontSize(9).text("Bank Details", bankTableX, bankTableY - 14, {
-    underline: true,
-  });
+  // Bank details card
+  const bankY = 334;
 
   doc
-    .rect(bankTableX, bankTableY, bankTableWidth, bankRowHeight * 2)
-    .lineWidth(0.7)
+    .roundedRect(margin, bankY, contentWidth, 82, 10)
+    .fillAndStroke("#ffffff", borderColor);
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(11)
+    .fillColor(primaryColor)
+    .text("Bank / Identity Details", margin + 14, bankY + 13);
+
+  drawLabelValue(
+    "Bank Name",
+    data.bank_name,
+    margin + 14,
+    bankY + 40,
+    120
+  );
+
+  drawLabelValue(
+    "Account Holder",
+    data.account_holder_name,
+    margin + 148,
+    bankY + 40,
+    135
+  );
+
+  drawLabelValue(
+    "Account Number",
+    maskAccountNumber(data.account_number),
+    margin + 298,
+    bankY + 40,
+    105
+  );
+
+  drawLabelValue(
+    "IFSC / UPI / PAN",
+    `${cleanPdfText(data.ifsc_code)} / ${cleanPdfText(data.upi_id)} / ${cleanPdfText(data.pan_number)}`,
+    margin + 418,
+    bankY + 40,
+    92
+  );
+
+  // Summary cards
+  const summaryY = 432;
+  const summaryGap = 12;
+  const summaryWidth = (contentWidth - summaryGap * 2) / 3;
+
+  function drawSummaryCard(x, title, value, fillColor, textColor) {
+    doc
+      .roundedRect(x, summaryY, summaryWidth, 58, 10)
+      .fillAndStroke(fillColor, borderColor);
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(8.5)
+      .fillColor("#374151")
+      .text(title, x + 10, summaryY + 12, {
+        width: summaryWidth - 20,
+      });
+
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(13)
+      .fillColor(textColor)
+      .text(value, x + 10, summaryY + 31, {
+        width: summaryWidth - 20,
+      });
+  }
+
+  drawSummaryCard(
+    margin,
+    "Gross Salary",
+    formatCurrency(grossSalary),
+    lightBlue,
+    accentColor
+  );
+
+  drawSummaryCard(
+    margin + summaryWidth + summaryGap,
+    "Total Deductions",
+    formatCurrency(totalDeduction),
+    dangerColor,
+    "#991b1b"
+  );
+
+  drawSummaryCard(
+    margin + (summaryWidth + summaryGap) * 2,
+    "Net Salary",
+    formatCurrency(finalSalary),
+    successColor,
+    "#166534"
+  );
+
+  // Earnings, attendance, deductions
+  const tableTop = 512;
+  const tableGap = 14;
+  const halfWidth = (contentWidth - tableGap) / 2;
+
+  drawTable(margin, tableTop, halfWidth, "Earnings", [
+    { label: "Basic Salary", value: formatCurrency(basicSalary) },
+    { label: "HRA", value: formatCurrency(hra) },
+    { label: "Allowances", value: formatCurrency(allowances) },
+    { label: "Bonus", value: formatCurrency(bonus) },
+    {
+      label: "Gross Salary",
+      value: formatCurrency(grossSalary),
+      bold: true,
+      color: accentColor,
+    },
+  ]);
+
+  drawTable(margin + halfWidth + tableGap, tableTop, halfWidth, "Attendance", [
+    { label: "Present Days", value: cleanPdfText(data.present || 0) },
+    { label: "Absent Days", value: cleanPdfText(data.absent || 0) },
+    { label: "Half Days", value: cleanPdfText(data.halfday || 0) },
+    {
+      label: "Attendance Deduction",
+      value: formatCurrency(attendanceDeduction),
+      bold: true,
+      color: "#991b1b",
+    },
+  ]);
+
+  const deductionTableY = 660;
+
+  drawTable(margin, deductionTableY, contentWidth, "Deductions", [
+    { label: "PF Deduction", value: formatCurrency(pfDeduction) },
+    { label: "ESI Deduction", value: formatCurrency(esiDeduction) },
+    { label: "Professional Tax", value: formatCurrency(professionalTax) },
+    { label: "Other Deduction", value: formatCurrency(otherDeduction) },
+    {
+      label: "Total Deductions",
+      value: formatCurrency(totalDeduction),
+      bold: true,
+      color: "#991b1b",
+    },
+    {
+      label: "Final Net Salary",
+      value: formatCurrency(finalSalary),
+      bold: true,
+      color: "#166534",
+    },
+  ]);
+
+  // Footer
+  const footerY = 805;
+
+  doc
+    .strokeColor(borderColor)
+    .moveTo(margin, footerY - 18)
+    .lineTo(pageWidth - margin, footerY - 18)
     .stroke();
 
   doc
-    .moveTo(bankTableX + bankCol1, bankTableY)
-    .lineTo(bankTableX + bankCol1, bankTableY + bankRowHeight * 2)
-    .stroke();
-
-  doc
-    .moveTo(bankTableX + bankCol1 + bankCol2, bankTableY)
-    .lineTo(bankTableX + bankCol1 + bankCol2, bankTableY + bankRowHeight * 2)
-    .stroke();
-
-  doc
-    .moveTo(bankTableX + bankCol1 + bankCol2 + bankCol3, bankTableY)
-    .lineTo(bankTableX + bankCol1 + bankCol2 + bankCol3, bankTableY + bankRowHeight * 2)
-    .stroke();
-
-  doc
-    .moveTo(bankTableX, bankTableY + bankRowHeight)
-    .lineTo(bankTableX + bankTableWidth, bankTableY + bankRowHeight)
-    .stroke();
-
-  doc.fontSize(7.8).font("Helvetica-Bold");
-  doc.text("Bank", bankTableX + 5, bankTableY + 4, { width: bankCol1 - 10 });
-  doc.text("Account Holder", bankTableX + bankCol1 + 5, bankTableY + 4, { width: bankCol2 - 10 });
-  doc.text("Account No.", bankTableX + bankCol1 + bankCol2 + 5, bankTableY + 4, { width: bankCol3 - 10 });
-  doc.text("IFSC", bankTableX + bankCol1 + bankCol2 + bankCol3 + 5, bankTableY + 4, {
-    width: bankTableWidth - bankCol1 - bankCol2 - bankCol3 - 10,
-  });
-
-  doc.font("Helvetica");
-  doc.text(data.bank_name || "-", bankTableX + 5, bankTableY + bankRowHeight + 4, { width: bankCol1 - 10 });
-  doc.text(data.account_holder_name || "-", bankTableX + bankCol1 + 5, bankTableY + bankRowHeight + 4, { width: bankCol2 - 10 });
-  doc.text(maskAccountNumber(data.account_number), bankTableX + bankCol1 + bankCol2 + 5, bankTableY + bankRowHeight + 4, { width: bankCol3 - 10 });
-  doc.text(data.ifsc_code || "-", bankTableX + bankCol1 + bankCol2 + bankCol3 + 5, bankTableY + bankRowHeight + 4, {
-    width: bankTableWidth - bankCol1 - bankCol2 - bankCol3 - 10,
-  });
-
-  const basicSalary = n(data.basicSalary || data.basic_salary);
-  const hra = n(data.hra);
-  const allowances = n(data.allowances);
-  const bonus = n(data.bonus);
-  const grossSalary = n(data.grossSalary || data.gross_salary || data.salary);
-
-  const pfDeduction = n(data.pfDeduction || data.pf_deduction);
-  const esiDeduction = n(data.esiDeduction || data.esi_deduction);
-  const professionalTax = n(data.professionalTax || data.professional_tax);
-  const otherDeduction = n(data.otherDeduction || data.other_deduction);
-  const attendanceDeduction = n(data.attendanceDeduction || data.attendance_deduction);
-  const totalDeduction = n(data.deduction);
-  const finalSalary = n(data.finalSalary || data.final_salary);
-
-  const tableX = margin + 15;
-  const tableY = 315;
-  const tableWidth = contentWidth - 30;
-  const rowHeight = 19;
-  const col1Width = tableWidth * 0.6;
-
-  doc.font("Helvetica").fontSize(11).text("Salary Details", tableX, tableY - 20, {
-    underline: true,
-  });
-
-  const rows = [
-    ["Basic Salary", `Rs. ${basicSalary.toFixed(2)}`],
-    ["HRA", `Rs. ${hra.toFixed(2)}`],
-    ["Allowances", `Rs. ${allowances.toFixed(2)}`],
-    ["Bonus", `Rs. ${bonus.toFixed(2)}`],
-    ["Gross Salary", `Rs. ${grossSalary.toFixed(2)}`],
-    ["Present Days", data.present || 0],
-    ["Absent Days", data.absent || 0],
-    ["Half Days", data.halfday || 0],
-    ["Attendance Deduction", `Rs. ${attendanceDeduction.toFixed(2)}`],
-    ["PF Deduction", `Rs. ${pfDeduction.toFixed(2)}`],
-    ["ESI Deduction", `Rs. ${esiDeduction.toFixed(2)}`],
-    ["Professional Tax", `Rs. ${professionalTax.toFixed(2)}`],
-    ["Other Deduction", `Rs. ${otherDeduction.toFixed(2)}`],
-    ["Total Deductions", `Rs. ${totalDeduction.toFixed(2)}`],
-    ["Net Salary", `Rs. ${finalSalary.toFixed(2)}`],
-  ];
-
-  const totalRows = rows.length + 1;
-
-  doc.rect(tableX, tableY, tableWidth, rowHeight * totalRows).lineWidth(1).stroke();
-  doc.rect(tableX, tableY, tableWidth, rowHeight).fillAndStroke("#f2f2f2", "#000000");
-
-  doc.fillColor("#000000").fontSize(8.3).font("Helvetica-Bold");
-  doc.text("Particulars", tableX + 10, tableY + 5);
-  doc.text("Value", tableX + col1Width + 10, tableY + 5);
-
-  doc
-    .moveTo(tableX + col1Width, tableY)
-    .lineTo(tableX + col1Width, tableY + rowHeight * totalRows)
-    .stroke();
-
-  rows.forEach((row, index) => {
-    const y = tableY + rowHeight * (index + 1);
-
-    doc.moveTo(tableX, y).lineTo(tableX + tableWidth, y).stroke();
-
-    if (row[0] === "Net Salary") {
-      doc
-        .rect(tableX, y, tableWidth, rowHeight)
-        .fillAndStroke("#f7f7f7", "#000000")
-        .fillColor("#000000")
-        .font("Helvetica-Bold");
-    } else if (row[0] === "Gross Salary" || row[0] === "Total Deductions") {
-      doc.font("Helvetica-Bold");
-    } else {
-      doc.font("Helvetica");
-    }
-
-    doc.fontSize(8.3);
-    doc.text(String(row[0]), tableX + 10, y + 5);
-    doc.text(String(row[1] || 0), tableX + col1Width + 10, y + 5);
-  });
-
-  doc.font("Helvetica").fontSize(8.5);
-
-  doc.text(`UPI ID: ${data.upi_id || "-"}`, margin + 45, 650);
-  doc.text(`PAN: ${data.pan_number || "-"}`, margin + 290, 650);
-
-  const footerY = 680;
-
-  doc.moveTo(margin + 35, footerY).lineTo(margin + 190, footerY).stroke();
-  doc.fontSize(8.5).text("Employee Signature", margin + 60, footerY + 7);
-
-  doc
-    .moveTo(pageWidth - margin - 210, footerY)
-    .lineTo(pageWidth - margin - 55, footerY)
-    .stroke();
-
-  doc.fontSize(8.5).text("Authorized Signature", pageWidth - margin - 190, footerY + 7);
-
-  doc.fontSize(8).text("This is a computer-generated payslip.", margin, 725, {
-    align: "center",
-    width: contentWidth,
-  });
+    .font("Helvetica")
+    .fontSize(8)
+    .fillColor("#6b7280")
+    .text("This is a computer-generated payslip and does not require a physical signature.", margin, footerY - 8, {
+      width: contentWidth,
+      align: "center",
+    });
 }
 
 app.post("/payroll/payslip", async (req, res) => {
-  const data = req.body;
-  const doc = new PDFDocument({ margin: 50 });
+  try {
+    const data = req.body;
 
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename=payslip-${data.employeeName}.pdf`
-  );
+    const safeEmployeeName = safePdfFileName(data.employeeName || "employee");
+    const safeMonth = safePdfFileName(data.month || "month");
 
-  doc.pipe(res);
-  await drawPayslipPdf(doc, data);
-  doc.end();
+    const doc = new PDFDocument({
+      margin: 36,
+      size: "A4",
+    });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=payslip-${safeEmployeeName}-${safeMonth}.pdf`
+    );
+
+    doc.pipe(res);
+    await drawPayslipPdf(doc, data);
+    doc.end();
+  } catch (error) {
+    console.log("PAYSLIP PDF ERROR:", error);
+
+    res.status(500).send(`
+      <h2>Payslip generation failed</h2>
+      <p>${error.message}</p>
+      <a href="/payroll">Back to Payroll</a>
+    `);
+  }
 });
 
 app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
@@ -3267,9 +3489,16 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
   }
 
   try {
+    const safeEmployeeName = safePdfFileName(data.employeeName || "employee");
+    const safeMonth = safePdfFileName(data.month || "month");
+
     const pdfBuffer = await new Promise(async (resolve, reject) => {
       try {
-        const doc = new PDFDocument({ margin: 50 });
+        const doc = new PDFDocument({
+          margin: 36,
+          size: "A4",
+        });
+
         const chunks = [];
 
         doc.on("data", (chunk) => chunks.push(chunk));
@@ -3298,19 +3527,19 @@ app.post("/payroll/email-payslip", requireSuperAdmin, async (req, res) => {
         to: [
           {
             email: data.email,
-            name: data.employeeName,
+            name: data.employeeName || "Employee",
           },
         ],
-        subject: `Payslip - ${data.month}`,
-        textContent: `Dear ${data.employeeName},
+        subject: `Payslip - ${data.month || ""}`,
+        textContent: `Dear ${data.employeeName || "Employee"},
 
-Please find attached your payslip for ${data.month}.
+Please find attached your payslip for ${data.month || ""}.
 
 Regards,
-VLCG`,
+VLCG HRMS`,
         attachment: [
           {
-            name: `payslip-${data.employeeName}-${data.month}.pdf`,
+            name: `payslip-${safeEmployeeName}-${safeMonth}.pdf`,
             content: pdfBuffer.toString("base64"),
           },
         ],
@@ -3328,6 +3557,12 @@ VLCG`,
         <a href="/payroll">Back to Payroll</a>
       `);
     }
+
+    await logActivity(
+      req,
+      "Payslip Emailed",
+      `Payslip emailed to ${data.employeeName || "employee"} for ${data.month || "-"}`
+    );
 
     res.send(`
       <h2>Payslip emailed successfully</h2>
