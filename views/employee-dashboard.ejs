@@ -521,6 +521,39 @@
 
     <main class="content">
 
+        <%
+    const dateFormatterIST = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    });
+
+    const timeFormatterIST = new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    });
+
+    function formatDateIST(value) {
+        if (!value) {
+            return "-";
+        }
+
+        return dateFormatterIST.format(new Date(value));
+    }
+
+    function formatTimeIST(value) {
+        if (!value) {
+            return "-";
+        }
+
+        return timeFormatterIST.format(new Date(value)).toUpperCase();
+    }
+%>
+
         <div class="card profile-card">
             <img
                 src="<%= photoUrl %>"
@@ -725,7 +758,7 @@
                         <% attendance.forEach(record => { %>
                             <tr>
                                 <td>
-                                    <%= record.date ? new Date(record.date).toLocaleDateString() : "" %>
+                                    <%= formatDateIST(record.date) %>
                                 </td>
 
                                 <td>
@@ -741,11 +774,11 @@
                                 </td>
 
                                 <td>
-                                    <%= record.check_in ? new Date(record.check_in).toLocaleTimeString() : "-" %>
+                                    <%= formatTimeIST(record.check_in) %>
                                 </td>
 
                                 <td>
-                                    <%= record.check_out ? new Date(record.check_out).toLocaleTimeString() : "-" %>
+                                    <%= formatTimeIST(record.check_out) %>
                                 </td>
                             </tr>
                         <% }) %>
