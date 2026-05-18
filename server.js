@@ -359,40 +359,7 @@ function requireRole(allowedRoles) {
 
 const requireSuperAdmin = requireRole(["Super Admin"]);
 
-app.get("/admin/update-payment-db", requireSuperAdmin, async (req, res) => {
-  try {
-    await db.query(`
-      ALTER TABLE payroll_records
-      ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'Pending',
-      ADD COLUMN IF NOT EXISTS payment_date DATE,
-      ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(50),
-      ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100),
-      ADD COLUMN IF NOT EXISTS payment_remarks TEXT,
-      ADD COLUMN IF NOT EXISTS paid_by VARCHAR(100),
-      ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
-    `);
 
-    await db.query(`
-      UPDATE payroll_records
-      SET payment_status = 'Pending'
-      WHERE payment_status IS NULL;
-    `);
-
-    res.send(`
-      <h2>DB Updated Successfully</h2>
-      <p>Salary payment tracking columns added.</p>
-      <a href="/payroll">Go to Payroll</a>
-    `);
-  } catch (error) {
-    console.log("PAYMENT DB UPDATE ERROR:", error.message);
-
-    res.status(500).send(`
-      <h2>DB Update Failed</h2>
-      <p>${error.message}</p>
-      <a href="/dashboard">Back to Dashboard</a>
-    `);
-  }
-});
 
 const requireHRorSuperAdmin = requireRole([
   "Super Admin",
@@ -1630,6 +1597,87 @@ app.post("/payroll/save", requireSuperAdmin, async (req, res) => {
   );
 
   res.redirect("/payroll");
+});
+
+app.post("/payroll/payment/update/:id", requireSuperAdmin, async (req, res) => {
+  try {
+    const {
+      payment_status,
+      payment_date,
+      payment_mode,
+      payment_reference,
+      payment_remarks,
+    } = req.body;
+
+    const payrollId = req.params.id;
+    const status = payment_status === "Paid" ? "Paid" : "Pending";
+
+    const payrollResult = await db.query(
+      `
+      SELECT payroll_records.*, employees.name, employees.id AS employee_id
+      FROM payroll_records
+      JOIN employees ON payroll_records.employee_id = employees.id
+      WHERE payroll_records.id = $1
+      `,
+      [payrollId]
+    );
+
+    const payroll = payrollResult.rows[0];
+
+    if (!payroll) {
+      return res.redirect("/payroll");
+    }
+
+    await db.query(
+      `
+      UPDATE payroll_records
+      SET payment_status = $1,
+          payment_date = $2,
+          payment_mode = $3,
+          payment_reference = $4,
+          payment_remarks = $5,
+          paid_by = $6,
+          paid_at = CASE
+            WHEN $1 = 'Paid' THEN CURRENT_TIMESTAMP
+            ELSE NULL
+          END
+      WHERE id = $7
+      `,
+      [
+        status,
+        payment_date || null,
+        payment_mode || "",
+        payment_reference || "",
+        payment_remarks || "",
+        status === "Paid" ? req.session.user.username : null,
+        payrollId,
+      ]
+    );
+
+    await logActivity(
+      req,
+      "Salary Payment Updated",
+      `Updated salary payment for ${payroll.name}, month: ${payroll.month}, status: ${status}`
+    );
+
+    if (status === "Paid") {
+      await createEmployeeNotification(
+        payroll.employee_id,
+        "Salary Payment Updated",
+        `Your salary for ${payroll.month} has been marked as paid.`
+      );
+    }
+
+    res.redirect("/payroll");
+  } catch (error) {
+    console.log("PAYMENT UPDATE ERROR:", error.message);
+
+    res.status(500).send(`
+      <h2>Payment update failed</h2>
+      <p>${error.message}</p>
+      <a href="/payroll">Back to Payroll</a>
+    `);
+  }
 });
 
 /* =========================

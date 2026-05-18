@@ -187,7 +187,9 @@
         }
 
         .toolbar select:focus,
-        .toolbar input:focus {
+        .toolbar input:focus,
+        .payment-form select:focus,
+        .payment-form input:focus {
             border-color: #2563eb;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
@@ -195,7 +197,8 @@
         .primary-btn,
         .secondary-btn,
         .save-btn,
-        .email-btn {
+        .email-btn,
+        .payment-btn {
             border: none;
             border-radius: 10px;
             padding: 10px 13px;
@@ -243,6 +246,16 @@
 
         .email-btn:hover {
             background: #d97706;
+        }
+
+        .payment-btn {
+            background: #2563eb;
+            color: #ffffff;
+            width: 100%;
+        }
+
+        .payment-btn:hover {
+            background: #1d4ed8;
         }
 
         .result-header {
@@ -336,6 +349,16 @@
             color: #111827;
         }
 
+        .payment-help {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 13px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
         .table-wrap {
             width: 100%;
             overflow-x: auto;
@@ -344,7 +367,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1180px;
+            min-width: 1650px;
             background: #ffffff;
         }
 
@@ -366,6 +389,63 @@
         .amount-strong {
             font-weight: 700;
             color: #166534;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .payment-details {
+            min-width: 210px;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .payment-details strong {
+            color: #111827;
+        }
+
+        .payment-form {
+            min-width: 320px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(130px, 1fr));
+            gap: 8px;
+        }
+
+        .payment-form select,
+        .payment-form input {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            font-size: 13px;
+            outline: none;
+            background: #ffffff;
+        }
+
+        .payment-form .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .small-muted {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 4px;
         }
 
         @media (max-width: 1200px) {
@@ -504,7 +584,7 @@
         <div class="page-header">
             <div>
                 <h1>Payroll Management</h1>
-                <p>Calculate employee payroll, save payroll records, download PDF payslips, and email payslips.</p>
+                <p>Calculate payroll, save records, download payslips, email payslips, and track salary payments.</p>
             </div>
 
             <div class="role-badge">
@@ -783,6 +863,10 @@
         <div class="card">
             <h2 class="section-title">Payroll History</h2>
 
+            <div class="payment-help">
+                Use this section to track whether salary is <strong>Pending</strong> or <strong>Paid</strong>. Add payment date, mode, UTR/reference number, and remarks after salary transfer.
+            </div>
+
             <div class="table-wrap">
                 <table>
                     <tr>
@@ -795,12 +879,23 @@
                         <th>Half Days</th>
                         <th>Deduction</th>
                         <th>Net Salary</th>
+                        <th>Payment Status</th>
+                        <th>Payment Details</th>
+                        <th>Update Payment</th>
                         <th>Created</th>
                         <th>PDF</th>
                     </tr>
 
                     <% if (history && history.length > 0) { %>
                         <% history.forEach(record => { %>
+
+                            <%
+                                const paymentStatus = record.payment_status || "Pending";
+                                const paymentDateValue = record.payment_date
+                                    ? new Date(record.payment_date).toISOString().split("T")[0]
+                                    : "";
+                            %>
+
                             <tr>
                                 <td><%= record.id %></td>
                                 <td><%= record.name || "-" %></td>
@@ -813,6 +908,101 @@
                                 <td class="amount-strong">
                                     Rs. <%= Number(record.final_salary || 0).toFixed(2) %>
                                 </td>
+
+                                <td>
+                                    <% if (paymentStatus === "Paid") { %>
+                                        <span class="status-badge status-paid">Paid</span>
+                                    <% } else { %>
+                                        <span class="status-badge status-pending">Pending</span>
+                                    <% } %>
+
+                                    <% if (record.paid_by) { %>
+                                        <div class="small-muted">
+                                            By: <%= record.paid_by %>
+                                        </div>
+                                    <% } %>
+                                </td>
+
+                                <td>
+                                    <div class="payment-details">
+                                        <strong>Date:</strong>
+                                        <%= record.payment_date ? new Date(record.payment_date).toLocaleDateString() : "-" %>
+                                        <br>
+
+                                        <strong>Mode:</strong>
+                                        <%= record.payment_mode || "-" %>
+                                        <br>
+
+                                        <strong>Ref/UTR:</strong>
+                                        <%= record.payment_reference || "-" %>
+                                        <br>
+
+                                        <strong>Remarks:</strong>
+                                        <%= record.payment_remarks || "-" %>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <form action="/payroll/payment/update/<%= record.id %>" method="POST" class="payment-form">
+
+                                        <select name="payment_status" required>
+                                            <option value="Pending" <%= paymentStatus === "Pending" ? "selected" : "" %>>
+                                                Pending
+                                            </option>
+                                            <option value="Paid" <%= paymentStatus === "Paid" ? "selected" : "" %>>
+                                                Paid
+                                            </option>
+                                        </select>
+
+                                        <input
+                                            type="date"
+                                            name="payment_date"
+                                            value="<%= paymentDateValue %>"
+                                        >
+
+                                        <select name="payment_mode">
+                                            <option value="" <%= !record.payment_mode ? "selected" : "" %>>
+                                                Payment Mode
+                                            </option>
+                                            <option value="Cash" <%= record.payment_mode === "Cash" ? "selected" : "" %>>
+                                                Cash
+                                            </option>
+                                            <option value="Bank Transfer" <%= record.payment_mode === "Bank Transfer" ? "selected" : "" %>>
+                                                Bank Transfer
+                                            </option>
+                                            <option value="UPI" <%= record.payment_mode === "UPI" ? "selected" : "" %>>
+                                                UPI
+                                            </option>
+                                            <option value="Cheque" <%= record.payment_mode === "Cheque" ? "selected" : "" %>>
+                                                Cheque
+                                            </option>
+                                            <option value="Other" <%= record.payment_mode === "Other" ? "selected" : "" %>>
+                                                Other
+                                            </option>
+                                        </select>
+
+                                        <input
+                                            type="text"
+                                            name="payment_reference"
+                                            placeholder="UTR / Ref No."
+                                            value="<%= record.payment_reference || '' %>"
+                                        >
+
+                                        <input
+                                            type="text"
+                                            name="payment_remarks"
+                                            placeholder="Remarks"
+                                            value="<%= record.payment_remarks || '' %>"
+                                            class="full-width"
+                                        >
+
+                                        <button type="submit" class="payment-btn full-width">
+                                            Update Payment
+                                        </button>
+
+                                    </form>
+                                </td>
+
                                 <td>
                                     <%= record.created_at ? new Date(record.created_at).toLocaleString() : "" %>
                                 </td>
@@ -853,7 +1043,7 @@
                         <% }) %>
                     <% } else { %>
                         <tr>
-                            <td colspan="11">No payroll records saved yet.</td>
+                            <td colspan="14">No payroll records saved yet.</td>
                         </tr>
                     <% } %>
                 </table>
