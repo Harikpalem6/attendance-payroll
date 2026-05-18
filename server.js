@@ -2992,11 +2992,11 @@ app.post(
           ($1, CURRENT_DATE, 'Present', NOW(), $2, $3, $4)
         ON CONFLICT (employee_id, date)
         DO UPDATE SET
-          status = 'Present',
-          check_in = COALESCE(attendance.check_in, NOW()),
-          check_in_latitude = COALESCE(attendance.check_in_latitude, EXCLUDED.check_in_latitude),
-          check_in_longitude = COALESCE(attendance.check_in_longitude, EXCLUDED.check_in_longitude),
-          check_in_photo_path = COALESCE(attendance.check_in_photo_path, EXCLUDED.check_in_photo_path)
+  status = 'Present',
+  check_in = NOW(),
+  check_in_latitude = EXCLUDED.check_in_latitude,
+  check_in_longitude = EXCLUDED.check_in_longitude,
+  check_in_photo_path = EXCLUDED.check_in_photo_path
         `,
         [employeeId, latitude, longitude, proofPhotoPath]
       );
@@ -3072,9 +3072,8 @@ app.post(
             check_out_longitude = $3,
             check_out_photo_path = $4
         WHERE employee_id = $1
-        AND date = CURRENT_DATE
-        AND check_in IS NOT NULL
-        AND check_out IS NULL
+AND date = CURRENT_DATE
+AND check_in IS NOT NULL
         `,
         [employeeId, latitude, longitude, proofPhotoPath]
       );
