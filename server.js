@@ -359,6 +359,41 @@ function requireRole(allowedRoles) {
 
 const requireSuperAdmin = requireRole(["Super Admin"]);
 
+app.get("/admin/update-payment-db", requireSuperAdmin, async (req, res) => {
+  try {
+    await db.query(`
+      ALTER TABLE payroll_records
+      ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'Pending',
+      ADD COLUMN IF NOT EXISTS payment_date DATE,
+      ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS payment_remarks TEXT,
+      ADD COLUMN IF NOT EXISTS paid_by VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
+    `);
+
+    await db.query(`
+      UPDATE payroll_records
+      SET payment_status = 'Pending'
+      WHERE payment_status IS NULL;
+    `);
+
+    res.send(`
+      <h2>DB Updated Successfully</h2>
+      <p>Salary payment tracking columns added.</p>
+      <a href="/payroll">Go to Payroll</a>
+    `);
+  } catch (error) {
+    console.log("PAYMENT DB UPDATE ERROR:", error.message);
+
+    res.status(500).send(`
+      <h2>DB Update Failed</h2>
+      <p>${error.message}</p>
+      <a href="/dashboard">Back to Dashboard</a>
+    `);
+  }
+});
+
 const requireHRorSuperAdmin = requireRole([
   "Super Admin",
   "HR",
