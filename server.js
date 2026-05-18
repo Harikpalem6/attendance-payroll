@@ -323,11 +323,44 @@ async function uploadAttendanceProofPhoto(employeeId, file, type) {
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-
 app.get("/.well-known/assetlinks.json", (req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.sendFile(path.join(__dirname, "public", ".well-known", "assetlinks.json"));
+  res.type("application/json");
+
+  res.send([
+    {
+      relation: [
+        "delegate_permission/common.handle_all_urls"
+      ],
+      target: {
+        namespace: "android_app",
+        package_name: "in.vlcghrms.app",
+        sha256_cert_fingerprints: [
+          "91:CA:B2:7F:A7:50:E6:6B:6C:AB:FB:D4:C5:FF:C6:2E:0E:BC:2D:EE:09:BD:BC:78:41:5C:1B:6D:CF:08:2C:C3"
+        ]
+      }
+    }
+  ]);
 });
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.type("application/json");
+
+  res.send([
+    {
+      relation: [
+        "delegate_permission/common.handle_all_urls"
+      ],
+      target: {
+        namespace: "android_app",
+        package_name: "in.vlcghrms.app",
+        sha256_cert_fingerprints: [
+          "91:CA:B2:7F:A7:50:E6:6B:6C:AB:FB:D4:C5:FF:C6:2E:0E:BC:2D:EE:09:BD:BC:78:41:5C:1B:6D:CF:08:2C:C3"
+        ]
+      }
+    }
+  ]);
+});
+
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(bodyParser.urlencoded({ extended: true }));
