@@ -3085,8 +3085,8 @@ async function drawPayslipPdf(doc, data) {
   }
 
   function drawTable(x, y, width, title, rows, options = {}) {
-    const rowHeight = 22;
-    const titleHeight = 26;
+    const rowHeight = 18;
+    const titleHeight = 22;
     const labelWidth = width * 0.58;
     const tableHeight = titleHeight + rows.length * rowHeight;
 
@@ -3102,7 +3102,7 @@ async function drawPayslipPdf(doc, data) {
       .font("Helvetica-Bold")
       .fontSize(10)
       .fillColor(options.titleTextColor || primaryColor)
-      .text(title, x + 10, y + 8, { width: width - 20 });
+      .text(title, x + 10, y + 6, { width: width - 20 }); 
 
     rows.forEach((row, index) => {
       const rowY = y + titleHeight + index * rowHeight;
@@ -3123,7 +3123,7 @@ async function drawPayslipPdf(doc, data) {
         .font(row.bold ? "Helvetica-Bold" : "Helvetica")
         .fontSize(8.8)
         .fillColor("#374151")
-        .text(row.label, x + 10, rowY + 7, {
+        .text(row.label, x + 10, rowY + 5, {
           width: labelWidth - 15,
         });
 
@@ -3131,7 +3131,7 @@ async function drawPayslipPdf(doc, data) {
         .font(row.bold ? "Helvetica-Bold" : "Helvetica")
         .fontSize(8.8)
         .fillColor(row.color || "#111827")
-        .text(row.value, x + labelWidth, rowY + 7, {
+        .text(row.value, x + labelWidth, rowY + 5, {
           width: width - labelWidth - 10,
           align: "right",
         });
@@ -3376,7 +3376,7 @@ async function drawPayslipPdf(doc, data) {
   );
 
   // Earnings, attendance, deductions
-  const tableTop = 512;
+  const tableTop = 500;
   const tableGap = 14;
   const halfWidth = (contentWidth - tableGap) / 2;
 
@@ -3405,7 +3405,7 @@ async function drawPayslipPdf(doc, data) {
     },
   ]);
 
-  const deductionTableY = 660;
+  const deductionTableY = 628;
 
   drawTable(margin, deductionTableY, contentWidth, "Deductions", [
     { label: "PF Deduction", value: formatCurrency(pfDeduction) },
@@ -3427,7 +3427,7 @@ async function drawPayslipPdf(doc, data) {
   ]);
 
   // Footer
-  const footerY = 805;
+const footerY = 790;
 
   doc
     .strokeColor(borderColor)
