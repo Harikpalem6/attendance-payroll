@@ -297,6 +297,29 @@ const uploadPhoto = multer({
   }
 });
 
+async function uploadAttendanceProofPhoto(employeeId, file, type) {
+  if (!file) {
+    return null;
+  }
+
+  const fileExt = file.originalname.split(".").pop() || "jpg";
+  const safeType = type === "check_out" ? "check-out" : "check-in";
+  const storagePath = `attendance-proofs/${employeeId}/${safeType}-${Date.now()}.${fileExt}`;
+
+  const { error } = await supabase.storage
+    .from(SUPABASE_PHOTO_BUCKET)
+    .upload(storagePath, file.buffer, {
+      contentType: file.mimetype,
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return storagePath;
+}
+
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -359,33 +382,6 @@ function requireRole(allowedRoles) {
 
 const requireSuperAdmin = requireRole(["Super Admin"]);
 
-app.get("/admin/update-attendance-proof-db", requireSuperAdmin, async (req, res) => {
-  try {
-    await db.query(`
-      ALTER TABLE attendance
-      ADD COLUMN IF NOT EXISTS check_in_latitude VARCHAR(50),
-      ADD COLUMN IF NOT EXISTS check_in_longitude VARCHAR(50),
-      ADD COLUMN IF NOT EXISTS check_in_photo_path TEXT,
-      ADD COLUMN IF NOT EXISTS check_out_latitude VARCHAR(50),
-      ADD COLUMN IF NOT EXISTS check_out_longitude VARCHAR(50),
-      ADD COLUMN IF NOT EXISTS check_out_photo_path TEXT;
-    `);
-
-    res.send(`
-      <h2>DB Updated Successfully</h2>
-      <p>Attendance location/photo proof columns added.</p>
-      <a href="/attendance">Go to Attendance</a>
-    `);
-  } catch (error) {
-    console.log("ATTENDANCE PROOF DB UPDATE ERROR:", error.message);
-
-    res.status(500).send(`
-      <h2>DB Update Failed</h2>
-      <p>${error.message}</p>
-      <a href="/dashboard">Back to Dashboard</a>
-    `);
-  }
-});
 
 const requireHRorSuperAdmin = requireRole([
   "Super Admin",
@@ -2935,49 +2931,171 @@ app.get("/employee/dashboard", requireEmployeeLogin, async (req, res) => {
   });
 });
 
-app.post("/employee/check-in", requireEmployeeLogin, async (req, res) => {
-  const employeeId = req.session.employee.id;
+app.post(
+  "/employee/check-in",
+  requireEmployeeLogin,
+  (req, res, next) => {
+    uploadPhoto.single("proof_photo")(req, res, (err) => {
+      if (err) {
+        console.log("CHECK-IN PHOTO ERROR:", err.message);
 
-  try {
-    await db.query(
-      `
-      INSERT INTO attendance (employee_id, date, status, check_in)
-      VALUES ($1, CURRENT_DATE, 'Present', NOW())
-      ON CONFLICT (employee_id, date)
-      DO UPDATE SET
-        status = 'Present',
-        check_in = COALESCE(attendance.check_in, NOW())
-      `,
-      [employeeId]
-    );
-  } catch (err) {
-    console.log(err.message);
+        return res.status(400).send(`
+          <h2>Check-in failed</h2>
+          <p>${err.message}</p>
+          <a href="/employee/dashboard">Back to Dashboard</a>
+        `);
+      }
+
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      const employeeId = req.session.employee.id;
+      const { latitude, longitude } = req.body;
+
+      if (!latitude || !longitude) {
+        return res.status(400).send(`
+          <h2>Check-in failed</h2>
+          <p>Location permission is required for check-in.</p>
+          <a href="/employee/dashboard">Back to Dashboard</a>
+        `);
+      }
+
+      if (!req.file) {
+        return res.status(400).send(`
+          <h2>Check-in failed</h2>
+          <p>Photo proof is required for check-in.</p>
+          <a href="/employee/dashboard">Back to Dashboard</a>
+        `);
+      }
+
+      const proofPhotoPath = await uploadAttendanceProofPhoto(
+        employeeId,
+        req.file,
+        "check_in"
+      );
+
+      await db.query(
+        `
+        INSERT INTO attendance
+          (
+            employee_id,
+            date,
+            status,
+            check_in,
+            check_in_latitude,
+            check_in_longitude,
+            check_in_photo_path
+          )
+        VALUES
+          ($1, CURRENT_DATE, 'Present', NOW(), $2, $3, $4)
+        ON CONFLICT (employee_id, date)
+        DO UPDATE SET
+          status = 'Present',
+          check_in = COALESCE(attendance.check_in, NOW()),
+          check_in_latitude = COALESCE(attendance.check_in_latitude, EXCLUDED.check_in_latitude),
+          check_in_longitude = COALESCE(attendance.check_in_longitude, EXCLUDED.check_in_longitude),
+          check_in_photo_path = COALESCE(attendance.check_in_photo_path, EXCLUDED.check_in_photo_path)
+        `,
+        [employeeId, latitude, longitude, proofPhotoPath]
+      );
+
+      await createAdminNotification(
+        "Employee Checked In",
+        `${req.session.employee.name} checked in with location/photo proof.`
+      );
+
+      res.redirect("/employee/dashboard");
+    } catch (error) {
+      console.log("CHECK-IN ERROR:", error.message);
+
+      res.status(500).send(`
+        <h2>Check-in failed</h2>
+        <p>${error.message}</p>
+        <a href="/employee/dashboard">Back to Dashboard</a>
+      `);
+    }
   }
+);
 
-  res.redirect("/employee/dashboard");
-});
+app.post(
+  "/employee/check-out",
+  requireEmployeeLogin,
+  (req, res, next) => {
+    uploadPhoto.single("proof_photo")(req, res, (err) => {
+      if (err) {
+        console.log("CHECK-OUT PHOTO ERROR:", err.message);
 
-app.post("/employee/check-out", requireEmployeeLogin, async (req, res) => {
-  const employeeId = req.session.employee.id;
+        return res.status(400).send(`
+          <h2>Check-out failed</h2>
+          <p>${err.message}</p>
+          <a href="/employee/dashboard">Back to Dashboard</a>
+        `);
+      }
 
-  try {
-    await db.query(
-      `
-      UPDATE attendance
-      SET check_out = NOW()
-      WHERE employee_id = $1
-      AND date = CURRENT_DATE
-      AND check_in IS NOT NULL
-      AND check_out IS NULL
-      `,
-      [employeeId]
-    );
-  } catch (err) {
-    console.log(err.message);
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      const employeeId = req.session.employee.id;
+      const { latitude, longitude } = req.body;
+
+      if (!latitude || !longitude) {
+        return res.status(400).send(`
+          <h2>Check-out failed</h2>
+          <p>Location permission is required for check-out.</p>
+          <a href="/employee/dashboard">Back to Dashboard</a>
+        `);
+      }
+
+      if (!req.file) {
+        return res.status(400).send(`
+          <h2>Check-out failed</h2>
+          <p>Photo proof is required for check-out.</p>
+          <a href="/employee/dashboard">Back to Dashboard</a>
+        `);
+      }
+
+      const proofPhotoPath = await uploadAttendanceProofPhoto(
+        employeeId,
+        req.file,
+        "check_out"
+      );
+
+      await db.query(
+        `
+        UPDATE attendance
+        SET check_out = NOW(),
+            check_out_latitude = $2,
+            check_out_longitude = $3,
+            check_out_photo_path = $4
+        WHERE employee_id = $1
+        AND date = CURRENT_DATE
+        AND check_in IS NOT NULL
+        AND check_out IS NULL
+        `,
+        [employeeId, latitude, longitude, proofPhotoPath]
+      );
+
+      await createAdminNotification(
+        "Employee Checked Out",
+        `${req.session.employee.name} checked out with location/photo proof.`
+      );
+
+      res.redirect("/employee/dashboard");
+    } catch (error) {
+      console.log("CHECK-OUT ERROR:", error.message);
+
+      res.status(500).send(`
+        <h2>Check-out failed</h2>
+        <p>${error.message}</p>
+        <a href="/employee/dashboard">Back to Dashboard</a>
+      `);
+    }
   }
-
-  res.redirect("/employee/dashboard");
-});
+);
 
 app.get("/employee/leaves", requireEmployeeLogin, async (req, res) => {
   const leaves = await db.query(
