@@ -359,7 +359,33 @@ function requireRole(allowedRoles) {
 
 const requireSuperAdmin = requireRole(["Super Admin"]);
 
+app.get("/admin/update-attendance-proof-db", requireSuperAdmin, async (req, res) => {
+  try {
+    await db.query(`
+      ALTER TABLE attendance
+      ADD COLUMN IF NOT EXISTS check_in_latitude VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS check_in_longitude VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS check_in_photo_path TEXT,
+      ADD COLUMN IF NOT EXISTS check_out_latitude VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS check_out_longitude VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS check_out_photo_path TEXT;
+    `);
 
+    res.send(`
+      <h2>DB Updated Successfully</h2>
+      <p>Attendance location/photo proof columns added.</p>
+      <a href="/attendance">Go to Attendance</a>
+    `);
+  } catch (error) {
+    console.log("ATTENDANCE PROOF DB UPDATE ERROR:", error.message);
+
+    res.status(500).send(`
+      <h2>DB Update Failed</h2>
+      <p>${error.message}</p>
+      <a href="/dashboard">Back to Dashboard</a>
+    `);
+  }
+});
 
 const requireHRorSuperAdmin = requireRole([
   "Super Admin",
