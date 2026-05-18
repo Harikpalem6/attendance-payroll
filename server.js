@@ -286,19 +286,15 @@ const uploadDocument = multer({
 const uploadPhoto = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 2 * 1024 * 1024,
+    fileSize: 5 * 1024 * 1024
   },
-  fileFilter: function (req, file, cb) {
-    if (
-      file.mimetype === "image/jpeg" ||
-      file.mimetype === "image/png" ||
-      file.mimetype === "image/webp"
-    ) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only JPG, PNG, and WEBP images are allowed"));
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"));
     }
-  },
+
+    cb(null, true);
+  }
 });
 
 
@@ -1930,64 +1926,102 @@ app.get("/employees/id-card/:id", requireHRorSuperAdmin, async (req, res) => {
 app.post(
   "/employees/photo/upload/:id",
   requireHRorSuperAdmin,
-  uploadPhoto.single("employee_photo"),
+  (req, res, next) => {
+    uploadPhoto.single("employee_photo")(req, res, (err) => {
+      if (err) {
+        console.log("PHOTO MULTER ERROR:", err.message);
+
+        return res.status(400).send(`
+          <h2>Photo upload failed</h2>
+          <p>${err.message}</p>
+          <a href="/employees">Back to Employees</a>
+        `);
+      }
+
+      next();
+    });
+  },
   async (req, res) => {
-    const employeeId = req.params.id;
+    try {
+      const employeeId = req.params.id;
 
-    if (!req.file) {
-      return res.redirect("/employees");
-    }
+      if (!req.file) {
+        return res.redirect("/employees");
+      }
 
-    const employeeResult = await db.query(
-      "SELECT * FROM employees WHERE id = $1",
-      [employeeId]
-    );
+      if (!req.file.buffer) {
+        console.log("PHOTO UPLOAD ERROR: req.file.buffer missing");
 
-    const employee = employeeResult.rows[0];
+        return res.status(500).send(`
+          <h2>Photo upload failed</h2>
+          <p>Upload buffer missing. Please check multer memoryStorage setup.</p>
+          <a href="/employees">Back to Employees</a>
+        `);
+      }
 
-    if (!employee) {
-      return res.redirect("/employees");
-    }
+      const employeeResult = await db.query(
+        "SELECT * FROM employees WHERE id = $1",
+        [employeeId]
+      );
 
-    // Delete old photo from Supabase if exists
-    if (employee.photo_path) {
-      await supabase.storage
+      const employee = employeeResult.rows[0];
+
+      if (!employee) {
+        return res.redirect("/employees");
+      }
+
+      if (employee.photo_path) {
+        const { error: removeError } = await supabase.storage
+          .from(SUPABASE_PHOTO_BUCKET)
+          .remove([employee.photo_path]);
+
+        if (removeError) {
+          console.log("OLD PHOTO DELETE ERROR:", removeError.message);
+        }
+      }
+
+      const fileExt = req.file.originalname.split(".").pop();
+      const safeName = employee.name.replace(/[^a-zA-Z0-9]/g, "_");
+      const storagePath = `${employeeId}/${Date.now()}-${safeName}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
         .from(SUPABASE_PHOTO_BUCKET)
-        .remove([employee.photo_path]);
-    }
+        .upload(storagePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
 
-    const fileExt = req.file.originalname.split(".").pop();
-    const safeName = employee.name.replace(/[^a-zA-Z0-9]/g, "_");
-    const storagePath = `${employeeId}/${Date.now()}-${safeName}.${fileExt}`;
+      if (uploadError) {
+        console.log("PHOTO UPLOAD ERROR:", uploadError.message);
 
-    const { error } = await supabase.storage
-      .from(SUPABASE_PHOTO_BUCKET)
-      .upload(storagePath, req.file.buffer, {
-        contentType: req.file.mimetype,
-        upsert: false,
-      });
+        return res.status(500).send(`
+          <h2>Photo upload failed</h2>
+          <p>${uploadError.message}</p>
+          <a href="/employees">Back to Employees</a>
+        `);
+      }
 
-    if (error) {
-      console.log("PHOTO UPLOAD ERROR:", error.message);
+      await db.query(
+        "UPDATE employees SET photo_path = $1 WHERE id = $2",
+        [storagePath, employeeId]
+      );
 
-      return res.send(`
-        <h2>Photo upload failed</h2>
+      await logActivity(
+        req,
+        "Employee Photo Uploaded",
+        `Uploaded photo for employee ID: ${employeeId}`
+      );
+
+      res.redirect("/employees");
+    } catch (error) {
+      console.log("PHOTO UPLOAD SERVER ERROR:", error);
+
+      res.status(500).send(`
+        <h2>Internal Server Error</h2>
         <p>${error.message}</p>
         <a href="/employees">Back to Employees</a>
       `);
     }
-
-    await db.query(
-      "UPDATE employees SET photo_path = $1 WHERE id = $2",
-      [storagePath, employeeId]
-    );
-
-      await logActivity(
-  req,
-  "Employee Photo Uploaded",
-  `Uploaded photo for employee ID: ${employeeId}`
-);
-    res.redirect("/employees");
   }
 );
 
