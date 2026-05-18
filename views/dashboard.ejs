@@ -98,9 +98,10 @@
             border: none;
             background: #1e293b;
             color: #ffffff;
-            padding: 9px 12px;
+            padding: 9px 14px;
             border-radius: 8px;
-            font-size: 18px;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
         }
 
@@ -142,19 +143,19 @@
         }
 
         .user-badge span {
-    color: #6b7280;
-}
+            color: #6b7280;
+        }
 
-.role-pill {
-    display: inline-block;
-    margin-left: 8px;
-    background: #dbeafe;
-    color: #1d4ed8 !important;
-    padding: 5px 9px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-}
+        .role-pill {
+            display: inline-block;
+            margin-left: 8px;
+            background: #dbeafe;
+            color: #1d4ed8 !important;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
 
         .stats-grid {
             display: grid;
@@ -250,8 +251,10 @@
 
         .bar-fill {
             height: 100%;
+            width: 0;
             background: #2563eb;
             border-radius: 20px;
+            transition: width 0.3s ease;
         }
 
         .bar-fill.present {
@@ -467,7 +470,7 @@
 <body>
 
 <div class="mobile-topbar">
-    <button type="button" class="menu-toggle" id="menuToggle">☰</button>
+    <button type="button" class="menu-toggle" id="menuToggle">Menu</button>
     <h2>VLCG HRMS</h2>
 </div>
 
@@ -519,17 +522,16 @@
             </div>
 
             <div class="user-badge">
-    <span>Logged in as</span>
-    <strong><%= user && user.username ? user.username : "User" %></strong>
+                <span>Logged in as</span>
+                <strong><%= user && user.username ? user.username : "User" %></strong>
 
-    <% if (user && user.role) { %>
-        <span class="role-pill"><%= user.role %></span>
-    <% } %>
-</div>
+                <% if (user && user.role) { %>
+                    <span class="role-pill"><%= user.role %></span>
+                <% } %>
+            </div>
         </div>
 
         <div class="stats-grid">
-
             <div class="card stat-card">
                 <h2>Total Employees</h2>
                 <p><%= totalEmployees || 0 %></p>
@@ -549,7 +551,6 @@
                 <h2>Half Day Today</h2>
                 <p><%= halfDayToday || 0 %></p>
             </div>
-
         </div>
 
         <h2 class="section-title">Dashboard Charts</h2>
@@ -560,7 +561,7 @@
                 <h3>Today Attendance</h3>
                 <p class="chart-subtitle">Present, absent, and half-day records for today.</p>
 
-                <% 
+                <%
                     const attendanceTotal = Number(presentToday || 0) + Number(absentToday || 0) + Number(halfDayToday || 0);
                     const presentPercent = attendanceTotal > 0 ? (Number(presentToday || 0) / attendanceTotal) * 100 : 0;
                     const absentPercent = attendanceTotal > 0 ? (Number(absentToday || 0) / attendanceTotal) * 100 : 0;
@@ -573,7 +574,7 @@
                         <span><%= presentToday || 0 %></span>
                     </div>
                     <div class="bar-bg">
-                        <div class="bar-fill present" style="width:<%= presentPercent %>%"></div>
+                        <div class="bar-fill present js-bar-fill" data-percent="<%= presentPercent %>"></div>
                     </div>
                 </div>
 
@@ -583,7 +584,7 @@
                         <span><%= absentToday || 0 %></span>
                     </div>
                     <div class="bar-bg">
-                        <div class="bar-fill absent" style="width:<%= absentPercent %>%"></div>
+                        <div class="bar-fill absent js-bar-fill" data-percent="<%= absentPercent %>"></div>
                     </div>
                 </div>
 
@@ -593,7 +594,7 @@
                         <span><%= halfDayToday || 0 %></span>
                     </div>
                     <div class="bar-bg">
-                        <div class="bar-fill halfday" style="width:<%= halfDayPercent %>%"></div>
+                        <div class="bar-fill halfday js-bar-fill" data-percent="<%= halfDayPercent %>"></div>
                     </div>
                 </div>
             </div>
@@ -602,7 +603,7 @@
                 <h3>Leave Status</h3>
                 <p class="chart-subtitle">Current leave request summary.</p>
 
-                <% 
+                <%
                     const leaveTotal = Number(pendingLeaves || 0) + Number(approvedLeaves || 0) + Number(rejectedLeaves || 0);
                     const pendingPercent = leaveTotal > 0 ? (Number(pendingLeaves || 0) / leaveTotal) * 100 : 0;
                     const approvedPercent = leaveTotal > 0 ? (Number(approvedLeaves || 0) / leaveTotal) * 100 : 0;
@@ -615,7 +616,7 @@
                         <span><%= pendingLeaves || 0 %></span>
                     </div>
                     <div class="bar-bg">
-                        <div class="bar-fill pending" style="width:<%= pendingPercent %>%"></div>
+                        <div class="bar-fill pending js-bar-fill" data-percent="<%= pendingPercent %>"></div>
                     </div>
                 </div>
 
@@ -625,7 +626,7 @@
                         <span><%= approvedLeaves || 0 %></span>
                     </div>
                     <div class="bar-bg">
-                        <div class="bar-fill approved" style="width:<%= approvedPercent %>%"></div>
+                        <div class="bar-fill approved js-bar-fill" data-percent="<%= approvedPercent %>"></div>
                     </div>
                 </div>
 
@@ -635,7 +636,7 @@
                         <span><%= rejectedLeaves || 0 %></span>
                     </div>
                     <div class="bar-bg">
-                        <div class="bar-fill rejected" style="width:<%= rejectedPercent %>%"></div>
+                        <div class="bar-fill rejected js-bar-fill" data-percent="<%= rejectedPercent %>"></div>
                     </div>
                 </div>
             </div>
@@ -644,7 +645,7 @@
                 <h3>Employees by Department</h3>
                 <p class="chart-subtitle">Department-wise employee count.</p>
 
-                <% 
+                <%
                     let maxDepartmentCount = 0;
 
                     if (departmentSummary && departmentSummary.length > 0) {
@@ -666,7 +667,7 @@
                                 <span><%= item.count || 0 %></span>
                             </div>
                             <div class="bar-bg">
-                                <div class="bar-fill" style="width:<%= deptPercent %>%"></div>
+                                <div class="bar-fill js-bar-fill" data-percent="<%= deptPercent %>"></div>
                             </div>
                         </div>
                     <% }) %>
@@ -748,6 +749,13 @@
 </div>
 
 <script>
+    document.querySelectorAll(".js-bar-fill").forEach(function (bar) {
+        const percent = Number(bar.getAttribute("data-percent") || 0);
+        const safePercent = Math.max(0, Math.min(100, percent));
+
+        bar.style.width = safePercent + "%";
+    });
+
     const menuToggle = document.getElementById("menuToggle");
     const sidebar = document.getElementById("sidebar");
     const sidebarOverlay = document.getElementById("sidebarOverlay");
