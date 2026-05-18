@@ -1628,6 +1628,9 @@ app.post("/payroll/payment/update/:id", requireSuperAdmin, async (req, res) => {
       return res.redirect("/payroll");
     }
 
+    const paidBy = status === "Paid" ? req.session.user.username : null;
+    const paidAt = status === "Paid" ? new Date() : null;
+
     await db.query(
       `
       UPDATE payroll_records
@@ -1637,11 +1640,8 @@ app.post("/payroll/payment/update/:id", requireSuperAdmin, async (req, res) => {
           payment_reference = $4,
           payment_remarks = $5,
           paid_by = $6,
-          paid_at = CASE
-            WHEN $1 = 'Paid' THEN CURRENT_TIMESTAMP
-            ELSE NULL
-          END
-      WHERE id = $7
+          paid_at = $7
+      WHERE id = $8
       `,
       [
         status,
@@ -1649,7 +1649,8 @@ app.post("/payroll/payment/update/:id", requireSuperAdmin, async (req, res) => {
         payment_mode || "",
         payment_reference || "",
         payment_remarks || "",
-        status === "Paid" ? req.session.user.username : null,
+        paidBy,
+        paidAt,
         payrollId,
       ]
     );
