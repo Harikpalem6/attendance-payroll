@@ -690,6 +690,14 @@ app.post("/employee/change-password", requireEmployeeLogin, async (req, res) => 
 });
 
 /* =========================
+   PRIVACY POLICY
+========================= */
+
+app.get("/privacy-policy", (req, res) => {
+  res.render("privacy-policy");
+});
+
+/* =========================
    ADMIN LOGIN
 ========================= */
 
