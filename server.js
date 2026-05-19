@@ -697,6 +697,10 @@ app.get("/privacy-policy", (req, res) => {
   res.render("privacy-policy");
 });
 
+app.get("/data-deletion", (req, res) => {
+  res.render("data-deletion");
+});
+
 /* =========================
    ADMIN LOGIN
 ========================= */
