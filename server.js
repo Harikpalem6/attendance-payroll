@@ -335,7 +335,8 @@ app.get("/.well-known/assetlinks.json", (req, res) => {
         namespace: "android_app",
         package_name: "in.vlcghrms.app",
         sha256_cert_fingerprints: [
-          "91:CA:B2:7F:A7:50:E6:6B:6C:AB:FB:D4:C5:FF:C6:2E:0E:BC:2D:EE:09:BD:BC:78:41:5C:1B:6D:CF:08:2C:C3"
+          "91:CA:B2:7F:A7:50:E6:6B:6C:AB:FB:D4:C5:FF:C6:2E:0E:BC:2D:EE:09:BD:BC:78:41:5C:1B:6D:CF:08:2C:C3",
+          "40:F9:F4:DB:33:47:31:E8:44:3A:65:CF:22:8D:38:6E:3D:5F:AA:82:EB:25:2A:49:9A:83:E7:3F:F7:30:1C:BD"
         ]
       }
     }
